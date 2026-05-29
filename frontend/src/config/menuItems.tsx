@@ -1,0 +1,90 @@
+import {
+  ShopOutlined,
+  TeamOutlined,
+  UserOutlined,
+  AppstoreOutlined,
+  DownloadOutlined,
+  UploadOutlined,
+  DatabaseOutlined,
+  WarningOutlined,
+  BarChartOutlined,
+  WalletOutlined,
+  SettingOutlined,
+} from '@ant-design/icons'
+import type { MenuProps } from 'antd'
+
+type MenuItem = Required<MenuProps>['items'][number]
+
+const menuItems: MenuItem[] = [
+  {
+    key: 'master',
+    icon: <AppstoreOutlined />,
+    label: '基础资料',
+    children: [
+      { key: '/master/suppliers', label: '供应商管理', icon: <ShopOutlined /> },
+      { key: '/master/customers', label: '客户管理', icon: <UserOutlined /> },
+      { key: '/master/products', label: '货品管理', icon: <TeamOutlined /> },
+    ],
+  },
+  {
+    key: 'purchase',
+    icon: <DownloadOutlined />,
+    label: '采购管理',
+    children: [
+      { key: '/purchase/orders', label: '采购单据' },
+      { key: '/purchase/orders/new', label: '采购入库' },
+      { key: '/purchase/returns', label: '采购退货' },
+    ],
+  },
+  {
+    key: 'sales',
+    icon: <UploadOutlined />,
+    label: '销售管理',
+    children: [
+      { key: '/sales/orders', label: '销售单据' },
+      { key: '/sales/orders/new', label: '销售开单' },
+      { key: '/sales/returns', label: '销售退货' },
+    ],
+  },
+  {
+    key: 'inventory',
+    icon: <DatabaseOutlined />,
+    label: '库存管理',
+    children: [
+      { key: '/inventory', label: '产品库存' },
+      { key: '/inventory/adjust', label: '库存调整' },
+      { key: '/inventory/check', label: '库存盘点' },
+    ],
+  },
+  {
+    key: 'loss',
+    icon: <WarningOutlined />,
+    label: '报损管理',
+    children: [
+      { key: '/loss', label: '报损记录' },
+      { key: '/loss/new', label: '新增报损' },
+    ],
+  },
+  {
+    key: 'reports',
+    icon: <BarChartOutlined />,
+    label: '报表中心',
+    children: [
+      { key: '/reports/sales', label: '销售报表' },
+      { key: '/reports/purchase', label: '采购报表' },
+      { key: '/reports/inventory', label: '库存报表' },
+    ],
+  },
+  {
+    key: '/payment',
+    icon: <WalletOutlined />,
+    label: '收支管理',
+  },
+  {
+    key: '/settings',
+    icon: <SettingOutlined />,
+    label: '系统设置',
+  },
+]
+
+export default menuItems
