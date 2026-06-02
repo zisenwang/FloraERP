@@ -1,4 +1,5 @@
 import {
+  HomeOutlined,
   ShopOutlined,
   TeamOutlined,
   UserOutlined,
@@ -16,6 +17,11 @@ import type { MenuProps } from 'antd'
 type MenuItem = Required<MenuProps>['items'][number]
 
 const menuItems: MenuItem[] = [
+  {
+    key: '/',
+    icon: <HomeOutlined />,
+    label: '首页',
+  },
   {
     key: 'master',
     icon: <AppstoreOutlined />,
