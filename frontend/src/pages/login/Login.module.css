@@ -1,0 +1,32 @@
+.page {
+  min-height: 100vh;
+  background: #f0f5f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 48px 40px;
+  width: 380px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+.logo {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.logoText {
+  font-size: 22px;
+  font-weight: 700;
+  color: #16a34a;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: #999;
+  margin-top: 4px;
+}

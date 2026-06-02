@@ -25,9 +25,17 @@
   margin-right: auto;
 }
 
-.topbarRight {
+.userInfo {
   font-size: 13px;
-  color: #999;
+  color: #555;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.userInfo:hover {
+  background: #f5f5f5;
 }
 
 /* ── Body: sidebar + content ── */

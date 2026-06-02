@@ -1,0 +1,65 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.kpiRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.kpiCard {
+  background: #fff;
+  border-radius: 10px;
+  padding: 24px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.kpiLabel {
+  font-size: 13px;
+  color: #999;
+  margin-bottom: 8px;
+}
+
+.kpiValue {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111;
+}
+
+.kpiValueGreen {
+  color: #16a34a;
+}
+
+.kpiValueBlue {
+  color: #2563eb;
+}
+
+.kpiValueOrange {
+  color: #ea580c;
+}
+
+.rankRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.section {
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  overflow: hidden;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f5f5f5;
+}

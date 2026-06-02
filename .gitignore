@@ -13,6 +13,7 @@ backend/dist/
 .env.production
 backend/.env
 frontend/.env
+backend/.env.*
 
 # Logs
 logs/

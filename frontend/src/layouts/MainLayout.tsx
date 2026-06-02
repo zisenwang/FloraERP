@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Menu, Button } from 'antd'
-import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons'
+import { Menu, Button, Dropdown } from 'antd'
+import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined, LogoutOutlined } from '@ant-design/icons'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import menuItems from '@/config/menuItems'
+import { useAuth } from '@/store/AuthContext'
 import styles from './MainLayout.module.css'
 
 const SIDEBAR_WIDTH = 220
@@ -12,8 +13,20 @@ export default function MainLayout() {
   const [collapsed, setCollapsed] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
+  const { user, logout } = useAuth()
 
   const openKey = location.pathname.split('/')[1] || 'sales'
+
+  const userMenu = {
+    items: [
+      {
+        key: 'logout',
+        icon: <LogoutOutlined />,
+        label: '退出登录',
+        onClick: logout,
+      },
+    ],
+  }
 
   return (
     <div className={styles.root}>
@@ -24,9 +37,14 @@ export default function MainLayout() {
           type="text"
           icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
           onClick={() => setCollapsed(!collapsed)}
-          style={{ marginRight: 16 }}
+          style={{ marginRight: 'auto' }}
         />
-        <span className={styles.topbarRight}>花卉管理系统</span>
+        <Dropdown menu={userMenu} placement="bottomRight">
+          <span className={styles.userInfo}>
+            <UserOutlined style={{ marginRight: 6 }} />
+            {user?.name ?? '用户'}
+          </span>
+        </Dropdown>
       </header>
 
       {/* Body */}

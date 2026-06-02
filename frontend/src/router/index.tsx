@@ -1,5 +1,7 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 import MainLayout from '@/layouts/MainLayout'
+import Login from '@/pages/login/Login'
+import Dashboard from '@/pages/dashboard/Dashboard'
 
 // 基础资料
 import SupplierList from '@/pages/master/SupplierList'
@@ -36,12 +38,22 @@ import PaymentList from '@/pages/payment/PaymentList'
 // 系统设置
 import Settings from '@/pages/settings/Settings'
 
+const isLoggedIn = () => !!localStorage.getItem('token')
+
+function RequireAuth({ children }: { children: React.ReactNode }) {
+  return isLoggedIn() ? <>{children}</> : <Navigate to="/login" replace />
+}
+
 const router = createBrowserRouter([
   {
+    path: '/login',
+    element: <Login />,
+  },
+  {
     path: '/',
-    element: <MainLayout />,
+    element: <RequireAuth><MainLayout /></RequireAuth>,
     children: [
-      { index: true, element: <SalesOrderList /> },
+      { index: true, element: <Dashboard /> },
 
       // 基础资料
       { path: 'master/suppliers', element: <SupplierList /> },
