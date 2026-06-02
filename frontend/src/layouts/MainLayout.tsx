@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Menu, Button, Dropdown } from 'antd'
+import { Menu, Dropdown } from 'antd'
 import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined, LogoutOutlined } from '@ant-design/icons'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import menuItems from '@/config/menuItems'
@@ -33,12 +33,6 @@ export default function MainLayout() {
       {/* Top navbar */}
       <header className={styles.topbar}>
         <span className={styles.brand}>广阔园艺 ERP</span>
-        <Button
-          type="text"
-          icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-          onClick={() => setCollapsed(!collapsed)}
-          style={{ marginRight: 'auto' }}
-        />
         <Dropdown menu={userMenu} placement="bottomRight">
           <span className={styles.userInfo}>
             <UserOutlined style={{ marginRight: 6 }} />
@@ -63,6 +57,12 @@ export default function MainLayout() {
             onClick={({ key }) => navigate(key)}
             style={{ border: 'none', flex: 1 }}
           />
+
+          {/* Collapse button at the bottom of the sidebar */}
+          <div className={styles.collapseBtnWrapper} onClick={() => setCollapsed(!collapsed)}>
+            {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            {!collapsed && <span style={{ marginLeft: 8, fontSize: 13 }}>隐藏菜单</span>}
+          </div>
         </nav>
 
         {/* Main content */}
