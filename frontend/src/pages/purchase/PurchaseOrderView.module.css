@@ -1,0 +1,141 @@
+.page {
+  max-width: 960px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+/* ── Screen preview ── */
+.printArea {
+  background: #fff;
+  padding: 32px 40px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #111;
+  line-height: 1.8;
+}
+
+.printTitle {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  margin-bottom: 6px;
+}
+
+.printSubtitle {
+  text-align: center;
+  font-size: 12px;
+  color: #555;
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.printMeta {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  font-size: 13px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 10px;
+}
+
+.printTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+}
+
+.printTable th,
+.printTable td {
+  border: 1px solid #bbb;
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 13px;
+}
+
+.printTable th {
+  background: #f5f5f5;
+  font-weight: 600;
+  text-align: center;
+}
+
+.printTable td.right {
+  text-align: right;
+}
+
+.printTable td.center {
+  text-align: center;
+}
+
+.printSummary {
+  font-size: 13px;
+  margin-bottom: 32px;
+  padding: 8px 0;
+  border-top: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+}
+
+.printFooter {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 40px;
+  font-size: 13px;
+  color: #333;
+}
+
+/* ── Print-specific overrides ── */
+@media print {
+  @page {
+    size: A4;
+    margin: 20mm 18mm;
+  }
+
+  .actions {
+    display: none !important;
+  }
+
+  .printArea {
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    font-size: 12pt;
+  }
+
+  .printTitle {
+    font-size: 18pt;
+    margin-bottom: 6pt;
+  }
+
+  .printSubtitle {
+    font-size: 10pt;
+    margin-bottom: 16pt;
+  }
+
+  .printMeta {
+    font-size: 11pt;
+    margin-bottom: 12pt;
+    padding-bottom: 8pt;
+  }
+
+  .printTable th,
+  .printTable td {
+    padding: 6pt 10pt;
+    font-size: 11pt;
+  }
+
+  .printSummary {
+    font-size: 11pt;
+    margin-bottom: 24pt;
+    padding: 6pt 0;
+  }
+
+  .printFooter {
+    font-size: 11pt;
+    margin-top: 32pt;
+  }
+}

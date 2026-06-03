@@ -11,6 +11,7 @@ import ProductList from '@/pages/master/ProductList'
 // 采购管理
 import PurchaseOrderList from '@/pages/purchase/PurchaseOrderList'
 import PurchaseOrderNew from '@/pages/purchase/PurchaseOrderNew'
+import PurchaseOrderView from '@/pages/purchase/PurchaseOrderView'
 import PurchaseReturnList from '@/pages/purchase/PurchaseReturnList'
 
 // 销售管理
@@ -63,6 +64,7 @@ const router = createBrowserRouter([
       // 采购管理
       { path: 'purchase/orders', element: <PurchaseOrderList /> },
       { path: 'purchase/orders/new', element: <PurchaseOrderNew /> },
+      { path: 'purchase/orders/:id', element: <PurchaseOrderView /> },
       { path: 'purchase/returns', element: <PurchaseReturnList /> },
 
       // 销售管理

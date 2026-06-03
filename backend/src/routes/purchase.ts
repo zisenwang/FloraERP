@@ -60,10 +60,15 @@ router.post('/orders', async (req: AuthRequest, res: Response): Promise<void> =>
   try {
     // TODO: replace with real SQL
     const body = req.body as Record<string, unknown>;
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    const seq = mockPurchaseOrders.length + 1;
+    const order_no = `C${year}${month}G20_D${seq}`;
     const newOrder = {
-      id: mockPurchaseOrders.length + 1,
-      order_no: `P${Date.now()}`,
-      status: '待入库',
+      id: seq,
+      order_no,
+      status: '已入库',
       ...body,
     };
     res.status(201).json({ data: newOrder });
