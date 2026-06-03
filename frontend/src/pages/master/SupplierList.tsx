@@ -138,7 +138,7 @@ export default function SupplierList() {
         okText="保存"
         cancelText="取消"
         confirmLoading={saving}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item name="code" label="编码" rules={[{ required: true, message: '请输入编码' }]}>
