@@ -1,0 +1,51 @@
+.pageTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111;
+  margin-bottom: 16px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.statsRow {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.statCard {
+  flex: 1;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+
+.statLabel {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 6px;
+}
+
+.statValue {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111;
+}
+
+.statValueRed {
+  font-size: 22px;
+  font-weight: 700;
+  color: #cf1322;
+}
+
+.statValueGreen {
+  font-size: 22px;
+  font-weight: 700;
+  color: #389e0d;
+}

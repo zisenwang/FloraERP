@@ -16,6 +16,7 @@ export interface PurchaseOrder {
   supplier_name: string
   order_date: string
   total_amount: number
+  paid_amount: number
   status: string
   items: PurchaseOrderItem[]
 }
