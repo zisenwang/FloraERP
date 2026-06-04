@@ -17,6 +17,7 @@ import PurchaseReturnList from '@/pages/purchase/PurchaseReturnList'
 // 销售管理
 import SalesOrderList from '@/pages/sales/SalesOrderList'
 import SalesOrderNew from '@/pages/sales/SalesOrderNew'
+import SalesOrderView from '@/pages/sales/SalesOrderView'
 import SalesReturnList from '@/pages/sales/SalesReturnList'
 
 // 库存管理
@@ -70,6 +71,7 @@ const router = createBrowserRouter([
       // 销售管理
       { path: 'sales/orders', element: <SalesOrderList /> },
       { path: 'sales/orders/new', element: <SalesOrderNew /> },
+      { path: 'sales/orders/:id', element: <SalesOrderView /> },
       { path: 'sales/returns', element: <SalesReturnList /> },
 
       // 库存管理

@@ -1,7 +1,7 @@
 export default function SalesReturnList() {
   return (
-    <div className="text-gray-400 text-sm">
-      <h2 className="text-lg font-semibold text-gray-700 mb-4">销售退货</h2>
+    <div style={{ color: '#999', fontSize: 14 }}>
+      <h2 style={{ fontSize: 16, fontWeight: 600, color: '#333', marginBottom: 16 }}>销售退货</h2>
       <p>页面开发中...</p>
     </div>
   )

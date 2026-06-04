@@ -25,10 +25,11 @@ const mockSalesReturns = [
 router.get('/orders', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     // TODO: replace with real SQL
-    const { customer_id, status, start_date, end_date } = req.query as Record<string, string | undefined>;
+    const { customer_id, status, pay_status, start_date, end_date } = req.query as Record<string, string | undefined>;
     let result = mockSalesOrders;
     if (customer_id) result = result.filter((o) => o.customer_id === Number(customer_id));
     if (status) result = result.filter((o) => o.status === status);
+    if (pay_status) result = result.filter((o) => o.pay_status === pay_status);
     if (start_date) result = result.filter((o) => o.order_date >= start_date);
     if (end_date) result = result.filter((o) => o.order_date <= end_date);
     res.json({ data: result });
@@ -60,10 +61,28 @@ router.post('/orders', async (req: AuthRequest, res: Response): Promise<void> =>
   try {
     // TODO: replace with real SQL
     const body = req.body as Record<string, unknown>;
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const seq = mockSalesOrders.length + 1;
+    const order_no = `X${year}${month}G${day}_D${700 + seq}`;
+    const items = body.items as Array<Record<string, unknown>>;
+    const total_amount = items
+      ? items.reduce((s: number, item) => {
+          const qty = Number(item.qty) || 0;
+          const price = Number(item.unit_price) || 0;
+          const discount = Number(item.discount ?? 100) / 100;
+          return +(s + qty * price * discount).toFixed(2);
+        }, 0)
+      : 0;
     const newOrder = {
-      id: mockSalesOrders.length + 1,
-      order_no: `X${Date.now()}`,
-      status: '待发货',
+      id: seq,
+      order_no,
+      status: 'confirmed',
+      pay_status: 'unpaid',
+      paid_amount: 0,
+      total_amount,
       ...body,
     };
     res.status(201).json({ data: newOrder });
