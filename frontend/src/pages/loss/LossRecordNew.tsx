@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Form, Select, InputNumber, Input, Button, App } from 'antd'
 import { useNavigate } from 'react-router-dom'
 import { createLossRecord } from '@/api/loss'
-import { getInventory, type InventoryItem } from '@/api/inventory'
+import { getProducts, type Product } from '@/api/products'
 import { getErrorMessage } from '@/utils/error'
 import styles from './Loss.module.css'
 
@@ -10,16 +10,16 @@ export default function LossRecordNew() {
   const { message } = App.useApp()
   const navigate = useNavigate()
   const [form] = Form.useForm()
-  const [products, setProducts] = useState<InventoryItem[]>([])
+  const [products, setProducts] = useState<Product[]>([])
   const [saving, setSaving] = useState(false)
-  const [selectedProduct, setSelectedProduct] = useState<InventoryItem | null>(null)
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
   useEffect(() => {
-    getInventory().then(setProducts).catch(() => {})
+    getProducts().then(setProducts).catch(() => {})
   }, [])
 
   const handleProductSelect = (code: string) => {
-    const p = products.find(p => p.product_code === code) ?? null
+    const p = products.find(p => p.code === code) ?? null
     setSelectedProduct(p)
     form.setFieldsValue({ unit_price: p?.price ?? 0, qty: 1 })
     recalcAmount()
@@ -36,7 +36,7 @@ export default function LossRecordNew() {
       setSaving(true)
       createLossRecord({
         product_code: values.product_code,
-        product_name: selectedProduct?.product_name ?? '',
+        product_name: selectedProduct?.name ?? '',
         qty: values.qty,
         unit_price: values.unit_price,
         total_amount: values.total_amount,
@@ -65,8 +65,8 @@ export default function LossRecordNew() {
                 String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
               }
               options={products.map(p => ({
-                value: p.product_code,
-                label: `${p.product_code} ${p.product_name}（库存 ${p.stock}）`,
+                value: p.code,
+                label: `${p.code} ${p.name}（库存 ${p.stock}）`,
               }))}
               onChange={handleProductSelect}
             />
