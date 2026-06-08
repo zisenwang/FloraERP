@@ -1,5 +1,5 @@
 .page {
-  max-width: 960px;
+  max-width: 1140px;
 }
 
 .actions {
@@ -53,9 +53,10 @@
 .printTable th,
 .printTable td {
   border: 1px solid #bbb;
-  padding: 8px 12px;
+  padding: 6px 8px;
   text-align: left;
   font-size: 13px;
+  white-space: nowrap;
 }
 
 .printTable th {

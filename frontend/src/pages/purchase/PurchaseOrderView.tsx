@@ -32,7 +32,8 @@ export default function PurchaseOrderView() {
   if (loading) return <Spin size="large" style={{ display: 'block', margin: '80px auto' }} />
   if (!order) return null
 
-  const totalQty = order.items.reduce((s, i) => s + i.qty, 0)
+  const items = order.items ?? []
+  const totalQty = items.reduce((s, i) => s + i.qty, 0)
 
   return (
     <div className={styles.page}>
@@ -53,10 +54,25 @@ export default function PurchaseOrderView() {
         </div>
 
         <table className={styles.printTable}>
+          <colgroup>
+            <col style={{ width: '9%' }} />   {/* 编码 */}
+            <col style={{ width: '18%' }} />  {/* 货品名称 */}
+            <col style={{ width: '9%' }} />   {/* 品类 */}
+            <col style={{ width: '6%' }} />   {/* 等级 */}
+            <col style={{ width: '5%' }} />   {/* 单位 */}
+            <col style={{ width: '6%' }} />   {/* 数量 */}
+            <col style={{ width: '9%' }} />   {/* 单价 */}
+            <col style={{ width: '10%' }} />  {/* 金额 */}
+            <col style={{ width: '6%' }} />   {/* 折扣 */}
+            <col style={{ width: '11%' }} />  {/* 折后金额 */}
+            <col style={{ width: '11%' }} />  {/* 备注 */}
+          </colgroup>
           <thead>
             <tr>
               <th>编码</th>
               <th>货品名称</th>
+              <th>品类</th>
+              <th>等级</th>
               <th>单位</th>
               <th>数量</th>
               <th>单价</th>
@@ -67,14 +83,16 @@ export default function PurchaseOrderView() {
             </tr>
           </thead>
           <tbody>
-            {order.items.map((item, i) => {
+            {items.map((item, i) => {
               const discount = item.discount ?? 100
               const finalAmt = item.finalAmount ?? +(item.amount * discount / 100).toFixed(2)
               return (
                 <tr key={i}>
                   <td>{item.productCode}</td>
                   <td>{item.productName}</td>
-                  <td className={styles.center}>盆</td>
+                  <td className={styles.center}>{item.category ?? '—'}</td>
+                  <td className={styles.center}>{item.grade ?? '—'}</td>
+                  <td className={styles.center}>{item.unit}</td>
                   <td className={styles.center}>{item.qty}</td>
                   <td className={styles.right}>¥{item.unitPrice}</td>
                   <td className={styles.right}>¥{item.amount.toFixed(2)}</td>
@@ -85,7 +103,7 @@ export default function PurchaseOrderView() {
               )
             })}
             <tr>
-              <td colSpan={3} style={{ textAlign: 'right', fontWeight: 600 }}>小计</td>
+              <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600 }}>小计</td>
               <td className={styles.right}><strong>{totalQty}</strong></td>
               <td></td>
               <td className={styles.right}><strong>¥{order.totalAmount.toFixed(2)}</strong></td>

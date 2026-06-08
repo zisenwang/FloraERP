@@ -3,6 +3,8 @@ export interface PurchaseOrderItem {
   productId: number
   productCode: string
   productName: string
+  category: string | null
+  grade: string | null
   unit: string
   qty: number
   unitPrice: number
