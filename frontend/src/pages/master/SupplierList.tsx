@@ -82,6 +82,7 @@ export default function SupplierList() {
     { title: '名称', dataIndex: 'name', width: 120 },
     { title: '联系人', dataIndex: 'contact', width: 100 },
     { title: '电话', dataIndex: 'phone', width: 140 },
+    { title: '城市', dataIndex: 'city', width: 100 },
     { title: '地址', dataIndex: 'address', ellipsis: true },
     {
       title: '状态', dataIndex: 'status', width: 80,
@@ -151,6 +152,9 @@ export default function SupplierList() {
             <Input />
           </Form.Item>
           <Form.Item name="phone" label="电话">
+            <Input />
+          </Form.Item>
+          <Form.Item name="city" label="城市">
             <Input />
           </Form.Item>
           <Form.Item name="address" label="地址">

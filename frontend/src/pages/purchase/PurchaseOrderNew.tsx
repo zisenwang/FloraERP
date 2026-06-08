@@ -11,11 +11,11 @@ import styles from './Purchase.module.css'
 
 interface LineItem {
   key: number
-  product_id?: number
-  product_code: string
-  product_name: string
+  productId?: number
+  productCode: string
+  productName: string
   qty: number
-  unit_price: number
+  unitPrice: number
   discount: number
   amount: number
 }
@@ -23,10 +23,10 @@ interface LineItem {
 let keyCounter = 0
 const newLine = (): LineItem => ({
   key: keyCounter++,
-  product_code: '',
-  product_name: '',
+  productCode: '',
+  productName: '',
   qty: 0,
-  unit_price: 0,
+  unitPrice: 0,
   discount: 100,
   amount: 0,
 })
@@ -47,14 +47,14 @@ export default function PurchaseOrderNew() {
 
   const handleSupplierChange = (supplierId: number) => {
     setLines([newLine()])
-    getProducts({ supplier_id: supplierId }).then(setProducts).catch(() => {})
+    getProducts({ supplierId }).then(setProducts).catch(() => {})
   }
 
   const updateLine = (key: number, changes: Partial<LineItem>) => {
     setLines(prev => prev.map(line => {
       if (line.key !== key) return line
       const updated = { ...line, ...changes }
-      updated.amount = +(updated.qty * updated.unit_price * (updated.discount / 100)).toFixed(2)
+      updated.amount = +(updated.qty * updated.unitPrice * (updated.discount / 100)).toFixed(2)
       return updated
     }))
   }
@@ -63,10 +63,10 @@ export default function PurchaseOrderNew() {
     const p = products.find(p => p.id === productId)
     if (!p) return
     updateLine(key, {
-      product_id: productId,
-      product_code: p.code,
-      product_name: p.name,
-      unit_price: p.price,
+      productId,
+      productCode: p.code,
+      productName: p.name,
+      unitPrice: p.price,
     })
   }
 
@@ -79,7 +79,7 @@ export default function PurchaseOrderNew() {
 
   const handleSubmit = () => {
     form.validateFields().then(values => {
-      const validLines = lines.filter(l => l.product_code && l.qty > 0)
+      const validLines = lines.filter(l => l.productCode && l.qty > 0)
       if (validLines.length === 0) {
         message.warning('请至少添加一条货品明细')
         return
@@ -87,11 +87,14 @@ export default function PurchaseOrderNew() {
 
       setSaving(true)
       createPurchaseOrder({
-        supplier_id: values.supplier_id,
-        order_date: values.order_date.format('YYYY-MM-DD'),
+        supplierId: values.supplierId,
+        orderDate: values.orderDate.format('YYYY-MM-DD'),
         notes: values.notes,
-        items: validLines.map(({ product_code, product_name, qty, unit_price, discount }) => ({
-          product_code, product_name, qty, unit_price, discount,
+        items: validLines.map(({ productId, qty, unitPrice, discount }) => ({
+          productId: productId!,
+          qty,
+          unitPrice,
+          discount,
         })),
       })
         .then(() => {
@@ -111,16 +114,16 @@ export default function PurchaseOrderNew() {
         <Select
           placeholder="选择货品"
           style={{ width: '100%' }}
-          value={record.product_id}
+          value={record.productId}
           options={products.map(p => ({ value: p.id, label: `${p.code} ${p.name}` }))}
           onChange={val => handleProductSelect(record.key, val)}
         />
       ),
     },
     {
-      title: '编码', dataIndex: 'product_code', width: 100,
+      title: '编码', dataIndex: 'productCode', width: 100,
       render: (_: unknown, record: LineItem) => (
-        <span style={{ fontSize: 13, color: '#888' }}>{record.product_code || '—'}</span>
+        <span style={{ fontSize: 13, color: '#888' }}>{record.productCode || '—'}</span>
       ),
     },
     {
@@ -136,8 +139,8 @@ export default function PurchaseOrderNew() {
       title: '单价', width: 100,
       render: (_: unknown, record: LineItem) => (
         <InputNumber
-          min={0} precision={2} value={record.unit_price} style={{ width: '100%' }}
-          onChange={val => updateLine(record.key, { unit_price: val ?? 0 })}
+          min={0} precision={2} value={record.unitPrice} style={{ width: '100%' }}
+          onChange={val => updateLine(record.key, { unitPrice: val ?? 0 })}
         />
       ),
     },
@@ -173,7 +176,7 @@ export default function PurchaseOrderNew() {
       <div className={styles.pageTitle}>采购入库</div>
 
       <Form form={form} layout="inline" className={styles.headerForm}>
-        <Form.Item name="supplier_id" label="供应商" rules={[{ required: true, message: '请选择供应商' }]}>
+        <Form.Item name="supplierId" label="供应商" rules={[{ required: true, message: '请选择供应商' }]}>
           <Select
             placeholder="选择供应商"
             style={{ width: 200 }}
@@ -181,7 +184,7 @@ export default function PurchaseOrderNew() {
             onChange={handleSupplierChange}
           />
         </Form.Item>
-        <Form.Item name="order_date" label="日期" initialValue={dayjs()} rules={[{ required: true }]}>
+        <Form.Item name="orderDate" label="日期" initialValue={dayjs()} rules={[{ required: true }]}>
           <DatePicker />
         </Form.Item>
         <Form.Item name="notes" label="备注">

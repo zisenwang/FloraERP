@@ -10,7 +10,6 @@ import { getSuppliers, type Supplier } from '@/api/suppliers'
 import { getErrorMessage } from '@/utils/error'
 import styles from './SupplierList.module.css'
 
-const CATEGORY_OPTIONS = ['观叶植物', '兰花', '观花植物', '多肉植物', '绿植', '其他']
 
 export default function ProductList() {
   const { message, modal } = App.useApp()
@@ -27,7 +26,7 @@ export default function ProductList() {
 
   const fetchProducts = (kw?: string, supplierId?: number) => {
     setLoading(true)
-    getProducts({ search: kw, supplier_id: supplierId })
+    getProducts({ search: kw, supplierId })
       .then(setProducts)
       .catch(err => message.error(getErrorMessage(err)))
       .finally(() => setLoading(false))
@@ -88,7 +87,7 @@ export default function ProductList() {
   const columns: ColumnsType<Product> = [
     { title: '编码', dataIndex: 'code', width: 100 },
     { title: '货品名称', dataIndex: 'name', width: 140 },
-    { title: '供应商', dataIndex: 'supplier_name', width: 100 },
+    { title: '供应商', dataIndex: 'supplierName', width: 100 },
     { title: '品类', dataIndex: 'category', width: 100 },
     { title: '单位', dataIndex: 'unit', width: 60 },
     { title: '单价', dataIndex: 'price', width: 80, render: (v: number) => `¥${v}` },
@@ -161,7 +160,7 @@ export default function ProductList() {
         destroyOnHidden
       >
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-          <Form.Item name="supplier_id" label="供应商" rules={[{ required: true, message: '请选择供应商' }]}>
+          <Form.Item name="supplierId" label="供应商" rules={[{ required: true, message: '请选择供应商' }]}>
             <Select
               placeholder="选择供应商"
               options={suppliers.map(s => ({ value: s.id, label: `${s.code} ${s.name}` }))}
@@ -174,7 +173,7 @@ export default function ProductList() {
             <Input placeholder="如：金钱树小型" />
           </Form.Item>
           <Form.Item name="category" label="品类">
-            <Select placeholder="选择品类" options={CATEGORY_OPTIONS.map(c => ({ value: c, label: c }))} />
+            <Input placeholder="如：观叶植物" />
           </Form.Item>
           <Form.Item name="unit" label="单位" initialValue="盆">
             <Input />

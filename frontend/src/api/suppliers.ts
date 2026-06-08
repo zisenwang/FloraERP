@@ -7,11 +7,12 @@ export interface Supplier {
   contact: string
   phone: string
   address: string
+  city: string
+  notes?: string
   status: number
-  created_at: string
 }
 
-export type SupplierPayload = Omit<Supplier, 'id' | 'created_at'>
+export type SupplierPayload = Omit<Supplier, 'id'>
 
 export const getSuppliers = async (search?: string): Promise<Supplier[]> => {
   const res = await client.get<{ data: Supplier[] }>('/suppliers', { params: { search } })

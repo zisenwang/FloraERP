@@ -2,30 +2,30 @@ import client from './client'
 
 export interface Payment {
   id: number
-  payment_no: string
-  type: string           // 收款 | 付款
-  related_order_no: string
-  party_name: string
+  salesOrderId: number
+  orderNo: string
+  customerId: number
+  customerName: string
   amount: number
-  payment_method: string
-  payment_date: string
+  method: string
+  paymentDate: string
+  notes: string
   operator: string
-  remark: string
 }
 
 export interface PaymentPayload {
-  type: string
-  related_order_no: string
-  party_name: string
+  salesOrderId: number
   amount: number
-  payment_method: string
-  remark?: string
+  paymentDate: string
+  method?: string
+  notes?: string
 }
 
 export const getPayments = async (params?: {
-  type?: string
-  start_date?: string
-  end_date?: string
+  salesOrderId?: number
+  customerId?: number
+  startDate?: string
+  endDate?: string
 }): Promise<Payment[]> => {
   const res = await client.get<{ data: Payment[] }>('/payments', { params })
   return res.data.data
@@ -34,4 +34,8 @@ export const getPayments = async (params?: {
 export const createPayment = async (payload: PaymentPayload): Promise<Payment> => {
   const res = await client.post<{ data: Payment }>('/payments', payload)
   return res.data.data
+}
+
+export const deletePayment = async (id: number): Promise<void> => {
+  await client.delete(`/payments/${id}`)
 }

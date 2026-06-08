@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Table, Input, Select, Tag, App } from 'antd'
-import { SearchOutlined, WarningOutlined } from '@ant-design/icons'
+import { SearchOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
-import { getInventory, type InventoryItem } from '@/api/inventory'
+import { getInventory, type InventoryRow } from '@/api/inventory'
 import { getErrorMessage } from '@/utils/error'
 import styles from './Inventory.module.css'
 
@@ -10,7 +10,7 @@ const CATEGORIES = ['观叶植物', '兰花', '观花植物', '多肉植物', '�
 
 export default function InventoryList() {
   const { message } = App.useApp()
-  const [items, setItems] = useState<InventoryItem[]>([])
+  const [items, setItems] = useState<InventoryRow[]>([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<string | undefined>()
@@ -25,10 +25,10 @@ export default function InventoryList() {
 
   useEffect(() => { fetchInventory() }, [search, category])
 
-  const columns: ColumnsType<InventoryItem> = [
-    { title: '编码', dataIndex: 'product_code', width: 100 },
-    { title: '货品名称', dataIndex: 'product_name', width: 160 },
-    { title: '供应商', dataIndex: 'supplier_name', width: 100 },
+  const columns: ColumnsType<InventoryRow> = [
+    { title: '编码', dataIndex: 'productCode', width: 100 },
+    { title: '货品名称', dataIndex: 'productName', width: 160 },
+    { title: '供应商', dataIndex: 'supplierName', width: 100 },
     {
       title: '分类', dataIndex: 'category', width: 100,
       render: (v: string) => <Tag>{v}</Tag>,
@@ -36,24 +36,14 @@ export default function InventoryList() {
     { title: '单位', dataIndex: 'unit', width: 70, align: 'center' },
     {
       title: '当前库存', dataIndex: 'stock', width: 110, align: 'center',
-      render: (v: number, record: InventoryItem) => {
-        const low = v <= record.alert_stock
-        return (
-          <span className={low ? styles.stockLow : styles.stockOk}>
-            {low && <WarningOutlined style={{ marginRight: 4 }} />}
-            {v}
-          </span>
-        )
-      },
+      render: (v: number) => (
+        <span className={styles.stockOk}>
+          {v}
+        </span>
+      ),
     },
-    {
-      title: '预警库存', dataIndex: 'alert_stock', width: 90, align: 'center',
-      render: (v: number) => <span style={{ color: '#999' }}>{v}</span>,
-    },
-    { title: '最后更新', dataIndex: 'last_updated', width: 110 },
+    { title: '最后更新', dataIndex: 'lastUpdated', width: 110 },
   ]
-
-  const lowStockCount = items.filter(i => i.stock <= i.alert_stock).length
 
   return (
     <>
@@ -73,15 +63,10 @@ export default function InventoryList() {
           options={CATEGORIES.map(c => ({ value: c, label: c }))}
           onChange={v => setCategory(v)}
         />
-        {lowStockCount > 0 && (
-          <Tag color="red" icon={<WarningOutlined />}>
-            {lowStockCount} 个商品库存不足
-          </Tag>
-        )}
       </div>
 
       <Table
-        rowKey="id"
+        rowKey="productId"
         columns={columns}
         dataSource={items}
         loading={loading}

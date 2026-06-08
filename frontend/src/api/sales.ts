@@ -1,41 +1,63 @@
 import client from './client'
 
 export interface SalesOrderItem {
-  product_code: string
-  product_name: string
-  supplier_name: string
+  id: number
+  productId: number
+  productCode: string
+  productName: string
+  supplierId: number
+  supplierCode: string
+  supplierName: string
+  unit: string
   qty: number
-  unit_price: number
-  discount: number
+  unitPrice: number
   amount: number
+  discount: number
+  finalAmount: number
+  pieces: number
+  notes: string
 }
 
 export interface SalesOrder {
   id: number
-  order_no: string
-  customer_id: number
-  customer_name: string
-  order_date: string
-  total_amount: number
-  paid_amount: number
-  status: string        // draft | confirmed | cancelled
-  pay_status: string    // unpaid | partial | paid
-  notes?: string
+  orderNo: string
+  customerId: number
+  customerName: string
+  customerCode: string
+  customerPhone: string
+  orderDate: string
+  totalQty: number
+  totalAmount: number
+  totalPieces: number
+  paymentStatus: string   // "未收款" | "部分收款" | "已收款"
+  operator: string
+  notes: string
+  status: string
+  createdAt: string
   items: SalesOrderItem[]
 }
 
 export interface SalesOrderPayload {
-  customer_id: number
-  order_date: string
+  customerId: number
+  orderDate: string
   notes?: string
-  items: Omit<SalesOrderItem, 'amount'>[]
+  items: {
+    productId: number
+    supplierId?: number
+    qty: number
+    unitPrice: number
+    discount?: number
+    pieces?: number
+    notes?: string
+  }[]
 }
 
 export const getSalesOrders = async (params?: {
-  customer_id?: number
-  start_date?: string
-  end_date?: string
-  pay_status?: string
+  customerId?: number
+  paymentStatus?: string
+  startDate?: string
+  endDate?: string
+  search?: string
 }): Promise<SalesOrder[]> => {
   const res = await client.get<{ data: SalesOrder[] }>('/sales/orders', { params })
   return res.data.data
@@ -48,5 +70,10 @@ export const getSalesOrder = async (id: number): Promise<SalesOrder> => {
 
 export const createSalesOrder = async (payload: SalesOrderPayload): Promise<SalesOrder> => {
   const res = await client.post<{ data: SalesOrder }>('/sales/orders', payload)
+  return res.data.data
+}
+
+export const updateSalesOrder = async (id: number, payload: SalesOrderPayload): Promise<SalesOrder> => {
+  const res = await client.put<{ data: SalesOrder }>(`/sales/orders/${id}`, payload)
   return res.data.data
 }

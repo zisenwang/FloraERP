@@ -11,9 +11,9 @@ import { getErrorMessage } from '@/utils/error'
 import styles from './Sales.module.css'
 
 const PAY_STATUS_MAP: Record<string, { color: string; label: string }> = {
-  unpaid:  { color: 'red',    label: '未收款' },
-  partial: { color: 'orange', label: '部分收款' },
-  paid:    { color: 'green',  label: '已收款' },
+  '未收款':  { color: 'red',    label: '未收款' },
+  '部分收款': { color: 'orange', label: '部分收款' },
+  '已收款':  { color: 'green',  label: '已收款' },
 }
 
 export default function SalesOrderList() {
@@ -26,15 +26,15 @@ export default function SalesOrderList() {
 
   const [customerId, setCustomerId] = useState<number | undefined>()
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>(null)
-  const [payStatus, setPayStatus] = useState<string | undefined>()
+  const [paymentStatus, setPaymentStatus] = useState<string | undefined>()
 
   const fetchOrders = () => {
     setLoading(true)
     getSalesOrders({
-      customer_id: customerId,
-      start_date: dateRange?.[0].format('YYYY-MM-DD'),
-      end_date:   dateRange?.[1].format('YYYY-MM-DD'),
-      pay_status: payStatus,
+      customerId,
+      startDate: dateRange?.[0].format('YYYY-MM-DD'),
+      endDate:   dateRange?.[1].format('YYYY-MM-DD'),
+      paymentStatus,
     })
       .then(setOrders)
       .catch(err => message.error(getErrorMessage(err)))
@@ -45,18 +45,18 @@ export default function SalesOrderList() {
     getCustomers().then(setCustomers).catch(() => {})
   }, [])
 
-  useEffect(() => { fetchOrders() }, [customerId, dateRange, payStatus])
+  useEffect(() => { fetchOrders() }, [customerId, dateRange, paymentStatus])
 
   const columns: ColumnsType<SalesOrder> = [
-    { title: '单号', dataIndex: 'order_no', width: 160 },
-    { title: '客户', dataIndex: 'customer_name', width: 120 },
-    { title: '日期', dataIndex: 'order_date', width: 110 },
+    { title: '单号', dataIndex: 'orderNo', width: 160 },
+    { title: '客户', dataIndex: 'customerName', width: 120 },
+    { title: '日期', dataIndex: 'orderDate', width: 110 },
     {
-      title: '合计金额', dataIndex: 'total_amount', width: 110, align: 'right',
+      title: '合计金额', dataIndex: 'totalAmount', width: 110, align: 'right',
       render: (v: number) => `¥${v.toFixed(2)}`,
     },
     {
-      title: '收款状态', dataIndex: 'pay_status', width: 100, align: 'center',
+      title: '收款状态', dataIndex: 'paymentStatus', width: 100, align: 'center',
       render: (v: string) => {
         const s = PAY_STATUS_MAP[v] ?? { color: 'default', label: v }
         return <Tag color={s.color}>{s.label}</Tag>
@@ -78,17 +78,17 @@ export default function SalesOrderList() {
 
   const expandedRowRender = (record: SalesOrder) => {
     const itemCols: ColumnsType<SalesOrderItem> = [
-      { title: '编码', dataIndex: 'product_code', width: 100 },
-      { title: '货品名称', dataIndex: 'product_name' },
-      { title: '供应商', dataIndex: 'supplier_name', width: 120 },
+      { title: '编码', dataIndex: 'productCode', width: 100 },
+      { title: '货品名称', dataIndex: 'productName' },
+      { title: '供应商', dataIndex: 'supplierName', width: 120 },
       { title: '数量', dataIndex: 'qty', width: 80, align: 'center' },
-      { title: '单价', dataIndex: 'unit_price', width: 90, align: 'right', render: (v: number) => `¥${v}` },
+      { title: '单价', dataIndex: 'unitPrice', width: 90, align: 'right', render: (v: number) => `¥${v}` },
       { title: '折扣', dataIndex: 'discount', width: 70, align: 'right', render: (v: number) => `${v ?? 100}%` },
       { title: '金额', dataIndex: 'amount', width: 100, align: 'right', render: (v: number) => `¥${v.toFixed(2)}` },
     ]
     return (
       <Table
-        rowKey="product_code"
+        rowKey="productCode"
         columns={itemCols}
         dataSource={record.items}
         pagination={false}
@@ -121,11 +121,11 @@ export default function SalesOrderList() {
             allowClear placeholder="收款状态"
             style={{ width: 120 }}
             options={[
-              { value: 'unpaid',  label: '未收款' },
-              { value: 'partial', label: '部分收款' },
-              { value: 'paid',    label: '已收款' },
+              { value: '未收款',  label: '未收款' },
+              { value: '部分收款', label: '部分收款' },
+              { value: '已收款',  label: '已收款' },
             ]}
-            onChange={v => setPayStatus(v)}
+            onChange={v => setPaymentStatus(v)}
           />
         </div>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/sales/orders/new')}>

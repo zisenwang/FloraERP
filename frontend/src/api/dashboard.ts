@@ -8,14 +8,13 @@ export interface DashboardSummary {
   monthlySalesRank: {
     customerName: string;
     totalAmount: number;
-    orderCount: number;
+    totalPieces: number;
   }[];
   monthlyPurchaseRank: {
     supplierName: string;
     totalAmount: number;
-    orderCount: number;
+    totalQty: number;
   }[];
-  weeklyTrend: { date: string; salesAmount: number; purchaseAmount: number }[];
 }
 
 export const getDashboardSummary = async (): Promise<DashboardSummary> => {

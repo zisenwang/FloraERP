@@ -10,9 +10,9 @@ import type { SalesOrder } from '@/api/sales'
 import styles from './Reports.module.css'
 
 const PAY_STATUS_MAP: Record<string, { color: string; label: string }> = {
-  unpaid:  { color: 'red',    label: '未收款' },
-  partial: { color: 'orange', label: '部分收款' },
-  paid:    { color: 'green',  label: '已收款' },
+  '未收款':  { color: 'red',    label: '未收款' },
+  '部分收款': { color: 'orange', label: '部分收款' },
+  '已收款':  { color: 'green',  label: '已收款' },
 }
 
 export default function SalesReport() {
@@ -32,9 +32,9 @@ export default function SalesReport() {
   useEffect(() => {
     setLoading(true)
     getSalesReport({
-      start_date: dateRange[0].format('YYYY-MM-DD'),
-      end_date:   dateRange[1].format('YYYY-MM-DD'),
-      customer_id: customerId,
+      startDate: dateRange[0].format('YYYY-MM-DD'),
+      endDate:   dateRange[1].format('YYYY-MM-DD'),
+      customerId,
     })
       .then(setData)
       .catch(err => message.error(getErrorMessage(err)))
@@ -42,26 +42,15 @@ export default function SalesReport() {
   }, [dateRange, customerId])
 
   const columns: ColumnsType<SalesOrder> = [
-    { title: '单号', dataIndex: 'order_no', width: 160 },
-    { title: '客户', dataIndex: 'customer_name', width: 120 },
-    { title: '日期', dataIndex: 'order_date', width: 110 },
+    { title: '单号', dataIndex: 'orderNo', width: 160 },
+    { title: '客户', dataIndex: 'customerName', width: 120 },
+    { title: '日期', dataIndex: 'orderDate', width: 110 },
     {
-      title: '合计金额', dataIndex: 'total_amount', width: 120, align: 'right',
+      title: '合计金额', dataIndex: 'totalAmount', width: 120, align: 'right',
       render: (v: number) => `¥${v.toFixed(2)}`,
     },
     {
-      title: '已收款', dataIndex: 'paid_amount', width: 110, align: 'right',
-      render: (v: number) => <span style={{ color: '#389e0d' }}>¥{v.toFixed(2)}</span>,
-    },
-    {
-      title: '未收款', width: 110, align: 'right',
-      render: (_: unknown, r: SalesOrder) => {
-        const unpaid = r.total_amount - r.paid_amount
-        return unpaid > 0 ? <span style={{ color: '#cf1322' }}>¥{unpaid.toFixed(2)}</span> : '—'
-      },
-    },
-    {
-      title: '收款状态', dataIndex: 'pay_status', width: 100, align: 'center',
+      title: '收款状态', dataIndex: 'paymentStatus', width: 100, align: 'center',
       render: (v: string) => {
         const s = PAY_STATUS_MAP[v] ?? { color: 'default', label: v }
         return <Tag color={s.color}>{s.label}</Tag>
@@ -94,20 +83,20 @@ export default function SalesReport() {
         <div className={styles.statsRow}>
           <div className={styles.statCard}>
             <div className={styles.statLabel}>订单数</div>
-            <div className={styles.statValue}>{data.total_orders}</div>
+            <div className={styles.statValue}>{data.totalOrders}</div>
           </div>
           <div className={styles.statCard}>
             <div className={styles.statLabel}>销售总额</div>
-            <div className={styles.statValue}>¥{data.total_amount.toFixed(2)}</div>
+            <div className={styles.statValue}>¥{data.totalAmount.toFixed(2)}</div>
           </div>
           <div className={styles.statCard}>
             <div className={styles.statLabel}>已收款</div>
-            <div className={styles.statValueGreen}>¥{data.total_paid.toFixed(2)}</div>
+            <div className={styles.statValueGreen}>¥{data.totalPaid.toFixed(2)}</div>
           </div>
           <div className={styles.statCard}>
             <div className={styles.statLabel}>未收款</div>
-            <div className={data.total_unpaid > 0 ? styles.statValueRed : styles.statValue}>
-              ¥{data.total_unpaid.toFixed(2)}
+            <div className={data.totalUnpaid > 0 ? styles.statValueRed : styles.statValue}>
+              ¥{data.totalUnpaid.toFixed(2)}
             </div>
           </div>
         </div>

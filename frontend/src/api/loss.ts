@@ -2,29 +2,28 @@ import client from "./client";
 
 export interface LossRecord {
   id: number;
-  loss_no: string;
-  product_code: string;
-  product_name: string;
+  productId: number;
+  productCode: string;
+  productName: string;
+  unit: string;
   qty: number;
-  unit_price: number;
-  total_amount: number;
   reason: string;
   operator: string;
-  loss_date: string;
+  date: string;
+  notes: string;
 }
 
 export interface LossPayload {
-  product_code: string;
-  product_name: string;
+  productId: number;
   qty: number;
-  unit_price: number;
-  total_amount: number;
-  reason: string;
+  reason?: string;
+  date: string;
+  notes?: string;
 }
 
 export const getLossRecords = async (params?: {
-  start_date?: string;
-  end_date?: string;
+  startDate?: string;
+  endDate?: string;
 }): Promise<LossRecord[]> => {
   const res = await client.get<{ data: LossRecord[] }>("/loss", { params });
   return res.data.data;

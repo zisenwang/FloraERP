@@ -12,9 +12,9 @@ const COMPANY_ADDRESS = '广州市荔湾区花博园宏星路中段广阔卉'
 const COMPANY_PHONE = '13059146326，13903057717'
 
 const PAY_STATUS_MAP: Record<string, { color: string; label: string }> = {
-  unpaid:  { color: 'red',    label: '未收款' },
-  partial: { color: 'orange', label: '部分收款' },
-  paid:    { color: 'green',  label: '已收款' },
+  '未收款':  { color: 'red',    label: '未收款' },
+  '部分收款': { color: 'orange', label: '部分收款' },
+  '已收款':  { color: 'green',  label: '已收款' },
 }
 
 export default function SalesOrderView() {
@@ -39,7 +39,7 @@ export default function SalesOrderView() {
   if (!order) return null
 
   const totalQty = order.items.reduce((s, i) => s + i.qty, 0)
-  const payInfo = PAY_STATUS_MAP[order.pay_status] ?? { color: 'default', label: order.pay_status }
+  const payInfo = PAY_STATUS_MAP[order.paymentStatus] ?? { color: 'default', label: order.paymentStatus }
 
   return (
     <div className={styles.page}>
@@ -55,9 +55,9 @@ export default function SalesOrderView() {
         </div>
 
         <div className={styles.printMeta}>
-          <span>客户：{order.customer_name}</span>
+          <span>客户：{order.customerName}</span>
           <span>
-            日期：{order.order_date}&emsp;单号：{order.order_no}&emsp;
+            日期：{order.orderDate}&emsp;单号：{order.orderNo}&emsp;
             <span className={styles.noprint}>
               收款状态：<Tag color={payInfo.color}>{payInfo.label}</Tag>
             </span>
@@ -82,18 +82,18 @@ export default function SalesOrderView() {
           <tbody>
             {order.items.map((item, i) => {
               const discount = item.discount ?? 100
-              const finalAmount = +(item.amount * discount / 100).toFixed(2)
+              const finalAmt = item.finalAmount ?? +(item.amount * discount / 100).toFixed(2)
               return (
                 <tr key={i}>
-                  <td>{item.product_code}</td>
-                  <td>{item.product_name}</td>
-                  <td>{item.supplier_name}</td>
+                  <td>{item.productCode}</td>
+                  <td>{item.productName}</td>
+                  <td>{item.supplierName}</td>
                   <td className={styles.center}>盆</td>
                   <td className={styles.center}>{item.qty}</td>
-                  <td className={styles.right}>¥{item.unit_price}</td>
+                  <td className={styles.right}>¥{item.unitPrice}</td>
                   <td className={styles.right}>¥{item.amount.toFixed(2)}</td>
                   <td className={styles.right}>{discount}%</td>
-                  <td className={styles.right}>¥{finalAmount.toFixed(2)}</td>
+                  <td className={styles.right}>¥{finalAmt.toFixed(2)}</td>
                   <td></td>
                 </tr>
               )
@@ -102,7 +102,7 @@ export default function SalesOrderView() {
               <td colSpan={4} style={{ textAlign: 'right', fontWeight: 600 }}>小计</td>
               <td className={styles.center}><strong>{totalQty}</strong></td>
               <td></td>
-              <td className={styles.right}><strong>¥{order.total_amount.toFixed(2)}</strong></td>
+              <td className={styles.right}><strong>¥{order.totalAmount.toFixed(2)}</strong></td>
               <td colSpan={3}></td>
             </tr>
           </tbody>
@@ -110,7 +110,7 @@ export default function SalesOrderView() {
 
         <div className={styles.printSummary}>
           人民币：合计 &nbsp;<strong>{totalQty}</strong>&nbsp; 盆&emsp;
-          小写 &nbsp;<strong>¥{order.total_amount.toFixed(2)}</strong>
+          小写 &nbsp;<strong>¥{order.totalAmount.toFixed(2)}</strong>
         </div>
 
         <div className={styles.printFooter}>

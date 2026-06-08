@@ -29,9 +29,9 @@ export default function PurchaseOrderList() {
   const fetchOrders = (sid?: number, range?: [string, string]) => {
     setLoading(true)
     getPurchaseOrders({
-      supplier_id: sid,
-      start_date: range?.[0],
-      end_date: range?.[1],
+      supplierId: sid,
+      startDate: range?.[0],
+      endDate: range?.[1],
     })
       .then(setOrders)
       .catch(err => message.error(getErrorMessage(err)))
@@ -44,11 +44,11 @@ export default function PurchaseOrderList() {
   }, [])
 
   const columns: ColumnsType<PurchaseOrder> = [
-    { title: '单号', dataIndex: 'order_no', width: 160 },
-    { title: '供应商', dataIndex: 'supplier_name', width: 100 },
-    { title: '日期', dataIndex: 'order_date', width: 110 },
+    { title: '单号', dataIndex: 'orderNo', width: 160 },
+    { title: '供应商', dataIndex: 'supplierName', width: 100 },
+    { title: '日期', dataIndex: 'orderDate', width: 110 },
     {
-      title: '金额', dataIndex: 'total_amount', width: 110,
+      title: '金额', dataIndex: 'totalAmount', width: 110,
       render: (v: number) => `¥${v.toLocaleString()}`,
       align: 'right',
     },
@@ -106,15 +106,15 @@ export default function PurchaseOrderList() {
         expandable={{
           expandedRowRender: record => (
             <Table
-              rowKey="product_code"
+              rowKey="productCode"
               size="small"
               pagination={false}
               dataSource={record.items}
               columns={[
-                { title: '编码', dataIndex: 'product_code', width: 100 },
-                { title: '货品名称', dataIndex: 'product_name' },
+                { title: '编码', dataIndex: 'productCode', width: 100 },
+                { title: '货品名称', dataIndex: 'productName' },
                 { title: '数量', dataIndex: 'qty', width: 80 },
-                { title: '单价', dataIndex: 'unit_price', width: 80, render: (v: number) => `¥${v}` },
+                { title: '单价', dataIndex: 'unitPrice', width: 80, render: (v: number) => `¥${v}` },
                 { title: '金额', dataIndex: 'amount', width: 100, render: (v: number) => `¥${v.toLocaleString()}` },
               ]}
             />

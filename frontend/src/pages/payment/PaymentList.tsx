@@ -1,59 +1,59 @@
 import { useEffect, useState } from 'react'
-import { Table, DatePicker, Select, Tag, App } from 'antd'
+import { Table, DatePicker, Select, App } from 'antd'
 import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
 import { getPayments, type Payment } from '@/api/payments'
+import { getCustomers, type Customer } from '@/api/customers'
 import { getErrorMessage } from '@/utils/error'
 import styles from './Payment.module.css'
 
 export default function PaymentList() {
   const { message } = App.useApp()
   const [payments, setPayments] = useState<Payment[]>([])
+  const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(false)
-  const [type, setType] = useState<string | undefined>()
+  const [customerId, setCustomerId] = useState<number | undefined>()
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>(null)
+
+  useEffect(() => {
+    getCustomers().then(setCustomers).catch(() => {})
+  }, [])
 
   useEffect(() => {
     setLoading(true)
     getPayments({
-      type,
-      start_date: dateRange?.[0].format('YYYY-MM-DD'),
-      end_date:   dateRange?.[1].format('YYYY-MM-DD'),
+      customerId,
+      startDate: dateRange?.[0].format('YYYY-MM-DD'),
+      endDate:   dateRange?.[1].format('YYYY-MM-DD'),
     })
       .then(setPayments)
       .catch(err => message.error(getErrorMessage(err)))
       .finally(() => setLoading(false))
-  }, [type, dateRange])
+  }, [customerId, dateRange])
 
-  const totalIn  = payments.filter(p => p.type === '收款').reduce((s, p) => s + p.amount, 0)
-  const totalOut = payments.filter(p => p.type === '付款').reduce((s, p) => s + p.amount, 0)
+  const totalAmount = payments.reduce((s, p) => s + p.amount, 0)
 
   const columns: ColumnsType<Payment> = [
-    { title: '流水号', dataIndex: 'payment_no', width: 180 },
-    { title: '日期', dataIndex: 'payment_date', width: 110 },
-    {
-      title: '类型', dataIndex: 'type', width: 80, align: 'center',
-      render: (v: string) => <Tag color={v === '收款' ? 'green' : 'red'}>{v}</Tag>,
-    },
-    { title: '往来方', dataIndex: 'party_name', width: 130 },
-    { title: '关联单号', dataIndex: 'related_order_no', width: 160 },
+    { title: '日期', dataIndex: 'paymentDate', width: 110 },
+    { title: '单号', dataIndex: 'orderNo', width: 160 },
+    { title: '客户', dataIndex: 'customerName', width: 130 },
     {
       title: '金额', dataIndex: 'amount', width: 120, align: 'right',
-      render: (v: number, record: Payment) => (
-        <span style={{ color: record.type === '收款' ? '#389e0d' : '#cf1322', fontWeight: 600 }}>
-          {record.type === '收款' ? '+' : '-'}¥{v.toFixed(2)}
+      render: (v: number) => (
+        <span style={{ color: '#389e0d', fontWeight: 600 }}>
+          ¥{v.toFixed(2)}
         </span>
       ),
     },
-    { title: '收付方式', dataIndex: 'payment_method', width: 100 },
-    { title: '备注', dataIndex: 'remark', ellipsis: true },
+    { title: '方式', dataIndex: 'method', width: 100 },
+    { title: '备注', dataIndex: 'notes', ellipsis: true },
     { title: '操作人', dataIndex: 'operator', width: 90 },
   ]
 
   return (
     <>
-      <div className={styles.pageTitle}>收支管理</div>
+      <div className={styles.pageTitle}>收款管理</div>
 
       <div className={styles.toolbar}>
         <DatePicker.RangePicker
@@ -65,30 +65,17 @@ export default function PaymentList() {
           ]}
         />
         <Select
-          allowClear placeholder="全部类型"
-          style={{ width: 110 }}
-          options={[
-            { value: '收款', label: '收款' },
-            { value: '付款', label: '付款' },
-          ]}
-          onChange={v => setType(v)}
+          allowClear placeholder="所有客户"
+          style={{ width: 160 }}
+          options={customers.map(c => ({ value: c.id, label: `${c.code} ${c.name}` }))}
+          onChange={v => setCustomerId(v)}
         />
       </div>
 
       <div className={styles.statsRow}>
         <div className={styles.statCard}>
           <div className={styles.statLabel}>收款合计</div>
-          <div className={styles.statValueGreen}>+¥{totalIn.toFixed(2)}</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>付款合计</div>
-          <div className={styles.statValueRed}>-¥{totalOut.toFixed(2)}</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>净收入</div>
-          <div className={totalIn - totalOut >= 0 ? styles.statValueGreen : styles.statValueRed}>
-            ¥{(totalIn - totalOut).toFixed(2)}
-          </div>
+          <div className={styles.statValueGreen}>+¥{totalAmount.toFixed(2)}</div>
         </div>
       </div>
 

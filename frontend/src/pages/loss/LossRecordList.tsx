@@ -19,8 +19,8 @@ export default function LossRecordList() {
   const fetchRecords = () => {
     setLoading(true)
     getLossRecords({
-      start_date: dateRange?.[0].format('YYYY-MM-DD'),
-      end_date:   dateRange?.[1].format('YYYY-MM-DD'),
+      startDate: dateRange?.[0].format('YYYY-MM-DD'),
+      endDate:   dateRange?.[1].format('YYYY-MM-DD'),
     })
       .then(setRecords)
       .catch(err => message.error(getErrorMessage(err)))
@@ -30,24 +30,15 @@ export default function LossRecordList() {
   useEffect(() => { fetchRecords() }, [dateRange])
 
   const columns: ColumnsType<LossRecord> = [
-    { title: '单号', dataIndex: 'loss_no', width: 160 },
-    { title: '日期', dataIndex: 'loss_date', width: 110 },
-    { title: '编码', dataIndex: 'product_code', width: 100 },
-    { title: '货品名称', dataIndex: 'product_name' },
+    { title: '日期', dataIndex: 'date', width: 110 },
+    { title: '编码', dataIndex: 'productCode', width: 100 },
+    { title: '货品名称', dataIndex: 'productName' },
+    { title: '单位', dataIndex: 'unit', width: 70, align: 'center' },
     { title: '数量', dataIndex: 'qty', width: 80, align: 'center' },
-    {
-      title: '单价', dataIndex: 'unit_price', width: 90, align: 'right',
-      render: (v: number) => `¥${v.toFixed(2)}`,
-    },
-    {
-      title: '报损金额', dataIndex: 'total_amount', width: 110, align: 'right',
-      render: (v: number) => <strong style={{ color: '#cf1322' }}>¥{v.toFixed(2)}</strong>,
-    },
     { title: '原因', dataIndex: 'reason', ellipsis: true },
+    { title: '备注', dataIndex: 'notes', ellipsis: true },
     { title: '操作人', dataIndex: 'operator', width: 90 },
   ]
-
-  const totalAmount = records.reduce((s, r) => s + r.total_amount, 0)
 
   return (
     <>
@@ -74,11 +65,6 @@ export default function LossRecordList() {
         loading={loading}
         pagination={{ pageSize: 20, showTotal: total => `共 ${total} 条` }}
         size="small"
-        footer={() => (
-          <div style={{ textAlign: 'right', fontWeight: 600, color: '#cf1322' }}>
-            合计报损金额：¥{totalAmount.toFixed(2)}
-          </div>
-        )}
       />
     </>
   )

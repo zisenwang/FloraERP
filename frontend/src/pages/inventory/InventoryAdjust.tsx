@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Form, Select, InputNumber, Input, Button, Table, Tag, App } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { getInventory, getAdjustments, createAdjustment, type InventoryItem, type InventoryAdjustment } from '@/api/inventory'
+import { getInventory, getAdjustments, createAdjustment, type InventoryRow, type InventoryAdjustment } from '@/api/inventory'
 import { getErrorMessage } from '@/utils/error'
 import styles from './Inventory.module.css'
 
@@ -9,7 +9,7 @@ export default function InventoryAdjust() {
   const { message } = App.useApp()
   const [form] = Form.useForm()
 
-  const [products, setProducts] = useState<InventoryItem[]>([])
+  const [products, setProducts] = useState<InventoryRow[]>([])
   const [history, setHistory] = useState<InventoryAdjustment[]>([])
   const [saving, setSaving] = useState(false)
 
@@ -21,11 +21,16 @@ export default function InventoryAdjust() {
   const handleSubmit = () => {
     form.validateFields().then(values => {
       setSaving(true)
+      const product = products.find(p => p.productId === values.productId)
+      const currentStock = product?.stock ?? 0
+      const qty = Number(values.qty)
+      const qtyNew = values.adjustType === '盘亏'
+        ? currentStock - Math.abs(qty)
+        : currentStock + Math.abs(qty)
+
       createAdjustment({
-        product_code: values.product_code,
-        product_name: products.find(p => p.product_code === values.product_code)?.product_name ?? '',
-        adjust_type: values.adjust_type,
-        qty: values.adjust_type === '盘亏' ? -Math.abs(values.qty) : Math.abs(values.qty),
+        productId: values.productId,
+        qtyNew,
         reason: values.reason ?? '',
       })
         .then(record => {
@@ -39,21 +44,22 @@ export default function InventoryAdjust() {
   }
 
   const historyColumns: ColumnsType<InventoryAdjustment> = [
-    { title: '时间', dataIndex: 'created_at', width: 110 },
-    { title: '编码', dataIndex: 'product_code', width: 100 },
-    { title: '货品名称', dataIndex: 'product_name' },
+    { title: '时间', dataIndex: 'createdAt', width: 110 },
+    { title: '编码', dataIndex: 'productCode', width: 100 },
+    { title: '货品名称', dataIndex: 'productName' },
     {
-      title: '类型', dataIndex: 'adjust_type', width: 80, align: 'center',
+      title: '类型', dataIndex: 'type', width: 80, align: 'center',
       render: (v: string) => <Tag color={v === '盘盈' ? 'green' : 'red'}>{v}</Tag>,
     },
     {
-      title: '数量', dataIndex: 'qty', width: 80, align: 'center',
+      title: '变动数量', dataIndex: 'qtyChange', width: 90, align: 'center',
       render: (v: number) => (
         <span style={{ color: v > 0 ? '#389e0d' : '#cf1322', fontWeight: 600 }}>
           {v > 0 ? `+${v}` : v}
         </span>
       ),
     },
+    { title: '调后数量', dataIndex: 'qtyAfter', width: 90, align: 'center' },
     { title: '原因', dataIndex: 'reason' },
     { title: '操作人', dataIndex: 'operator', width: 90 },
   ]
@@ -65,7 +71,7 @@ export default function InventoryAdjust() {
       <div className={styles.card}>
         <div className={styles.sectionTitle}>新建调整</div>
         <Form form={form} layout="inline">
-          <Form.Item name="product_code" label="货品" rules={[{ required: true, message: '请选择货品' }]}>
+          <Form.Item name="productId" label="货品" rules={[{ required: true, message: '请选择货品' }]}>
             <Select
               showSearch
               placeholder="选择货品"
@@ -74,12 +80,12 @@ export default function InventoryAdjust() {
                 String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
               }
               options={products.map(p => ({
-                value: p.product_code,
-                label: `${p.product_code} ${p.product_name}`,
+                value: p.productId,
+                label: `${p.productCode} ${p.productName}`,
               }))}
             />
           </Form.Item>
-          <Form.Item name="adjust_type" label="类型" initialValue="盘亏" rules={[{ required: true }]}>
+          <Form.Item name="adjustType" label="类型" initialValue="盘亏" rules={[{ required: true }]}>
             <Select style={{ width: 90 }} options={[
               { value: '盘亏', label: '盘亏' },
               { value: '盘盈', label: '盘盈' },

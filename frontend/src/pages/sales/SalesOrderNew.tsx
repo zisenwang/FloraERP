@@ -11,12 +11,12 @@ import styles from './Sales.module.css'
 
 interface LineItem {
   key: number
-  product_id?: number
-  product_code: string
-  product_name: string
-  supplier_name: string
+  productId?: number
+  productCode: string
+  productName: string
+  supplierName: string
   qty: number
-  unit_price: number
+  unitPrice: number
   discount: number
   amount: number
 }
@@ -24,11 +24,11 @@ interface LineItem {
 let keyCounter = 0
 const newLine = (): LineItem => ({
   key: keyCounter++,
-  product_code: '',
-  product_name: '',
-  supplier_name: '',
+  productCode: '',
+  productName: '',
+  supplierName: '',
   qty: 0,
-  unit_price: 0,
+  unitPrice: 0,
   discount: 100,
   amount: 0,
 })
@@ -53,7 +53,7 @@ export default function SalesOrderNew() {
     setLines(prev => prev.map(line => {
       if (line.key !== key) return line
       const updated = { ...line, ...changes }
-      updated.amount = +(updated.qty * updated.unit_price * (updated.discount / 100)).toFixed(2)
+      updated.amount = +(updated.qty * updated.unitPrice * (updated.discount / 100)).toFixed(2)
       return updated
     }))
   }
@@ -62,11 +62,11 @@ export default function SalesOrderNew() {
     const p = products.find(p => p.id === productId)
     if (!p) return
     updateLine(key, {
-      product_id: productId,
-      product_code: p.code,
-      product_name: p.name,
-      supplier_name: p.supplier_name,
-      unit_price: p.price,
+      productId,
+      productCode: p.code,
+      productName: p.name,
+      supplierName: p.supplierName,
+      unitPrice: p.price,
     })
   }
 
@@ -79,7 +79,7 @@ export default function SalesOrderNew() {
 
   const handleSubmit = () => {
     form.validateFields().then(values => {
-      const validLines = lines.filter(l => l.product_code && l.qty > 0)
+      const validLines = lines.filter(l => l.productCode && l.qty > 0)
       if (validLines.length === 0) {
         message.warning('请至少添加一条货品明细')
         return
@@ -87,11 +87,14 @@ export default function SalesOrderNew() {
 
       setSaving(true)
       createSalesOrder({
-        customer_id: values.customer_id,
-        order_date: values.order_date.format('YYYY-MM-DD'),
+        customerId: values.customerId,
+        orderDate: values.orderDate.format('YYYY-MM-DD'),
         notes: values.notes,
-        items: validLines.map(({ product_code, product_name, supplier_name, qty, unit_price, discount }) => ({
-          product_code, product_name, supplier_name, qty, unit_price, discount,
+        items: validLines.map(({ productId, qty, unitPrice, discount }) => ({
+          productId: productId!,
+          qty,
+          unitPrice,
+          discount,
         })),
       })
         .then(order => {
@@ -112,7 +115,7 @@ export default function SalesOrderNew() {
           showSearch
           placeholder="选择货品"
           style={{ width: '100%' }}
-          value={record.product_id}
+          value={record.productId}
           filterOption={(input, option) =>
             String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
           }
@@ -122,15 +125,15 @@ export default function SalesOrderNew() {
       ),
     },
     {
-      title: '编码', dataIndex: 'product_code', width: 100,
+      title: '编码', dataIndex: 'productCode', width: 100,
       render: (_: unknown, record: LineItem) => (
-        <span style={{ fontSize: 13, color: '#888' }}>{record.product_code || '—'}</span>
+        <span style={{ fontSize: 13, color: '#888' }}>{record.productCode || '—'}</span>
       ),
     },
     {
       title: '供应商', width: 110,
       render: (_: unknown, record: LineItem) => (
-        <span style={{ fontSize: 13, color: '#555' }}>{record.supplier_name || '—'}</span>
+        <span style={{ fontSize: 13, color: '#555' }}>{record.supplierName || '—'}</span>
       ),
     },
     {
@@ -146,8 +149,8 @@ export default function SalesOrderNew() {
       title: '单价', width: 100,
       render: (_: unknown, record: LineItem) => (
         <InputNumber
-          min={0} precision={2} value={record.unit_price} style={{ width: '100%' }}
-          onChange={val => updateLine(record.key, { unit_price: val ?? 0 })}
+          min={0} precision={2} value={record.unitPrice} style={{ width: '100%' }}
+          onChange={val => updateLine(record.key, { unitPrice: val ?? 0 })}
         />
       ),
     },
@@ -183,7 +186,7 @@ export default function SalesOrderNew() {
       <div className={styles.pageTitle}>销售开单</div>
 
       <Form form={form} layout="inline" className={styles.headerForm}>
-        <Form.Item name="customer_id" label="客户" rules={[{ required: true, message: '请选择客户' }]}>
+        <Form.Item name="customerId" label="客户" rules={[{ required: true, message: '请选择客户' }]}>
           <Select
             showSearch
             placeholder="选择客户"
@@ -194,7 +197,7 @@ export default function SalesOrderNew() {
             options={customers.map(c => ({ value: c.id, label: `${c.code} ${c.name}` }))}
           />
         </Form.Item>
-        <Form.Item name="order_date" label="日期" initialValue={dayjs()} rules={[{ required: true }]}>
+        <Form.Item name="orderDate" label="日期" initialValue={dayjs()} rules={[{ required: true }]}>
           <DatePicker />
         </Form.Item>
         <Form.Item name="notes" label="备注">

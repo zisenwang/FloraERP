@@ -3,19 +3,36 @@ import client from './client'
 export interface Product {
   id: number
   code: string
-  supplier_id: number
-  supplier_name: string
   name: string
+  supplierId: number
+  supplierName: string
+  supplierCode: string
   category: string
+  grade: string
+  spec: string
   unit: string
+  costPrice: number
   price: number
-  stock: number
+  unitsPerPiece: number
   status: number
+  stock: number
 }
 
-export type ProductPayload = Omit<Product, 'id' | 'supplier_name' | 'stock'>
+export interface ProductPayload {
+  code: string
+  name: string
+  supplierId: number
+  category?: string
+  grade?: string
+  spec?: string
+  unit?: string
+  costPrice?: number
+  price?: number
+  unitsPerPiece?: number
+  status?: number
+}
 
-export const getProducts = async (params?: { supplier_id?: number; search?: string }): Promise<Product[]> => {
+export const getProducts = async (params?: { supplierId?: number; search?: string }): Promise<Product[]> => {
   const res = await client.get<{ data: Product[] }>('/products', { params })
   return res.data.data
 }

@@ -1,50 +1,54 @@
 import client from "./client";
 
-export interface InventoryItem {
-  id: number;
-  product_id: number;
-  product_code: string;
-  product_name: string;
-  supplier_name: string;
+export interface InventoryRow {
+  productId: number;
+  productCode: string;
+  productName: string;
+  supplierName: string;
+  supplierCode: string;
   category: string;
   unit: string;
   stock: number;
-  alert_stock: number;
-  last_updated: string;
+  lastUpdated: string;
 }
 
 export interface InventoryAdjustment {
   id: number;
-  product_code: string;
-  product_name: string;
-  adjust_type: string; // 盘盈 | 盘亏
-  qty: number;
+  productId: number;
+  productCode: string;
+  productName: string;
+  type: string;
+  qtyBefore: number;
+  qtyChange: number;
+  qtyAfter: number;
   reason: string;
+  refType: string;
+  refId: number;
   operator: string;
-  created_at: string;
+  createdAt: string;
 }
 
 export interface AdjustPayload {
-  product_code: string;
-  product_name: string;
-  adjust_type: string;
-  qty: number;
-  reason: string;
+  productId: number;
+  qtyNew: number;
+  reason?: string;
 }
 
 export const getInventory = async (params?: {
-  search?: string;
+  supplierId?: number;
   category?: string;
-}): Promise<InventoryItem[]> => {
-  const res = await client.get<{ data: InventoryItem[] }>("/inventory", {
+  search?: string;
+}): Promise<InventoryRow[]> => {
+  const res = await client.get<{ data: InventoryRow[] }>("/inventory", {
     params,
   });
   return res.data.data;
 };
 
-export const getAdjustments = async (): Promise<InventoryAdjustment[]> => {
+export const getAdjustments = async (params?: { productId?: number }): Promise<InventoryAdjustment[]> => {
   const res = await client.get<{ data: InventoryAdjustment[] }>(
     "/inventory/adjustments",
+    { params },
   );
   return res.data.data;
 };

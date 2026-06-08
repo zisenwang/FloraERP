@@ -26,9 +26,9 @@ export default function PurchaseReport() {
   useEffect(() => {
     setLoading(true)
     getPurchaseReport({
-      start_date: dateRange[0].format('YYYY-MM-DD'),
-      end_date:   dateRange[1].format('YYYY-MM-DD'),
-      supplier_id: supplierId,
+      startDate: dateRange[0].format('YYYY-MM-DD'),
+      endDate:   dateRange[1].format('YYYY-MM-DD'),
+      supplierId,
     })
       .then(setData)
       .catch(err => message.error(getErrorMessage(err)))
@@ -36,23 +36,16 @@ export default function PurchaseReport() {
   }, [dateRange, supplierId])
 
   const columns: ColumnsType<PurchaseOrder> = [
-    { title: '单号', dataIndex: 'order_no', width: 160 },
-    { title: '供应商', dataIndex: 'supplier_name', width: 120 },
-    { title: '日期', dataIndex: 'order_date', width: 110 },
+    { title: '单号', dataIndex: 'orderNo', width: 160 },
+    { title: '供应商', dataIndex: 'supplierName', width: 120 },
+    { title: '日期', dataIndex: 'orderDate', width: 110 },
     {
-      title: '进货金额', dataIndex: 'total_amount', width: 120, align: 'right',
+      title: '进货金额', dataIndex: 'totalAmount', width: 120, align: 'right',
       render: (v: number) => `¥${v.toFixed(2)}`,
     },
     {
-      title: '已付款', dataIndex: 'paid_amount', width: 110, align: 'right',
+      title: '折后金额', dataIndex: 'finalAmount', width: 110, align: 'right',
       render: (v: number) => <span style={{ color: '#389e0d' }}>¥{v.toFixed(2)}</span>,
-    },
-    {
-      title: '未付款', width: 110, align: 'right',
-      render: (_: unknown, r: PurchaseOrder) => {
-        const unpaid = r.total_amount - r.paid_amount
-        return unpaid > 0 ? <span style={{ color: '#cf1322' }}>¥{unpaid.toFixed(2)}</span> : '—'
-      },
     },
   ]
 
@@ -81,21 +74,15 @@ export default function PurchaseReport() {
         <div className={styles.statsRow}>
           <div className={styles.statCard}>
             <div className={styles.statLabel}>订单数</div>
-            <div className={styles.statValue}>{data.total_orders}</div>
+            <div className={styles.statValue}>{data.totalOrders}</div>
           </div>
           <div className={styles.statCard}>
             <div className={styles.statLabel}>进货总额</div>
-            <div className={styles.statValue}>¥{data.total_amount.toFixed(2)}</div>
+            <div className={styles.statValue}>¥{data.totalAmount.toFixed(2)}</div>
           </div>
           <div className={styles.statCard}>
-            <div className={styles.statLabel}>已付款</div>
-            <div className={styles.statValueGreen}>¥{data.total_paid.toFixed(2)}</div>
-          </div>
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>未付款</div>
-            <div className={data.total_unpaid > 0 ? styles.statValueRed : styles.statValue}>
-              ¥{data.total_unpaid.toFixed(2)}
-            </div>
+            <div className={styles.statLabel}>总数量</div>
+            <div className={styles.statValue}>{data.totalQty}</div>
           </div>
         </div>
       )}

@@ -21,14 +21,14 @@ export default function Dashboard() {
     { title: '排名', key: 'rank', render: (_: unknown, __: unknown, i: number) => i + 1, width: 60 },
     { title: '客户', dataIndex: 'customerName' },
     { title: '金额', dataIndex: 'totalAmount', render: (v: number) => `¥${v.toLocaleString()}`, align: 'right' as const },
-    { title: '单数', dataIndex: 'orderCount', align: 'right' as const },
+    { title: '件数', dataIndex: 'totalPieces', align: 'right' as const },
   ]
 
   const purchaseRankColumns = [
     { title: '排名', key: 'rank', render: (_: unknown, __: unknown, i: number) => i + 1, width: 60 },
     { title: '供应商', dataIndex: 'supplierName' },
     { title: '金额', dataIndex: 'totalAmount', render: (v: number) => `¥${v.toLocaleString()}`, align: 'right' as const },
-    { title: '单数', dataIndex: 'orderCount', align: 'right' as const },
+    { title: '数量', dataIndex: 'totalQty', align: 'right' as const },
   ]
 
   return (

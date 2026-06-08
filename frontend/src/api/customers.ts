@@ -6,14 +6,14 @@ export interface Customer {
   name: string;
   contact: string;
   phone: string;
-  address: string;
   city: string;
+  address: string;
   level: string;
+  notes?: string;
   status: number;
-  created_at: string;
 }
 
-export type CustomerPayload = Omit<Customer, "id" | "created_at">;
+export type CustomerPayload = Omit<Customer, "id">;
 
 export const getCustomers = async (search?: string): Promise<Customer[]> => {
   const res = await client.get<{ data: Customer[] }>("/customers", {

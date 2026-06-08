@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react'
 import { Table, InputNumber, Button, Tag, App, Popconfirm } from 'antd'
 import { CheckOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
-import { getInventory, createAdjustment, type InventoryItem } from '@/api/inventory'
+import { getInventory, createAdjustment, type InventoryRow } from '@/api/inventory'
 import { getErrorMessage } from '@/utils/error'
 import styles from './Inventory.module.css'
 
-interface CheckRow extends InventoryItem {
+interface CheckRow extends InventoryRow {
   actual: number | null  // null = not counted yet
 }
 
@@ -24,8 +24,8 @@ export default function InventoryCheck() {
       .finally(() => setLoading(false))
   }, [])
 
-  const setActual = (id: number, val: number | null) => {
-    setRows(prev => prev.map(r => r.id === id ? { ...r, actual: val } : r))
+  const setActual = (productId: number, val: number | null) => {
+    setRows(prev => prev.map(r => r.productId === productId ? { ...r, actual: val } : r))
   }
 
   const handleSubmit = async () => {
@@ -37,12 +37,9 @@ export default function InventoryCheck() {
     setSubmitting(true)
     try {
       for (const row of diffs) {
-        const diff = (row.actual as number) - row.stock
         await createAdjustment({
-          product_code: row.product_code,
-          product_name: row.product_name,
-          adjust_type: diff > 0 ? '盘盈' : '盘亏',
-          qty: diff,
+          productId: row.productId,
+          qtyNew: row.actual as number,
           reason: '库存盘点',
         })
       }
@@ -60,9 +57,9 @@ export default function InventoryCheck() {
   const diffRows = rows.filter(r => r.actual !== null && r.actual !== r.stock)
 
   const columns: ColumnsType<CheckRow> = [
-    { title: '编码', dataIndex: 'product_code', width: 100 },
-    { title: '货品名称', dataIndex: 'product_name', width: 160 },
-    { title: '供应商', dataIndex: 'supplier_name', width: 100 },
+    { title: '编码', dataIndex: 'productCode', width: 100 },
+    { title: '货品名称', dataIndex: 'productName', width: 160 },
+    { title: '供应商', dataIndex: 'supplierName', width: 100 },
     { title: '单位', dataIndex: 'unit', width: 70, align: 'center' },
     {
       title: '系统库存', dataIndex: 'stock', width: 100, align: 'center',
@@ -76,7 +73,7 @@ export default function InventoryCheck() {
           value={record.actual ?? undefined}
           placeholder="输入数量"
           style={{ width: 90 }}
-          onChange={val => setActual(record.id, val)}
+          onChange={val => setActual(record.productId, val)}
         />
       ),
     },
@@ -123,7 +120,7 @@ export default function InventoryCheck() {
       </div>
 
       <Table
-        rowKey="id"
+        rowKey="productId"
         columns={columns}
         dataSource={rows}
         loading={loading}
