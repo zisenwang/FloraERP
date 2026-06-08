@@ -4,12 +4,8 @@ export interface Customer {
   id: number;
   code: string;
   name: string;
-  contact: string;
   phone: string;
-  city: string;
   address: string;
-  level: string;
-  notes?: string;
   status: number;
 }
 

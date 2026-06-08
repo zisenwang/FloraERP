@@ -4,11 +4,8 @@ export interface Supplier {
   id: number
   code: string
   name: string
-  contact: string
   phone: string
   address: string
-  city: string
-  notes?: string
   status: number
 }
 

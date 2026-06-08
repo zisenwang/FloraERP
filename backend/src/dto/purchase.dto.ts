@@ -9,7 +9,6 @@ export interface PurchaseOrderItem {
   amount: number
   discount: number
   finalAmount: number
-  spec: string | null
   notes: string | null
 }
 
@@ -36,7 +35,6 @@ export interface CreatePurchaseItemDto {
   qty: number
   unitPrice: number
   discount?: number // default 100
-  spec?: string
   notes?: string
 }
 

@@ -11,7 +11,6 @@ export interface PurchaseOrderItem {
   amount: number
   discount: number
   finalAmount: number
-  spec: string
   notes: string
 }
 
@@ -43,7 +42,6 @@ export interface PurchaseOrderPayload {
     qty: number
     unitPrice: number
     discount?: number
-    spec?: string
     notes?: string
   }[]
 }

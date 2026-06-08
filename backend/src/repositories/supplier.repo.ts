@@ -4,7 +4,7 @@ import type { Supplier, CreateSupplierDto, UpdateSupplierDto } from '@/dto/suppl
 import type { RowDataPacket, ResultSetHeader } from 'mysql2'
 import { AppError } from '@/services/supplier.service'
 
-const SELECT = `SELECT id, code, name, contact, phone, address, city, status FROM suppliers`
+const SELECT = `SELECT id, code, name, phone, address, status FROM suppliers`
 
 export async function findAll(search?: string): Promise<Supplier[]> {
   let sql = SELECT
@@ -19,22 +19,15 @@ export async function findAll(search?: string): Promise<Supplier[]> {
 }
 
 export async function findById(id: number): Promise<Supplier | null> {
-  const [rows] = await pool.query<RowDataPacket[]>(`${SELECT}, notes WHERE id = ?`, [id])
+  const [rows] = await pool.query<RowDataPacket[]>(`${SELECT} WHERE id = ?`, [id])
   return rows.length ? rowToCamel<Supplier>(rows[0] as Record<string, unknown>) : null
 }
 
 export async function create(dto: CreateSupplierDto): Promise<Supplier> {
   try {
     const [result] = await pool.query<ResultSetHeader>(
-      'INSERT INTO suppliers (code, name, contact, phone, address, city) VALUES (?, ?, ?, ?, ?, ?)',
-      [
-        dto.code,
-        dto.name,
-        dto.contact ?? null,
-        dto.phone ?? null,
-        dto.address ?? null,
-        dto.city ?? null,
-      ],
+      'INSERT INTO suppliers (code, name, phone, address) VALUES (?, ?, ?, ?)',
+      [dto.code, dto.name, dto.phone ?? null, dto.address ?? null],
     )
     return findById(result.insertId) as Promise<Supplier>
   } catch (err: any) {
@@ -46,17 +39,8 @@ export async function create(dto: CreateSupplierDto): Promise<Supplier> {
 export async function update(id: number, dto: UpdateSupplierDto): Promise<Supplier | null> {
   try {
     const [result] = await pool.query<ResultSetHeader>(
-      'UPDATE suppliers SET code=?, name=?, contact=?, phone=?, address=?, city=?, status=? WHERE id=?',
-      [
-        dto.code,
-        dto.name,
-        dto.contact ?? null,
-        dto.phone ?? null,
-        dto.address ?? null,
-        dto.city ?? null,
-        dto.status ?? 1,
-        id,
-      ],
+      'UPDATE suppliers SET code=?, name=?, phone=?, address=?, status=? WHERE id=?',
+      [dto.code, dto.name, dto.phone ?? null, dto.address ?? null, dto.status ?? 1, id],
     )
     if (result.affectedRows === 0) return null
     return findById(id)

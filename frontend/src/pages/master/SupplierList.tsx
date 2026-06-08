@@ -79,10 +79,8 @@ export default function SupplierList() {
 
   const columns: ColumnsType<Supplier> = [
     { title: '编码', dataIndex: 'code', width: 80 },
-    { title: '名称', dataIndex: 'name', width: 120 },
-    { title: '联系人', dataIndex: 'contact', width: 100 },
+    { title: '名称', dataIndex: 'name', width: 160 },
     { title: '电话', dataIndex: 'phone', width: 140 },
-    { title: '城市', dataIndex: 'city', width: 100 },
     { title: '地址', dataIndex: 'address', ellipsis: true },
     {
       title: '状态', dataIndex: 'status', width: 80,
@@ -148,13 +146,7 @@ export default function SupplierList() {
           <Form.Item name="name" label="名称" rules={[{ required: true, message: '请输入名称' }]}>
             <Input placeholder="如：广阔" />
           </Form.Item>
-          <Form.Item name="contact" label="联系人">
-            <Input />
-          </Form.Item>
           <Form.Item name="phone" label="电话">
-            <Input />
-          </Form.Item>
-          <Form.Item name="city" label="城市">
             <Input />
           </Form.Item>
           <Form.Item name="address" label="地址">

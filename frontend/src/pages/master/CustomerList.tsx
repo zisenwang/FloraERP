@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Table, Button, Input, Modal, Form, App, Tag, Select } from 'antd'
+import { Table, Button, Input, Modal, Form, App, Tag } from 'antd'
 import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import {
@@ -8,8 +8,6 @@ import {
 } from '@/api/customers'
 import { getErrorMessage } from '@/utils/error'
 import styles from './SupplierList.module.css'
-
-const LEVEL_OPTIONS = ['A', 'B', 'C']
 
 export default function CustomerList() {
   const { message, modal } = App.useApp()
@@ -81,17 +79,9 @@ export default function CustomerList() {
 
   const columns: ColumnsType<Customer> = [
     { title: '编码', dataIndex: 'code', width: 80 },
-    { title: '客户名称', dataIndex: 'name', width: 140 },
-    { title: '联系人', dataIndex: 'contact', width: 100 },
+    { title: '客户名称', dataIndex: 'name', width: 180 },
     { title: '电话', dataIndex: 'phone', width: 140 },
-    { title: '城市', dataIndex: 'city', width: 100 },
-    {
-      title: '等级', dataIndex: 'level', width: 80,
-      render: (v: string) => {
-        const color = v === 'A' ? 'gold' : v === 'B' ? 'blue' : 'default'
-        return <Tag color={color}>{v}</Tag>
-      },
-    },
+    { title: '地址', dataIndex: 'address', ellipsis: true },
     {
       title: '状态', dataIndex: 'status', width: 80,
       render: (v: number) => v === 1
@@ -156,20 +146,11 @@ export default function CustomerList() {
           <Form.Item name="name" label="客户名称" rules={[{ required: true, message: '请输入名称' }]}>
             <Input placeholder="如：西安王蒙" />
           </Form.Item>
-          <Form.Item name="contact" label="联系人">
-            <Input />
-          </Form.Item>
           <Form.Item name="phone" label="电话">
             <Input />
           </Form.Item>
-          <Form.Item name="city" label="城市">
-            <Input placeholder="如：西安" />
-          </Form.Item>
           <Form.Item name="address" label="地址">
             <Input />
-          </Form.Item>
-          <Form.Item name="level" label="等级">
-            <Select placeholder="选择等级" options={LEVEL_OPTIONS.map(l => ({ value: l, label: l }))} />
           </Form.Item>
         </Form>
       </Modal>

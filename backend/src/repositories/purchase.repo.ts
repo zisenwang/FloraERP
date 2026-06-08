@@ -14,7 +14,7 @@ const ORDER_SELECT = `
 const ITEM_SELECT = `
   SELECT poi.id, poi.product_id, p.code AS product_code, p.name AS product_name,
          p.unit, poi.qty, poi.unit_price, poi.amount,
-         poi.discount, poi.final_amount, poi.spec, poi.notes
+         poi.discount, poi.final_amount, poi.notes
   FROM purchase_order_items poi
   JOIN products p ON p.id = poi.product_id
   WHERE poi.order_id = ?
@@ -134,26 +134,15 @@ export async function insertItem(
     amount: number
     discount: number
     finalAmount: number
-    spec: string | null
     notes: string | null
   },
   conn: PoolConnection,
 ): Promise<void> {
   await conn.query(
     `INSERT INTO purchase_order_items
-       (order_id, product_id, qty, unit_price, amount, discount, final_amount, spec, notes)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      orderId,
-      item.productId,
-      item.qty,
-      item.unitPrice,
-      item.amount,
-      item.discount,
-      item.finalAmount,
-      item.spec,
-      item.notes,
-    ],
+       (order_id, product_id, qty, unit_price, amount, discount, final_amount, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [orderId, item.productId, item.qty, item.unitPrice, item.amount, item.discount, item.finalAmount, item.notes],
   )
 }
 
