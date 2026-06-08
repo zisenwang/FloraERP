@@ -23,3 +23,10 @@ ALTER TABLE customers
 -- purchase_order_items: 去掉 spec
 ALTER TABLE purchase_order_items
   DROP COLUMN IF EXISTS spec;
+
+-- purchase_orders: status 改为中文
+ALTER TABLE purchase_orders
+  MODIFY COLUMN status ENUM('草稿','已入库') NOT NULL DEFAULT '已入库';
+
+UPDATE purchase_orders SET status = '已入库' WHERE status = 'confirmed';
+UPDATE purchase_orders SET status = '草稿'  WHERE status = 'draft';

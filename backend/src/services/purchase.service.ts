@@ -1,6 +1,7 @@
 import pool from '@/db/pool'
 import * as purchaseRepo from '@/repositories/purchase.repo'
 import * as invRepo from '@/repositories/inventory.repo'
+import * as productRepo from '@/repositories/product.repo'
 import { genPurchaseNo } from '@/utils/orderNo'
 import { AppError } from '@/services/supplier.service'
 import type {
@@ -77,6 +78,7 @@ export async function createOrder(
         },
         conn,
       )
+      await productRepo.updateCostPrice(line.productId, line.unitPrice, conn)
 
       const qtyBefore = await invRepo.getQuantity(line.productId, conn)
       await invRepo.incrementQuantity(line.productId, line.qty, conn)
@@ -146,6 +148,7 @@ export async function updateOrder(id: number, dto: UpdatePurchaseOrderDto): Prom
         },
         conn,
       )
+      await productRepo.updateCostPrice(line.productId, line.unitPrice, conn)
       await invRepo.incrementQuantity(line.productId, line.qty, conn)
     }
 

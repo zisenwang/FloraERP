@@ -25,7 +25,7 @@ export interface PurchaseOrder {
   finalAmount: number
   operator: string | null
   notes: string | null
-  status: 'draft' | 'confirmed'
+  status: '草稿' | '已入库'
   createdAt: string
   items?: PurchaseOrderItem[]
 }

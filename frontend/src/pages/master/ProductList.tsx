@@ -89,7 +89,9 @@ export default function ProductList() {
     { title: '货品名称', dataIndex: 'name', width: 140 },
     { title: '供应商', dataIndex: 'supplierName', width: 100 },
     { title: '品类', dataIndex: 'category', width: 100 },
+    { title: '等级', dataIndex: 'grade', width: 80, render: (v: string) => v ?? '—' },
     { title: '单位', dataIndex: 'unit', width: 60 },
+    { title: '每件', dataIndex: 'unitsPerPiece', width: 70, render: (v: number) => v ?? '—' },
     { title: '单价', dataIndex: 'price', width: 80, render: (v: number) => `¥${v}` },
     { title: '库存', dataIndex: 'stock', width: 80 },
     {
@@ -175,11 +177,17 @@ export default function ProductList() {
           <Form.Item name="category" label="品类">
             <Input placeholder="如：观叶植物" />
           </Form.Item>
+          <Form.Item name="grade" label="等级">
+            <Input placeholder="如：A级" />
+          </Form.Item>
           <Form.Item name="unit" label="单位" initialValue="盆">
             <Input />
           </Form.Item>
           <Form.Item name="price" label="单价">
             <InputNumber min={0} precision={2} prefix="¥" style={{ width: '100%' }} />
+          </Form.Item>
+          <Form.Item name="unitsPerPiece" label="每件数量" tooltip="每件包含多少盆/株，开单时用于计算件数">
+            <InputNumber min={1} precision={0} style={{ width: '100%' }} placeholder="如：30" />
           </Form.Item>
         </Form>
       </Modal>

@@ -27,7 +27,7 @@ export interface PurchaseOrder {
   finalAmount: number
   operator: string
   notes: string
-  status: string
+  status: '草稿' | '已入库'
   createdAt: string
   items: PurchaseOrderItem[]
 }

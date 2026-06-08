@@ -139,7 +139,7 @@ CREATE TABLE purchase_orders (
   final_amount DECIMAL(10,2)  NOT NULL DEFAULT 0.00,
   operator     VARCHAR(50)    DEFAULT NULL,
   notes        TEXT           DEFAULT NULL,
-  status       ENUM('draft','confirmed') NOT NULL DEFAULT 'confirmed',
+  status       ENUM('草稿','已入库') NOT NULL DEFAULT '已入库',
   created_at   DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at   DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
