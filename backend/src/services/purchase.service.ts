@@ -107,6 +107,26 @@ export async function createOrder(
   }
 }
 
+export async function deleteOrder(id: number): Promise<void> {
+  const conn = await pool.getConnection()
+  try {
+    await conn.beginTransaction()
+    const order = await purchaseRepo.findById(id)
+    if (!order) throw new AppError(404, '采购订单不存在')
+    const oldItems = await purchaseRepo.deleteItems(id, conn)
+    for (const old of oldItems) {
+      await invRepo.incrementQuantity(old.productId, -old.qty, conn)
+    }
+    await conn.query('DELETE FROM purchase_orders WHERE id = ?', [id])
+    await conn.commit()
+  } catch (e) {
+    await conn.rollback()
+    throw e
+  } finally {
+    conn.release()
+  }
+}
+
 export async function updateOrder(id: number, dto: UpdatePurchaseOrderDto): Promise<PurchaseOrder> {
   const orderDiscount = dto.discount ?? 100
   const { lines, totalQty, totalAmount, finalAmount } = computeLineTotals(dto.items, orderDiscount)

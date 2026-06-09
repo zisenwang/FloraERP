@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Form, Select, DatePicker, Input, Button, Table, InputNumber, App } from 'antd'
+import { Form, Select, DatePicker, Input, Button, Table, InputNumber, App, Spin } from 'antd'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import dayjs from 'dayjs'
-import { createPurchaseOrder } from '@/api/purchase'
+import { createPurchaseOrder, getPurchaseOrder, updatePurchaseOrder } from '@/api/purchase'
 import { getSuppliers, type Supplier } from '@/api/suppliers'
 import { getProducts, type Product } from '@/api/products'
 import { getErrorMessage } from '@/utils/error'
@@ -32,6 +32,9 @@ const newLine = (): LineItem => ({
 })
 
 export default function PurchaseOrderNew() {
+  const { id } = useParams<{ id?: string }>()
+  const isEdit = !!id
+
   const { message } = App.useApp()
   const navigate = useNavigate()
   const [form] = Form.useForm()
@@ -39,11 +42,37 @@ export default function PurchaseOrderNew() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [lines, setLines] = useState<LineItem[]>([newLine()])
+  const [loading, setLoading] = useState(isEdit)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     getSuppliers().then(setSuppliers).catch(() => {})
-  }, [])
+
+    if (!isEdit) return
+
+    getPurchaseOrder(Number(id))
+      .then(order => {
+        form.setFieldsValue({
+          supplierId: order.supplierId,
+          orderDate: dayjs(order.orderDate),
+          notes: order.notes,
+        })
+        getProducts({ supplierId: order.supplierId }).then(setProducts).catch(() => {})
+        const loaded: LineItem[] = (order.items ?? []).map(item => ({
+          key: keyCounter++,
+          productId: item.productId,
+          productCode: item.productCode,
+          productName: item.productName,
+          qty: item.qty,
+          unitPrice: item.unitPrice,
+          discount: item.discount,
+          amount: item.amount,
+        }))
+        setLines(loaded.length ? loaded : [newLine()])
+      })
+      .catch(err => message.error(getErrorMessage(err)))
+      .finally(() => setLoading(false))
+  }, [id])
 
   const handleSupplierChange = (supplierId: number) => {
     setLines([newLine()])
@@ -62,12 +91,7 @@ export default function PurchaseOrderNew() {
   const handleProductSelect = (key: number, productId: number) => {
     const p = products.find(p => p.id === productId)
     if (!p) return
-    updateLine(key, {
-      productId,
-      productCode: p.code,
-      productName: p.name,
-      unitPrice: p.price,
-    })
+    updateLine(key, { productId, productCode: p.code, productName: p.name, unitPrice: p.costPrice ?? p.price })
   }
 
   const removeLine = (key: number) => {
@@ -79,14 +103,13 @@ export default function PurchaseOrderNew() {
 
   const handleSubmit = () => {
     form.validateFields().then(values => {
-      const validLines = lines.filter(l => l.productCode && l.qty > 0)
+      const validLines = lines.filter(l => l.productId && l.qty > 0)
       if (validLines.length === 0) {
         message.warning('请至少添加一条货品明细')
         return
       }
-
       setSaving(true)
-      createPurchaseOrder({
+      const payload = {
         supplierId: values.supplierId,
         orderDate: values.orderDate.format('YYYY-MM-DD'),
         notes: values.notes,
@@ -96,9 +119,14 @@ export default function PurchaseOrderNew() {
           unitPrice,
           discount,
         })),
-      })
+      }
+      const req = isEdit
+        ? updatePurchaseOrder(Number(id), payload)
+        : createPurchaseOrder(payload)
+
+      req
         .then(() => {
-          message.success('采购入库成功')
+          message.success(isEdit ? '更新成功' : '采购入库成功')
           navigate('/purchase/orders')
         })
         .catch(err => message.error(getErrorMessage(err)))
@@ -108,8 +136,7 @@ export default function PurchaseOrderNew() {
 
   const columns = [
     {
-      title: '货品',
-      width: 220,
+      title: '货品', width: 220,
       render: (_: unknown, record: LineItem) => (
         <Select
           placeholder="选择货品"
@@ -129,51 +156,42 @@ export default function PurchaseOrderNew() {
     {
       title: '数量', width: 90,
       render: (_: unknown, record: LineItem) => (
-        <InputNumber
-          min={0} value={record.qty} style={{ width: '100%' }}
-          onChange={val => updateLine(record.key, { qty: val ?? 0 })}
-        />
+        <InputNumber min={0} value={record.qty} style={{ width: '100%' }}
+          onChange={val => updateLine(record.key, { qty: val ?? 0 })} />
       ),
     },
     {
       title: '单价', width: 100,
       render: (_: unknown, record: LineItem) => (
-        <InputNumber
-          min={0} precision={2} value={record.unitPrice} style={{ width: '100%' }}
-          onChange={val => updateLine(record.key, { unitPrice: val ?? 0 })}
-        />
+        <InputNumber min={0} precision={2} value={record.unitPrice} style={{ width: '100%' }}
+          onChange={val => updateLine(record.key, { unitPrice: val ?? 0 })} />
       ),
     },
     {
       title: '折扣%', width: 80,
       render: (_: unknown, record: LineItem) => (
-        <InputNumber
-          min={0} max={100} value={record.discount} style={{ width: '100%' }}
-          onChange={val => updateLine(record.key, { discount: val ?? 100 })}
-        />
+        <InputNumber min={0} max={100} value={record.discount} style={{ width: '100%' }}
+          onChange={val => updateLine(record.key, { discount: val ?? 100 })} />
       ),
     },
     {
       title: '金额', width: 100, align: 'right' as const,
-      render: (_: unknown, record: LineItem) => (
-        <span>¥{record.amount.toFixed(2)}</span>
-      ),
+      render: (_: unknown, record: LineItem) => <span>¥{record.amount.toFixed(2)}</span>,
     },
     {
       title: '', width: 40,
       render: (_: unknown, record: LineItem) => (
-        <Button
-          type="text" danger size="small" icon={<DeleteOutlined />}
-          onClick={() => removeLine(record.key)}
-          disabled={lines.length === 1}
-        />
+        <Button type="text" danger size="small" icon={<DeleteOutlined />}
+          onClick={() => removeLine(record.key)} disabled={lines.length === 1} />
       ),
     },
   ]
 
+  if (loading) return <Spin size="large" style={{ display: 'block', margin: '80px auto' }} />
+
   return (
     <>
-      <div className={styles.pageTitle}>采购入库</div>
+      <div className={styles.pageTitle}>{isEdit ? '编辑采购单' : '采购入库'}</div>
 
       <Form form={form} layout="inline" className={styles.headerForm}>
         <Form.Item name="supplierId" label="供应商" rules={[{ required: true, message: '请选择供应商' }]}>
@@ -184,7 +202,7 @@ export default function PurchaseOrderNew() {
             onChange={handleSupplierChange}
           />
         </Form.Item>
-        <Form.Item name="orderDate" label="日期" initialValue={dayjs()} rules={[{ required: true }]}>
+        <Form.Item name="orderDate" label="日期" initialValue={isEdit ? undefined : dayjs()} rules={[{ required: true }]}>
           <DatePicker />
         </Form.Item>
         <Form.Item name="notes" label="备注">
@@ -214,7 +232,9 @@ export default function PurchaseOrderNew() {
 
       <div className={styles.actions}>
         <Button onClick={() => navigate('/purchase/orders')}>取消</Button>
-        <Button type="primary" loading={saving} onClick={handleSubmit}>保存入库</Button>
+        <Button type="primary" loading={saving} onClick={handleSubmit}>
+          {isEdit ? '保存修改' : '保存入库'}
+        </Button>
       </div>
     </>
   )

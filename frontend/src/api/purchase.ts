@@ -72,3 +72,7 @@ export const updatePurchaseOrder = async (id: number, payload: PurchaseOrderPayl
   const res = await client.put<{ data: PurchaseOrder }>(`/purchase/orders/${id}`, payload)
   return res.data.data
 }
+
+export const deletePurchaseOrder = async (id: number): Promise<void> => {
+  await client.delete(`/purchase/orders/${id}`)
+}

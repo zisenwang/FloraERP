@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Table, Button, DatePicker, Select, Tag, App, Spin } from 'antd'
-import { PlusOutlined } from '@ant-design/icons'
+import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import type { ColumnsType } from 'antd/es/table'
-import { getPurchaseOrders, getPurchaseOrder, type PurchaseOrder, type PurchaseOrderItem } from '@/api/purchase'
+import { getPurchaseOrders, getPurchaseOrder, deletePurchaseOrder, type PurchaseOrder, type PurchaseOrderItem } from '@/api/purchase'
 import { getSuppliers, type Supplier } from '@/api/suppliers'
 import { getErrorMessage } from '@/utils/error'
 import styles from './Purchase.module.css'
@@ -16,7 +16,7 @@ const STATUS_COLOR: Record<string, string> = {
 }
 
 export default function PurchaseOrderList() {
-  const { message } = App.useApp()
+  const { message, modal } = App.useApp()
   const navigate = useNavigate()
 
   const [orders, setOrders] = useState<PurchaseOrder[]>([])
@@ -28,6 +28,7 @@ export default function PurchaseOrderList() {
   // items cache: orderId → items
   const [itemsMap, setItemsMap] = useState<Record<number, PurchaseOrderItem[]>>({})
   const [expandLoading, setExpandLoading] = useState<Record<number, boolean>>({})
+  const [deleting, setDeleting] = useState<Record<number, boolean>>({})
 
   const fetchOrders = (sid?: number, range?: [string, string]) => {
     setLoading(true)
@@ -45,6 +46,26 @@ export default function PurchaseOrderList() {
     fetchOrders()
     getSuppliers().then(setSuppliers).catch(() => {})
   }, [])
+
+  const handleDelete = (record: PurchaseOrder) => {
+    modal.confirm({
+      title: '确认删除',
+      content: `删除采购单「${record.orderNo}」？库存将同步回退，此操作不可撤销。`,
+      okText: '删除',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk: () => {
+        setDeleting(prev => ({ ...prev, [record.id]: true }))
+        return deletePurchaseOrder(record.id)
+          .then(() => {
+            message.success('删除成功')
+            fetchOrders(supplierId, dateRange)
+          })
+          .catch(err => message.error(getErrorMessage(err)))
+          .finally(() => setDeleting(prev => ({ ...prev, [record.id]: false })))
+      },
+    })
+  }
 
   const handleExpand = (expanded: boolean, record: PurchaseOrder) => {
     if (!expanded || itemsMap[record.id] !== undefined) return
@@ -72,11 +93,18 @@ export default function PurchaseOrderList() {
       render: (v: string) => <Tag color={STATUS_COLOR[v] ?? 'default'}>{v}</Tag>,
     },
     {
-      title: '操作', width: 80, fixed: 'right', align: 'center',
+      title: '操作', width: 130, fixed: 'right', align: 'center',
       render: (_, record) => (
-        <Button type="link" size="small" onClick={() => navigate(`/purchase/orders/${record.id}`)}>
-          查看
-        </Button>
+        <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+          <Button type="link" size="small" onClick={() => navigate(`/purchase/orders/${record.id}`)}>
+            查看
+          </Button>
+          <Button type="link" size="small" icon={<EditOutlined />}
+            onClick={() => navigate(`/purchase/orders/${record.id}/edit`)} />
+          <Button type="link" size="small" danger icon={<DeleteOutlined />}
+            loading={deleting[record.id]}
+            onClick={() => handleDelete(record)} />
+        </div>
       ),
     },
   ]

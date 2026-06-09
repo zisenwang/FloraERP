@@ -66,6 +66,7 @@ const router = createBrowserRouter([
       { path: 'purchase/orders', element: <PurchaseOrderList /> },
       { path: 'purchase/orders/new', element: <PurchaseOrderNew /> },
       { path: 'purchase/orders/:id', element: <PurchaseOrderView /> },
+      { path: 'purchase/orders/:id/edit', element: <PurchaseOrderNew /> },
       { path: 'purchase/returns', element: <PurchaseReturnList /> },
 
       // 销售管理

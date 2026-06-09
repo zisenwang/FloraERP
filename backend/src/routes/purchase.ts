@@ -8,5 +8,6 @@ router.get('/orders', ctrl.listOrders)
 router.get('/orders/:id', ctrl.getOrder)
 router.post('/orders', ctrl.createOrder)
 router.put('/orders/:id', ctrl.updateOrder)
+router.delete('/orders/:id', ctrl.deleteOrder)
 router.get('/returns', ctrl.listReturns)
 export default router
