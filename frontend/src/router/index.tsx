@@ -73,6 +73,7 @@ const router = createBrowserRouter([
       { path: 'sales/orders', element: <SalesOrderList /> },
       { path: 'sales/orders/new', element: <SalesOrderNew /> },
       { path: 'sales/orders/:id', element: <SalesOrderView /> },
+      { path: 'sales/orders/:id/edit', element: <SalesOrderNew /> },
       { path: 'sales/returns', element: <SalesReturnList /> },
 
       // 库存管理

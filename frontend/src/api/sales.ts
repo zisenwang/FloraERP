@@ -25,6 +25,7 @@ export interface SalesOrder {
   customerName: string
   customerCode: string
   customerPhone: string
+  customerAddress: string
   orderDate: string
   totalQty: number
   totalAmount: number
@@ -76,4 +77,8 @@ export const createSalesOrder = async (payload: SalesOrderPayload): Promise<Sale
 export const updateSalesOrder = async (id: number, payload: SalesOrderPayload): Promise<SalesOrder> => {
   const res = await client.put<{ data: SalesOrder }>(`/sales/orders/${id}`, payload)
   return res.data.data
+}
+
+export const deleteSalesOrder = async (id: number): Promise<void> => {
+  await client.delete(`/sales/orders/${id}`)
 }

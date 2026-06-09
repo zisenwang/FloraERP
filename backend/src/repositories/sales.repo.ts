@@ -5,7 +5,7 @@ import type { RowDataPacket, ResultSetHeader, PoolConnection } from 'mysql2/prom
 
 const ORDER_SELECT = `
   SELECT so.id, so.order_no, so.customer_id, c.name AS customer_name, c.code AS customer_code,
-         c.phone AS customer_phone,
+         c.phone AS customer_phone, c.address AS customer_address,
          DATE_FORMAT(so.date, '%Y-%m-%d') AS order_date,
          so.total_qty, so.total_amount, so.total_pieces,
          so.payment_status, so.operator, so.notes, so.status,

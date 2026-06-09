@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { login, type LoginPayload } from '@/api/auth'
 import { useAuth } from '@/store/AuthContext'
 import { getErrorMessage } from '@/utils/error'
+import { COMPANY_NAME } from '@/constants/company'
 import styles from './Login.module.css'
 
 export default function Login() {
@@ -26,7 +27,7 @@ export default function Login() {
     <div className={styles.page}>
       <div className={styles.card}>
         <div className={styles.logo}>
-          <div className={styles.logoText}>广阔园艺 ERP</div>
+          <div className={styles.logoText}>{COMPANY_NAME} ERP</div>
           <div className={styles.subtitle}>花卉管理系统</div>
         </div>
 

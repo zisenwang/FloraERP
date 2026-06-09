@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Form, Input, Button, App, Divider } from 'antd'
+import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE } from '@/constants/company'
 import styles from './Settings.module.css'
 
 const DEFAULT_SETTINGS = {
-  company_name: '广阔园艺',
-  company_address: '广州市荔湾区花博园宏星路中段广阔卉',
-  company_phone: '13059146326，13903057717',
-  print_title: '广阔园艺',
+  company_name: COMPANY_NAME,
+  company_address: COMPANY_ADDRESS,
+  company_phone: COMPANY_PHONE,
+  print_title: COMPANY_NAME,
 }
 
 export default function Settings() {

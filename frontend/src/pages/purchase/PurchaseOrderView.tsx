@@ -7,9 +7,7 @@ import { getPurchaseOrder, type PurchaseOrder } from '@/api/purchase'
 import { getErrorMessage } from '@/utils/error'
 import styles from './PurchaseOrderView.module.css'
 
-const COMPANY_NAME = '广阔园艺'
-const COMPANY_ADDRESS = '广州市荔湾区花博园宏星路中段广阔卉'
-const COMPANY_PHONE = '13059146326，13903057717'
+import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE } from '@/constants/company'
 
 export default function PurchaseOrderView() {
   const { id } = useParams<{ id: string }>()
@@ -90,23 +88,23 @@ export default function PurchaseOrderView() {
                 <tr key={i}>
                   <td>{item.productCode}</td>
                   <td>{item.productName}</td>
-                  <td className={styles.center}>{item.category ?? '—'}</td>
-                  <td className={styles.center}>{item.grade ?? '—'}</td>
-                  <td className={styles.center}>{item.unit}</td>
-                  <td className={styles.center}>{item.qty}</td>
-                  <td className={styles.right}>¥{item.unitPrice}</td>
-                  <td className={styles.right}>¥{item.amount.toFixed(2)}</td>
-                  <td className={styles.right}>{discount}%</td>
-                  <td className={styles.right}>¥{finalAmt.toFixed(2)}</td>
-                  <td></td>
+                  <td>{item.category ?? '—'}</td>
+                  <td>{item.grade ?? '—'}</td>
+                  <td>{item.unit}</td>
+                  <td>{item.qty}</td>
+                  <td>¥{item.unitPrice}</td>
+                  <td>¥{item.amount.toFixed(2)}</td>
+                  <td>{discount}%</td>
+                  <td>¥{finalAmt.toFixed(2)}</td>
+                  <td>{item.notes || ''}</td>
                 </tr>
               )
             })}
             <tr>
               <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600 }}>小计</td>
-              <td className={styles.right}><strong>{totalQty}</strong></td>
+              <td><strong>{totalQty}</strong></td>
               <td></td>
-              <td className={styles.right}><strong>¥{order.totalAmount.toFixed(2)}</strong></td>
+              <td><strong>¥{order.totalAmount.toFixed(2)}</strong></td>
               <td colSpan={3}></td>
             </tr>
           </tbody>
@@ -115,6 +113,7 @@ export default function PurchaseOrderView() {
         <div className={styles.printSummary}>
           人民币：合计 &nbsp;<strong>{totalQty}</strong>&nbsp; 盆&emsp;
           小写 &nbsp;<strong>¥{order.totalAmount.toFixed(2)}</strong>
+          {order.notes && <><br />备注：{order.notes}</>}
         </div>
 
         <div className={styles.printFooter}>

@@ -86,7 +86,7 @@ export default function PurchaseOrderList() {
     {
       title: '金额', dataIndex: 'totalAmount', width: 110,
       render: (v: number) => `¥${v.toLocaleString()}`,
-      align: 'right',
+      align: 'center',
     },
     {
       title: '状态', dataIndex: 'status', width: 90, align: 'center',

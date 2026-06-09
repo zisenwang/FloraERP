@@ -23,6 +23,7 @@ export interface SalesOrder {
   customerName: string
   customerCode: string
   customerPhone: string | null
+  customerAddress: string | null
   orderDate: string
   totalQty: number
   totalAmount: number

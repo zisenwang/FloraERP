@@ -42,6 +42,11 @@ export async function updateOrder(req: AuthRequest, res: Response): Promise<void
   res.json({ data })
 }
 
+export async function deleteOrder(req: AuthRequest, res: Response): Promise<void> {
+  await service.deleteOrder(Number(req.params.id))
+  res.json({ message: '删除成功' })
+}
+
 export async function listReturns(_req: AuthRequest, res: Response): Promise<void> {
   res.json({ data: [] })
 }

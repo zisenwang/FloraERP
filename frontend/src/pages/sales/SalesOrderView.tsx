@@ -1,21 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button, Spin, Tag, App } from 'antd'
+import { Button, Spin, App } from 'antd'
 import { ArrowLeftOutlined, PrinterOutlined } from '@ant-design/icons'
 import { useReactToPrint } from 'react-to-print'
 import { getSalesOrder, type SalesOrder } from '@/api/sales'
 import { getErrorMessage } from '@/utils/error'
+import { toChineseAmount } from '@/utils/chineseAmount'
 import styles from './SalesOrderView.module.css'
+import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE } from '@/constants/company'
 
-const COMPANY_NAME = '广阔园艺'
-const COMPANY_ADDRESS = '广州市荔湾区花博园宏星路中段广阔卉'
-const COMPANY_PHONE = '13059146326，13903057717'
-
-const PAY_STATUS_MAP: Record<string, { color: string; label: string }> = {
-  '未收款':  { color: 'red',    label: '未收款' },
-  '部分收款': { color: 'orange', label: '部分收款' },
-  '已收款':  { color: 'green',  label: '已收款' },
-}
 
 export default function SalesOrderView() {
   const { id } = useParams<{ id: string }>()
@@ -39,7 +32,7 @@ export default function SalesOrderView() {
   if (!order) return null
 
   const totalQty = order.items.reduce((s, i) => s + i.qty, 0)
-  const payInfo = PAY_STATUS_MAP[order.paymentStatus] ?? { color: 'default', label: order.paymentStatus }
+  const totalPieces = order.items.reduce((s, i) => s + (i.pieces || 0), 0)
 
   return (
     <div className={styles.page}>
@@ -55,46 +48,42 @@ export default function SalesOrderView() {
         </div>
 
         <div className={styles.printMeta}>
-          <span>客户：{order.customerName}</span>
           <span>
-            日期：{order.orderDate}&emsp;单号：{order.orderNo}&emsp;
-            <span className={styles.noprint}>
-              收款状态：<Tag color={payInfo.color}>{payInfo.label}</Tag>
-            </span>
+            客户：{order.customerCode} {order.customerName}
+            {order.customerPhone && <>&emsp; {order.customerPhone}</>}
+            {order.customerAddress && <><br />地址：{order.customerAddress}</>}
           </span>
+          <span>日期：{order.orderDate}&emsp;单号：{order.orderNo}</span>
         </div>
 
         <table className={styles.printTable}>
           <thead>
             <tr>
+              <th>供应商</th>
               <th>编码</th>
               <th>货品名称</th>
-              <th>供应商</th>
               <th>单位</th>
               <th>数量</th>
               <th>单价</th>
               <th>金额</th>
-              <th>折扣</th>
-              <th>折后金额</th>
+              <th>件数</th>
               <th>备注</th>
             </tr>
           </thead>
           <tbody>
             {order.items.map((item, i) => {
-              const discount = item.discount ?? 100
-              const finalAmt = item.finalAmount ?? +(item.amount * discount / 100).toFixed(2)
+              const finalAmt = item.finalAmount ?? +(item.amount * (item.discount ?? 100) / 100).toFixed(2)
               return (
                 <tr key={i}>
+                  <td>{item.supplierCode}</td>
                   <td>{item.productCode}</td>
                   <td>{item.productName}</td>
-                  <td>{item.supplierName}</td>
                   <td className={styles.center}>盆</td>
                   <td className={styles.center}>{item.qty}</td>
                   <td className={styles.right}>¥{item.unitPrice}</td>
-                  <td className={styles.right}>¥{item.amount.toFixed(2)}</td>
-                  <td className={styles.right}>{discount}%</td>
                   <td className={styles.right}>¥{finalAmt.toFixed(2)}</td>
-                  <td></td>
+                  <td className={styles.center}>{item.pieces}</td>
+                  <td>{item.notes || ''}</td>
                 </tr>
               )
             })}
@@ -103,14 +92,17 @@ export default function SalesOrderView() {
               <td className={styles.center}><strong>{totalQty}</strong></td>
               <td></td>
               <td className={styles.right}><strong>¥{order.totalAmount.toFixed(2)}</strong></td>
-              <td colSpan={3}></td>
+              <td className={styles.center}><strong>{totalPieces}</strong></td>
+              <td></td>
             </tr>
           </tbody>
         </table>
 
         <div className={styles.printSummary}>
-          人民币：合计 &nbsp;<strong>{totalQty}</strong>&nbsp; 盆&emsp;
-          小写 &nbsp;<strong>¥{order.totalAmount.toFixed(2)}</strong>
+          合计 &nbsp;<strong>{totalQty}</strong>&nbsp; 盆&emsp;
+          人民币：小写 &nbsp;<strong>¥{order.totalAmount.toFixed(2)}</strong>&emsp;
+          大写 &nbsp;<strong>{toChineseAmount(order.totalAmount)}</strong>
+          {order.notes && <><br />备注：{order.notes}</>}
         </div>
 
         <div className={styles.printFooter}>

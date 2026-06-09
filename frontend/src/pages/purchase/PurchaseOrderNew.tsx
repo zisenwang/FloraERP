@@ -18,6 +18,7 @@ interface LineItem {
   unitPrice: number
   discount: number
   amount: number
+  notes: string
 }
 
 let keyCounter = 0
@@ -29,6 +30,7 @@ const newLine = (): LineItem => ({
   unitPrice: 0,
   discount: 100,
   amount: 0,
+  notes: '',
 })
 
 export default function PurchaseOrderNew() {
@@ -67,6 +69,7 @@ export default function PurchaseOrderNew() {
           unitPrice: item.unitPrice,
           discount: item.discount,
           amount: item.amount,
+          notes: item.notes ?? '',
         }))
         setLines(loaded.length ? loaded : [newLine()])
       })
@@ -113,11 +116,12 @@ export default function PurchaseOrderNew() {
         supplierId: values.supplierId,
         orderDate: values.orderDate.format('YYYY-MM-DD'),
         notes: values.notes,
-        items: validLines.map(({ productId, qty, unitPrice, discount }) => ({
+        items: validLines.map(({ productId, qty, unitPrice, discount, notes }) => ({
           productId: productId!,
           qty,
           unitPrice,
           discount,
+          notes: notes || undefined,
         })),
       }
       const req = isEdit
@@ -177,6 +181,16 @@ export default function PurchaseOrderNew() {
     {
       title: '金额', width: 100, align: 'right' as const,
       render: (_: unknown, record: LineItem) => <span>¥{record.amount.toFixed(2)}</span>,
+    },
+    {
+      title: '备注',
+      render: (_: unknown, record: LineItem) => (
+        <Input
+          value={record.notes}
+          placeholder="可选"
+          onChange={e => updateLine(record.key, { notes: e.target.value })}
+        />
+      ),
     },
     {
       title: '', width: 40,

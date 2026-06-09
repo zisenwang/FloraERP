@@ -1,24 +1,28 @@
 import { useEffect, useState } from 'react'
-import { Form, Select, DatePicker, Input, Button, Table, InputNumber, App } from 'antd'
+import { Form, Select, DatePicker, Input, Button, Table, InputNumber, App, Spin } from 'antd'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import dayjs from 'dayjs'
-import { createSalesOrder } from '@/api/sales'
+import { createSalesOrder, getSalesOrder, updateSalesOrder } from '@/api/sales'
 import { getCustomers, type Customer } from '@/api/customers'
+import { getSuppliers, type Supplier } from '@/api/suppliers'
 import { getProducts, type Product } from '@/api/products'
 import { getErrorMessage } from '@/utils/error'
 import styles from './Sales.module.css'
 
 interface LineItem {
   key: number
+  supplierId?: number
   productId?: number
   productCode: string
   productName: string
-  supplierName: string
+  unitsPerPiece: number | null
   qty: number
   unitPrice: number
   discount: number
   amount: number
+  pieces: number
+  notes: string
 }
 
 let keyCounter = 0
@@ -26,48 +30,119 @@ const newLine = (): LineItem => ({
   key: keyCounter++,
   productCode: '',
   productName: '',
-  supplierName: '',
+  unitsPerPiece: null,
   qty: 0,
   unitPrice: 0,
   discount: 100,
   amount: 0,
+  pieces: 0,
+  notes: '',
 })
 
+function calcPieces(qty: number, unitsPerPiece: number | null): number {
+  if (!unitsPerPiece || unitsPerPiece <= 0) return 0
+  return Math.ceil(qty / unitsPerPiece)
+}
+
 export default function SalesOrderNew() {
+  const { id } = useParams<{ id?: string }>()
+  const isEdit = !!id
+
   const { message } = App.useApp()
   const navigate = useNavigate()
   const [form] = Form.useForm()
 
   const [customers, setCustomers] = useState<Customer[]>([])
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [lines, setLines] = useState<LineItem[]>([newLine()])
+  const [loading, setLoading] = useState(isEdit)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     getCustomers().then(setCustomers).catch(() => {})
-    // Load all products (sales orders can mix products from any supplier)
+    getSuppliers().then(setSuppliers).catch(() => {})
     getProducts().then(setProducts).catch(() => {})
-  }, [])
+
+    if (!isEdit) return
+
+    getSalesOrder(Number(id))
+      .then(order => {
+        form.setFieldsValue({
+          customerId: order.customerId,
+          orderDate: dayjs(order.orderDate),
+          notes: order.notes,
+        })
+        const loaded: LineItem[] = (order.items ?? []).map(item => ({
+          key: keyCounter++,
+          supplierId: item.supplierId,
+          productId: item.productId,
+          productCode: item.productCode,
+          productName: item.productName,
+          unitsPerPiece: null,
+          qty: item.qty,
+          unitPrice: item.unitPrice,
+          discount: item.discount,
+          amount: item.amount,
+          pieces: item.pieces,
+          notes: item.notes ?? '',
+        }))
+        setLines(loaded.length ? loaded : [newLine()])
+      })
+      .catch(err => message.error(getErrorMessage(err)))
+      .finally(() => setLoading(false))
+  }, [id])
+
+  // Products filtered per line by that line's supplierId
+  const productsForLine = (supplierId?: number) =>
+    supplierId ? products.filter(p => p.supplierId === supplierId) : []
+
+  const handleSupplierChange = (key: number, supplierId: number) => {
+    setLines(prev => prev.map(line =>
+      line.key !== key ? line : {
+        ...line,
+        supplierId,
+        productId: undefined,
+        productCode: '',
+        productName: '',
+        unitsPerPiece: null,
+        unitPrice: 0,
+        amount: 0,
+        pieces: 0,
+      }
+    ))
+  }
+
+  const handleProductSelect = (key: number, productId: number) => {
+    const p = products.find(p => p.id === productId)
+    if (!p) return
+    setLines(prev => prev.map(line => {
+      if (line.key !== key) return line
+      const qty = line.qty
+      const unitsPerPiece = p.unitsPerPiece ?? null
+      return {
+        ...line,
+        productId,
+        productCode: p.code,
+        productName: p.name,
+        unitsPerPiece,
+        unitPrice: p.price,
+        amount: +(qty * p.price * (line.discount / 100)).toFixed(2),
+        pieces: calcPieces(qty, unitsPerPiece),
+      }
+    }))
+  }
 
   const updateLine = (key: number, changes: Partial<LineItem>) => {
     setLines(prev => prev.map(line => {
       if (line.key !== key) return line
       const updated = { ...line, ...changes }
       updated.amount = +(updated.qty * updated.unitPrice * (updated.discount / 100)).toFixed(2)
+      if ('qty' in changes && !('pieces' in changes)) {
+        updated.pieces = calcPieces(updated.qty, updated.unitsPerPiece)
+      }
       return updated
     }))
-  }
-
-  const handleProductSelect = (key: number, productId: number) => {
-    const p = products.find(p => p.id === productId)
-    if (!p) return
-    updateLine(key, {
-      productId,
-      productCode: p.code,
-      productName: p.name,
-      supplierName: p.supplierName,
-      unitPrice: p.price,
-    })
   }
 
   const removeLine = (key: number) => {
@@ -75,31 +150,39 @@ export default function SalesOrderNew() {
   }
 
   const totalQty = lines.reduce((s, l) => s + (l.qty || 0), 0)
+  const totalPieces = lines.reduce((s, l) => s + (l.pieces || 0), 0)
   const totalAmount = lines.reduce((s, l) => s + (l.amount || 0), 0)
 
   const handleSubmit = () => {
     form.validateFields().then(values => {
-      const validLines = lines.filter(l => l.productCode && l.qty > 0)
+      const validLines = lines.filter(l => l.productId && l.supplierId && l.qty > 0)
       if (validLines.length === 0) {
         message.warning('请至少添加一条货品明细')
         return
       }
-
       setSaving(true)
-      createSalesOrder({
+      const payload = {
         customerId: values.customerId,
         orderDate: values.orderDate.format('YYYY-MM-DD'),
         notes: values.notes,
-        items: validLines.map(({ productId, qty, unitPrice, discount }) => ({
+        items: validLines.map(({ productId, supplierId, qty, unitPrice, discount, pieces, notes }) => ({
           productId: productId!,
+          supplierId: supplierId!,
           qty,
           unitPrice,
           discount,
+          pieces: pieces ?? 0,
+          notes: notes || null,
         })),
-      })
+      }
+      const req = isEdit
+        ? updateSalesOrder(Number(id), payload)
+        : createSalesOrder(payload)
+
+      req
         .then(order => {
-          message.success('销售开单成功')
-          navigate(`/sales/orders/${order.id}`)
+          message.success(isEdit ? '更新成功' : '销售开单成功')
+          navigate(`/sales/orders/${isEdit ? id : order.id}`)
         })
         .catch(err => message.error(getErrorMessage(err)))
         .finally(() => setSaving(false))
@@ -108,36 +191,45 @@ export default function SalesOrderNew() {
 
   const columns = [
     {
-      title: '货品',
-      width: 240,
+      title: '供应商', width: 160,
+      render: (_: unknown, record: LineItem) => (
+        <Select
+          placeholder="选择供应商"
+          style={{ width: '100%' }}
+          value={record.supplierId}
+          options={suppliers.map(s => ({ value: s.id, label: `${s.code} ${s.name}` }))}
+          onChange={val => handleSupplierChange(record.key, val)}
+        />
+      ),
+    },
+    {
+      title: '货品', width: 200,
       render: (_: unknown, record: LineItem) => (
         <Select
           showSearch
-          placeholder="选择货品"
+          placeholder={record.supplierId ? '选择货品' : '请先选供应商'}
           style={{ width: '100%' }}
           value={record.productId}
+          disabled={!record.supplierId}
           filterOption={(input, option) =>
             String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
           }
-          options={products.map(p => ({ value: p.id, label: `${p.code} ${p.name}` }))}
+          options={productsForLine(record.supplierId).map(p => ({
+            value: p.id,
+            label: `${p.code} ${p.name}`,
+          }))}
           onChange={val => handleProductSelect(record.key, val)}
         />
       ),
     },
     {
-      title: '编码', dataIndex: 'productCode', width: 100,
+      title: '编码', width: 100,
       render: (_: unknown, record: LineItem) => (
         <span style={{ fontSize: 13, color: '#888' }}>{record.productCode || '—'}</span>
       ),
     },
     {
-      title: '供应商', width: 110,
-      render: (_: unknown, record: LineItem) => (
-        <span style={{ fontSize: 13, color: '#555' }}>{record.supplierName || '—'}</span>
-      ),
-    },
-    {
-      title: '数量', width: 90,
+      title: '数量', width: 95,
       render: (_: unknown, record: LineItem) => (
         <InputNumber
           min={0} value={record.qty} style={{ width: '100%' }}
@@ -155,7 +247,7 @@ export default function SalesOrderNew() {
       ),
     },
     {
-      title: '折扣%', width: 80,
+      title: '折扣%', width: 85,
       render: (_: unknown, record: LineItem) => (
         <InputNumber
           min={0} max={100} value={record.discount} style={{ width: '100%' }}
@@ -164,26 +256,42 @@ export default function SalesOrderNew() {
       ),
     },
     {
-      title: '金额', width: 100, align: 'right' as const,
+      title: '金额', width: 100,
+      render: (_: unknown, record: LineItem) => <span>¥{record.amount.toFixed(2)}</span>,
+    },
+    {
+      title: '件数', width: 90,
       render: (_: unknown, record: LineItem) => (
-        <span>¥{record.amount.toFixed(2)}</span>
+        <InputNumber
+          min={0} precision={0} value={record.pieces} style={{ width: '100%' }}
+          onChange={val => updateLine(record.key, { pieces: val ?? 0 })}
+        />
+      ),
+    },
+    {
+      title: '备注', width: 200,
+      render: (_: unknown, record: LineItem) => (
+        <Input
+          value={record.notes}
+          placeholder="可选"
+          onChange={e => updateLine(record.key, { notes: e.target.value })}
+        />
       ),
     },
     {
       title: '', width: 40,
       render: (_: unknown, record: LineItem) => (
-        <Button
-          type="text" danger size="small" icon={<DeleteOutlined />}
-          onClick={() => removeLine(record.key)}
-          disabled={lines.length === 1}
-        />
+        <Button type="text" danger size="small" icon={<DeleteOutlined />}
+          onClick={() => removeLine(record.key)} disabled={lines.length === 1} />
       ),
     },
   ]
 
+  if (loading) return <Spin size="large" style={{ display: 'block', margin: '80px auto' }} />
+
   return (
     <>
-      <div className={styles.pageTitle}>销售开单</div>
+      <div className={styles.pageTitle}>{isEdit ? '编辑销售单' : '销售开单'}</div>
 
       <Form form={form} layout="inline" className={styles.headerForm}>
         <Form.Item name="customerId" label="客户" rules={[{ required: true, message: '请选择客户' }]}>
@@ -197,7 +305,7 @@ export default function SalesOrderNew() {
             options={customers.map(c => ({ value: c.id, label: `${c.code} ${c.name}` }))}
           />
         </Form.Item>
-        <Form.Item name="orderDate" label="日期" initialValue={dayjs()} rules={[{ required: true }]}>
+        <Form.Item name="orderDate" label="日期" initialValue={isEdit ? undefined : dayjs()} rules={[{ required: true }]}>
           <DatePicker />
         </Form.Item>
         <Form.Item name="notes" label="备注">
@@ -212,6 +320,7 @@ export default function SalesOrderNew() {
         pagination={false}
         size="small"
         style={{ marginTop: 16 }}
+        scroll={{ x: 960 }}
         footer={() => (
           <div className={styles.tableFooter}>
             <Button icon={<PlusOutlined />} onClick={() => setLines(p => [...p, newLine()])}>
@@ -219,6 +328,7 @@ export default function SalesOrderNew() {
             </Button>
             <div className={styles.totals}>
               合计数量：<strong>{totalQty}</strong>
+              &emsp;合计件数：<strong>{totalPieces}</strong>
               &emsp;合计金额：<strong>¥{totalAmount.toFixed(2)}</strong>
             </div>
           </div>
@@ -227,7 +337,9 @@ export default function SalesOrderNew() {
 
       <div className={styles.actions}>
         <Button onClick={() => navigate('/sales/orders')}>取消</Button>
-        <Button type="primary" loading={saving} onClick={handleSubmit}>保存开单</Button>
+        <Button type="primary" loading={saving} onClick={handleSubmit}>
+          {isEdit ? '保存修改' : '保存开单'}
+        </Button>
       </div>
     </>
   )
