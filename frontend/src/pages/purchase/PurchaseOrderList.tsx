@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Table, Button, DatePicker, Select, Tag, App, Spin } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import { Table, Button, DatePicker, Input, Tag, App, Spin } from 'antd'
+import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import type { ColumnsType } from 'antd/es/table'
 import { getPurchaseOrders, getPurchaseOrder, deletePurchaseOrder, type PurchaseOrder, type PurchaseOrderItem } from '@/api/purchase'
-import { getSuppliers, type Supplier } from '@/api/suppliers'
 import { getErrorMessage } from '@/utils/error'
 import styles from './Purchase.module.css'
 
@@ -20,9 +19,8 @@ export default function PurchaseOrderList() {
   const navigate = useNavigate()
 
   const [orders, setOrders] = useState<PurchaseOrder[]>([])
-  const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [loading, setLoading] = useState(false)
-  const [supplierId, setSupplierId] = useState<number | undefined>()
+  const [supplierSearch, setSupplierSearch] = useState('')
   const [dateRange, setDateRange] = useState<[string, string] | undefined>()
 
   // items cache: orderId → items
@@ -30,22 +28,15 @@ export default function PurchaseOrderList() {
   const [expandLoading, setExpandLoading] = useState<Record<number, boolean>>({})
   const [deleting, setDeleting] = useState<Record<number, boolean>>({})
 
-  const fetchOrders = (sid?: number, range?: [string, string]) => {
+  const fetchOrders = (range?: [string, string]) => {
     setLoading(true)
-    getPurchaseOrders({
-      supplierId: sid,
-      startDate: range?.[0],
-      endDate: range?.[1],
-    })
+    getPurchaseOrders({ startDate: range?.[0], endDate: range?.[1] })
       .then(setOrders)
       .catch(err => message.error(getErrorMessage(err)))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => {
-    fetchOrders()
-    getSuppliers().then(setSuppliers).catch(() => {})
-  }, [])
+  useEffect(() => { fetchOrders() }, [])
 
   const handleDelete = (record: PurchaseOrder) => {
     modal.confirm({
@@ -59,7 +50,7 @@ export default function PurchaseOrderList() {
         return deletePurchaseOrder(record.id)
           .then(() => {
             message.success('删除成功')
-            fetchOrders(supplierId, dateRange)
+            fetchOrders(dateRange)
           })
           .catch(err => message.error(getErrorMessage(err)))
           .finally(() => setDeleting(prev => ({ ...prev, [record.id]: false })))
@@ -76,9 +67,17 @@ export default function PurchaseOrderList() {
       .finally(() => setExpandLoading(prev => ({ ...prev, [record.id]: false })))
   }
 
+  const kw = supplierSearch.trim().toLowerCase()
+  const filteredOrders = kw
+    ? orders.filter(o =>
+        o.supplierName?.toLowerCase().includes(kw) ||
+        o.supplierCode?.toLowerCase().includes(kw)
+      )
+    : orders
+
   const columns: ColumnsType<PurchaseOrder> = [
     { title: '单号', dataIndex: 'orderNo', width: 160, align: 'center' },
-    { title: '供应商', dataIndex: 'supplierName', width: 120, align: 'center' },
+    { title: '供应商', width: 150, align: 'center', render: (_: unknown, r: PurchaseOrder) => `${r.supplierCode} ${r.supplierName}` },
     { title: '日期', dataIndex: 'orderDate', width: 110, align: 'center' },
     {
       title: '数量', dataIndex: 'totalQty', width: 90, align: 'center',
@@ -128,21 +127,19 @@ export default function PurchaseOrderList() {
 
       <div className={styles.toolbar}>
         <div className={styles.toolbarLeft}>
-          <Select
-            placeholder="选择供应商"
+          <Input
+            placeholder="搜索供应商名称或编码"
+            prefix={<SearchOutlined />}
             allowClear
-            style={{ width: 160 }}
-            options={suppliers.map(s => ({ value: s.id, label: `${s.code} ${s.name}` }))}
-            onChange={val => {
-              setSupplierId(val)
-              fetchOrders(val, dateRange)
-            }}
+            style={{ width: 200 }}
+            value={supplierSearch}
+            onChange={e => setSupplierSearch(e.target.value)}
           />
           <RangePicker
             onChange={(_, strs) => {
               const range = strs[0] && strs[1] ? [strs[0], strs[1]] as [string, string] : undefined
               setDateRange(range)
-              fetchOrders(supplierId, range)
+              fetchOrders(range)
             }}
           />
         </div>
@@ -154,7 +151,7 @@ export default function PurchaseOrderList() {
       <Table
         rowKey="id"
         columns={columns}
-        dataSource={orders}
+        dataSource={filteredOrders}
         loading={loading}
         size="middle"
         scroll={{ x: 700 }}

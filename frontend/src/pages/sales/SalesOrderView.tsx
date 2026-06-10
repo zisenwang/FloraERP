@@ -78,7 +78,7 @@ export default function SalesOrderView() {
                   <td>{item.supplierCode}</td>
                   <td>{item.productCode}</td>
                   <td>{item.productName}</td>
-                  <td className={styles.center}>盆</td>
+                  <td className={styles.center}>{item.unit}</td>
                   <td className={styles.center}>{item.qty}</td>
                   <td className={styles.right}>¥{item.unitPrice}</td>
                   <td className={styles.right}>¥{finalAmt.toFixed(2)}</td>

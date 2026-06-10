@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Table, Button, Select, DatePicker, Tag, App, Spin } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import { Table, Button, Select, DatePicker, Input, Tag, App, Spin } from 'antd'
+import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
 import { getSalesOrders, getSalesOrder, deleteSalesOrder, type SalesOrder, type SalesOrderItem } from '@/api/sales'
-import { getCustomers, type Customer } from '@/api/customers'
 import { getErrorMessage } from '@/utils/error'
 import styles from './Sales.module.css'
 
@@ -21,9 +20,8 @@ export default function SalesOrderList() {
   const { message, modal } = App.useApp()
 
   const [orders, setOrders] = useState<SalesOrder[]>([])
-  const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(false)
-  const [customerId, setCustomerId] = useState<number | undefined>()
+  const [customerSearch, setCustomerSearch] = useState('')
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>(null)
   const [paymentStatus, setPaymentStatus] = useState<string | undefined>()
 
@@ -34,7 +32,6 @@ export default function SalesOrderList() {
   const fetchOrders = () => {
     setLoading(true)
     getSalesOrders({
-      customerId,
       startDate: dateRange?.[0].format('YYYY-MM-DD'),
       endDate:   dateRange?.[1].format('YYYY-MM-DD'),
       paymentStatus,
@@ -44,11 +41,7 @@ export default function SalesOrderList() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => {
-    getCustomers().then(setCustomers).catch(() => {})
-  }, [])
-
-  useEffect(() => { fetchOrders() }, [customerId, dateRange, paymentStatus])
+  useEffect(() => { fetchOrders() }, [dateRange, paymentStatus])
 
   const handleExpand = (expanded: boolean, record: SalesOrder) => {
     if (!expanded || itemsMap[record.id] !== undefined) return
@@ -79,9 +72,17 @@ export default function SalesOrderList() {
     })
   }
 
+  const kw = customerSearch.trim().toLowerCase()
+  const filteredOrders = kw
+    ? orders.filter(o =>
+        o.customerName?.toLowerCase().includes(kw) ||
+        o.customerCode?.toLowerCase().includes(kw)
+      )
+    : orders
+
   const columns: ColumnsType<SalesOrder> = [
     { title: '单号',     dataIndex: 'orderNo',      width: 160, align: 'center' },
-    { title: '客户',     dataIndex: 'customerName', width: 130, align: 'center' },
+    { title: '客户', width: 150, align: 'center', render: (_: unknown, r: SalesOrder) => `${r.customerCode} ${r.customerName}` },
     { title: '日期',     dataIndex: 'orderDate',    width: 110, align: 'center' },
     { title: '数量',     dataIndex: 'totalQty',     width: 80,  align: 'center' },
     { title: '件数',     dataIndex: 'totalPieces',  width: 80,  align: 'center' },
@@ -131,11 +132,13 @@ export default function SalesOrderList() {
 
       <div className={styles.toolbar}>
         <div className={styles.toolbarLeft}>
-          <Select
-            allowClear placeholder="选择客户"
-            style={{ width: 160 }}
-            options={customers.map(c => ({ value: c.id, label: `${c.code} ${c.name}` }))}
-            onChange={v => setCustomerId(v)}
+          <Input
+            placeholder="搜索客户名称或编码"
+            prefix={<SearchOutlined />}
+            allowClear
+            style={{ width: 200 }}
+            value={customerSearch}
+            onChange={e => setCustomerSearch(e.target.value)}
           />
           <DatePicker.RangePicker
             value={dateRange}
@@ -164,7 +167,7 @@ export default function SalesOrderList() {
       <Table
         rowKey="id"
         columns={columns}
-        dataSource={orders}
+        dataSource={filteredOrders}
         loading={loading}
         size="middle"
         scroll={{ x: 900 }}
