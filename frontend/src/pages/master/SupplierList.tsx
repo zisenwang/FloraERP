@@ -81,7 +81,7 @@ export default function SupplierList() {
     { title: '编码', dataIndex: 'code', width: 80 },
     { title: '名称', dataIndex: 'name', width: 160 },
     { title: '电话', dataIndex: 'phone', width: 140 },
-    { title: '地址', dataIndex: 'address', ellipsis: true },
+    { title: '地址', dataIndex: 'address', width: 300 },
     {
       title: '状态', dataIndex: 'status', width: 80,
       render: (v: number) => v === 1
@@ -91,7 +91,7 @@ export default function SupplierList() {
     {
       title: '操作', width: 100, fixed: 'right',
       render: (_, record) => (
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)} />
           <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)} />
         </div>

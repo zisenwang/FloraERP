@@ -103,7 +103,7 @@ export default function ProductList() {
     {
       title: '操作', width: 100, fixed: 'right',
       render: (_, record) => (
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)} />
           <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)} />
         </div>

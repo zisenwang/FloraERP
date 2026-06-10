@@ -13,6 +13,8 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
   timezone: '+08:00',
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0,
   typeCast(field, next) {
     if (field.type === 'NEWDECIMAL' || field.type === 'DECIMAL') {
       const val = field.string()

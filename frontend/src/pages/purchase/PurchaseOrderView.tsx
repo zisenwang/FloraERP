@@ -8,6 +8,7 @@ import { getErrorMessage } from '@/utils/error'
 import styles from './PurchaseOrderView.module.css'
 
 import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE } from '@/constants/company'
+import {toChineseAmount} from "@/utils/chineseAmount.ts";
 
 export default function PurchaseOrderView() {
   const { id } = useParams<{ id: string }>()
@@ -47,7 +48,7 @@ export default function PurchaseOrderView() {
         </div>
 
         <div className={styles.printMeta}>
-          <span>供应商：{order.supplierName}</span>
+          <span>供应商：{order.supplierCode}</span>
           <span>日期：{order.orderDate}&emsp;单号：{order.orderNo}</span>
         </div>
 
@@ -111,8 +112,9 @@ export default function PurchaseOrderView() {
         </table>
 
         <div className={styles.printSummary}>
-          人民币：合计 &nbsp;<strong>{totalQty}</strong>&nbsp; 盆&emsp;
-          小写 &nbsp;<strong>¥{order.totalAmount.toFixed(2)}</strong>
+      合计数量 &nbsp;<strong>{totalQty}</strong>&emsp;
+          人民币：小写 &nbsp;<strong>¥{order.totalAmount.toFixed(2)}</strong>&emsp;
+          大写 &nbsp;<strong>{toChineseAmount(order.totalAmount)}</strong>
           {order.notes && <><br />备注：{order.notes}</>}
         </div>
 

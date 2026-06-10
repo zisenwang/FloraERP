@@ -20,6 +20,8 @@ export interface PurchaseOrder {
   supplierId: number
   supplierName: string
   supplierCode: string
+  supplierPhone: string | null
+  supplierAddress: string | null
   orderDate: string
   totalQty: number
   totalAmount: number

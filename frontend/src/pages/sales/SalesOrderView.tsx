@@ -99,7 +99,7 @@ export default function SalesOrderView() {
         </table>
 
         <div className={styles.printSummary}>
-          合计 &nbsp;<strong>{totalQty}</strong>&nbsp; 盆&emsp;
+          合计数量 &nbsp;<strong>{totalQty}</strong>&emsp;
           人民币：小写 &nbsp;<strong>¥{order.totalAmount.toFixed(2)}</strong>&emsp;
           大写 &nbsp;<strong>{toChineseAmount(order.totalAmount)}</strong>
           {order.notes && <><br />备注：{order.notes}</>}

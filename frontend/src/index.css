@@ -10,7 +10,8 @@ body {
   color: #333;
 }
 
-/* Center all Ant Design table header text */
-.ant-table-thead > tr > th {
+/* Center all Ant Design table header and cell text */
+.ant-table-thead > tr > th,
+.ant-table-tbody > tr > td {
   text-align: center !important;
 }

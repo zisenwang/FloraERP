@@ -5,6 +5,18 @@ import { getInventory, getAdjustments, createAdjustment, type InventoryRow, type
 import { getErrorMessage } from '@/utils/error'
 import styles from './Inventory.module.css'
 
+const TYPE_LABEL: Record<string, string> = {
+  in:     '入库',
+  out:    '出库',
+  adjust: '调整',
+}
+
+const TYPE_COLOR: Record<string, string> = {
+  in:     'green',
+  out:    'red',
+  adjust: 'blue',
+}
+
 export default function InventoryAdjust() {
   const { message } = App.useApp()
   const [form] = Form.useForm()
@@ -49,7 +61,7 @@ export default function InventoryAdjust() {
     { title: '货品名称', dataIndex: 'productName' },
     {
       title: '类型', dataIndex: 'type', width: 80, align: 'center',
-      render: (v: string) => <Tag color={v === '盘盈' ? 'green' : 'red'}>{v}</Tag>,
+      render: (v: string) => <Tag color={TYPE_COLOR[v] ?? 'default'}>{TYPE_LABEL[v] ?? v}</Tag>,
     },
     {
       title: '变动数量', dataIndex: 'qtyChange', width: 90, align: 'center',
