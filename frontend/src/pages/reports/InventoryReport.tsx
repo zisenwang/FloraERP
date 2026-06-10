@@ -36,7 +36,7 @@ export default function InventoryReport() {
     },
     {
       title: '单价', dataIndex: 'price', width: 90, align: 'right',
-      render: (v: number) => `¥${v.toFixed(2)}`,
+      render: (v: number) => v != null ? `¥${v.toFixed(2)}` : '—',
     },
   ]
 
