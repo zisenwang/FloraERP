@@ -1,12 +1,21 @@
 export interface SalesRankRow {
+  customerCode: string
   customerName: string
   totalAmount: number
   totalPieces: number
 }
 
-export interface PurchaseRankRow {
+export interface PurchaseSupplierRankRow {
+  supplierCode: string
   supplierName: string
-  totalAmount: number
+  totalQty: number
+}
+
+export interface PurchaseProductRankRow {
+  productCode: string
+  productName: string
+  supplierCode: string
+  supplierName: string
   totalQty: number
 }
 
@@ -16,5 +25,6 @@ export interface DashboardSummary {
   todayPurchase: number
   todayOrderCount: number
   monthlySalesRank: SalesRankRow[]
-  monthlyPurchaseRank: PurchaseRankRow[]
+  monthlyPurchaseSupplierRank: PurchaseSupplierRankRow[]
+  monthlyPurchaseProductRank: PurchaseProductRankRow[]
 }
