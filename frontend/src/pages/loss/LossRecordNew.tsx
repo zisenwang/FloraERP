@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
 import { createLossRecord } from '@/api/loss'
 import { getProducts, type Product } from '@/api/products'
+import { getSuppliers, type Supplier } from '@/api/suppliers'
 import { getErrorMessage } from '@/utils/error'
 import styles from './Loss.module.css'
 
@@ -11,12 +12,24 @@ export default function LossRecordNew() {
   const { message } = App.useApp()
   const navigate = useNavigate()
   const [form] = Form.useForm()
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [products, setProducts] = useState<Product[]>([])
+  const [supplierId, setSupplierId] = useState<number | undefined>()
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     getProducts().then(setProducts).catch(() => {})
+    getSuppliers().then(setSuppliers).catch(() => {})
   }, [])
+
+  const filteredProducts = supplierId
+    ? products.filter(p => p.supplierId === supplierId)
+    : products
+
+  const handleSupplierChange = (val: number | undefined) => {
+    setSupplierId(val)
+    form.setFieldValue('productId', undefined)
+  }
 
   const handleSubmit = () => {
     form.validateFields().then(values => {
@@ -43,14 +56,27 @@ export default function LossRecordNew() {
 
       <div className={styles.card}>
         <Form form={form} layout="vertical">
-          <Form.Item name="productId" label="货品" rules={[{ required: true, message: '请选择货品' }]}>
+          <Form.Item label="供应商">
             <Select
               showSearch
-              placeholder="选择货品"
+              allowClear
+              placeholder="按供应商筛选（可选）"
               filterOption={(input, option) =>
                 String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
               }
-              options={products.map(p => ({
+              options={suppliers.map(s => ({ value: s.id, label: `${s.code} ${s.name}` }))}
+              onChange={handleSupplierChange}
+            />
+          </Form.Item>
+
+          <Form.Item name="productId" label="货品" rules={[{ required: true, message: '请选择货品' }]}>
+            <Select
+              showSearch
+              placeholder={supplierId ? '选择货品' : '选择货品（可先筛选供应商）'}
+              filterOption={(input, option) =>
+                String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+              options={filteredProducts.map(p => ({
                 value: p.id,
                 label: `${p.code} ${p.name}（库存 ${p.stock}）`,
               }))}
