@@ -23,6 +23,7 @@ interface LineItem {
   amount: number
   pieces: number
   notes: string
+  costPrice: number | null
 }
 
 let keyCounter = 0
@@ -37,6 +38,7 @@ const newLine = (): LineItem => ({
   amount: 0,
   pieces: 0,
   notes: '',
+  costPrice: null,
 })
 
 function calcPieces(qty: number, unitsPerPiece: number | null): number {
@@ -56,18 +58,22 @@ export default function SalesOrderNew() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [lines, setLines] = useState<LineItem[]>([newLine()])
+  const [expandedKeys, setExpandedKeys] = useState<number[]>([])
   const [loading, setLoading] = useState(isEdit)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     getCustomers().then(setCustomers).catch(() => {})
     getSuppliers().then(setSuppliers).catch(() => {})
-    getProducts().then(setProducts).catch(() => {})
 
-    if (!isEdit) return
+    if (!isEdit) {
+      getProducts().then(setProducts).catch(() => {})
+      return
+    }
 
-    getSalesOrder(Number(id))
-      .then(order => {
+    Promise.all([getProducts(), getSalesOrder(Number(id))])
+      .then(([allProducts, order]) => {
+        setProducts(allProducts)
         form.setFieldsValue({
           customerId: order.customerId,
           orderDate: dayjs(order.orderDate),
@@ -86,8 +92,11 @@ export default function SalesOrderNew() {
           amount: item.amount,
           pieces: item.pieces,
           notes: item.notes ?? '',
+          costPrice: allProducts.find(p => p.id === item.productId)?.costPrice ?? null,
         }))
-        setLines(loaded.length ? loaded : [newLine()])
+        const finalLines = loaded.length ? loaded : [newLine()]
+        setLines(finalLines)
+        setExpandedKeys(finalLines.filter(l => !!l.productId).map(l => l.key))
       })
       .catch(err => message.error(getErrorMessage(err)))
       .finally(() => setLoading(false))
@@ -109,8 +118,10 @@ export default function SalesOrderNew() {
         unitPrice: 0,
         amount: 0,
         pieces: 0,
+        costPrice: null,
       }
     ))
+    setExpandedKeys(prev => prev.filter(k => k !== key))
   }
 
   const handleProductSelect = (key: number, productId: number) => {
@@ -129,8 +140,10 @@ export default function SalesOrderNew() {
         unitPrice: p.price,
         amount: +(qty * p.price * (line.discount / 100)).toFixed(2),
         pieces: calcPieces(qty, unitsPerPiece),
+        costPrice: p.costPrice ?? null,
       }
     }))
+    setExpandedKeys(prev => prev.includes(key) ? prev : [...prev, key])
   }
 
   const updateLine = (key: number, changes: Partial<LineItem>) => {
@@ -147,11 +160,16 @@ export default function SalesOrderNew() {
 
   const removeLine = (key: number) => {
     setLines(prev => prev.filter(l => l.key !== key))
+    setExpandedKeys(prev => prev.filter(k => k !== key))
   }
 
   const totalQty = lines.reduce((s, l) => s + (l.qty || 0), 0)
   const totalPieces = lines.reduce((s, l) => s + (l.pieces || 0), 0)
   const totalAmount = lines.reduce((s, l) => s + (l.amount || 0), 0)
+  const totalProfit = +lines
+    .filter(l => l.costPrice != null && l.qty > 0)
+    .reduce((s, l) => s + (l.unitPrice * (l.discount / 100) - l.costPrice!) * l.qty, 0)
+    .toFixed(2)
 
   const handleSubmit = () => {
     form.validateFields().then(values => {
@@ -321,6 +339,26 @@ export default function SalesOrderNew() {
         size="small"
         style={{ marginTop: 16 }}
         scroll={{ x: 960 }}
+        expandable={{
+          showExpandColumn: false,
+          expandedRowKeys: expandedKeys,
+          expandedRowRender: (record: LineItem) => {
+            if (record.costPrice == null) return null
+            const sellPrice = record.unitPrice * (record.discount / 100)
+            const profitPerUnit = sellPrice - record.costPrice
+            const totalProfit = +(profitPerUnit * record.qty).toFixed(2)
+            const margin = sellPrice > 0 ? ((profitPerUnit / sellPrice) * 100).toFixed(1) : '0.0'
+            const isProfit = profitPerUnit >= 0
+            return (
+              <div style={{ fontSize: 12, color: isProfit ? '#389e0d' : '#cf1322', paddingLeft: 8 }}>
+                进价 ¥{record.costPrice.toFixed(2)} &nbsp;｜&nbsp;
+                单位毛利 {isProfit ? '+' : ''}¥{profitPerUnit.toFixed(2)} &nbsp;｜&nbsp;
+                毛利率 {margin}% &nbsp;｜&nbsp;
+                本行毛利 {isProfit ? '+' : ''}¥{totalProfit.toFixed(2)}
+              </div>
+            )
+          },
+        }}
         footer={() => (
           <div className={styles.tableFooter}>
             <Button icon={<PlusOutlined />} onClick={() => setLines(p => [...p, newLine()])}>
@@ -330,6 +368,9 @@ export default function SalesOrderNew() {
               合计数量：<strong>{totalQty}</strong>
               &emsp;合计件数：<strong>{totalPieces}</strong>
               &emsp;合计金额：<strong>¥{totalAmount.toFixed(2)}</strong>
+              &emsp;<span style={{ color: totalProfit >= 0 ? '#389e0d' : '#cf1322' }}>
+                毛利：<strong>¥{totalProfit.toFixed(2)}</strong>
+              </span>
             </div>
           </div>
         )}

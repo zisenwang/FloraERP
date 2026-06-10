@@ -92,6 +92,7 @@ export default function ProductList() {
     { title: '等级', dataIndex: 'grade', width: 80, render: (v: string) => v ?? '—' },
     { title: '单位', dataIndex: 'unit', width: 60 },
     { title: '每件', dataIndex: 'unitsPerPiece', width: 70, render: (v: number) => v ?? '—' },
+    { title: '最新进价', dataIndex: 'costPrice', width: 90, render: (v: number) => v ? `¥${v}` : '—' },
     { title: '单价', dataIndex: 'price', width: 80, render: (v: number) => `¥${v}` },
     { title: '库存', dataIndex: 'stock', width: 80 },
     {
@@ -182,6 +183,9 @@ export default function ProductList() {
           </Form.Item>
           <Form.Item name="unit" label="单位" initialValue="盆">
             <Input />
+          </Form.Item>
+          <Form.Item name="costPrice" label="进价">
+            <InputNumber min={0} precision={2} prefix="¥" style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item name="price" label="单价">
             <InputNumber min={0} precision={2} prefix="¥" style={{ width: '100%' }} />

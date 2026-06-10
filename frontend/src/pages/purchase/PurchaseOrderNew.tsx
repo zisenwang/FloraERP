@@ -129,9 +129,9 @@ export default function PurchaseOrderNew() {
         : createPurchaseOrder(payload)
 
       req
-        .then(() => {
+        .then(order => {
           message.success(isEdit ? '更新成功' : '采购入库成功')
-          navigate('/purchase/orders')
+          navigate(isEdit ? '/purchase/orders' : `/purchase/orders/${order.id}`)
         })
         .catch(err => message.error(getErrorMessage(err)))
         .finally(() => setSaving(false))
