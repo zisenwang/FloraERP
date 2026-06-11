@@ -42,8 +42,23 @@ import Settings from '@/pages/settings/Settings'
 
 const isLoggedIn = () => !!localStorage.getItem('token')
 
+const isAdmin = () => {
+  try {
+    const raw = localStorage.getItem('user')
+    return raw ? JSON.parse(raw).role === 'admin' : false
+  } catch {
+    return false
+  }
+}
+
 function RequireAuth({ children }: { children: React.ReactNode }) {
   return isLoggedIn() ? <>{children}</> : <Navigate to="/login" replace />
+}
+
+function RequireAdmin({ children }: { children: React.ReactNode }) {
+  if (!isLoggedIn()) return <Navigate to="/login" replace />
+  if (!isAdmin()) return <Navigate to="/" replace />
+  return <>{children}</>
 }
 
 const router = createBrowserRouter([
@@ -93,8 +108,8 @@ const router = createBrowserRouter([
       // 收支管理
       { path: 'payment', element: <PaymentList /> },
 
-      // 系统设置
-      { path: 'settings', element: <Settings /> },
+      // 系统设置 (admin only)
+      { path: 'settings', element: <RequireAdmin><Settings /></RequireAdmin> },
     ],
   },
 ])

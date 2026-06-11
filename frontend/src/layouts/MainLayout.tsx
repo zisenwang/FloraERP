@@ -16,6 +16,7 @@ export default function MainLayout() {
   const location = useLocation()
   const { user, logout } = useAuth()
   const { settings } = useSettings()
+  const isAdmin = user?.role === 'admin'
 
   const openKey = location.pathname.split('/')[1] || 'sales'
 
@@ -55,7 +56,9 @@ export default function MainLayout() {
             inlineCollapsed={collapsed}
             selectedKeys={[location.pathname]}
             defaultOpenKeys={[openKey]}
-            items={menuItems}
+            items={menuItems.filter(item =>
+              'key' in item && item.key === '/settings' ? isAdmin : true
+            )}
             onClick={({ key }) => navigate(key)}
             style={{ border: 'none', flex: 1 }}
           />
