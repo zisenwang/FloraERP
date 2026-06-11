@@ -4,7 +4,7 @@ import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined, LogoutOutlined } fr
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import menuItems from '@/config/menuItems'
 import { useAuth } from '@/store/AuthContext'
-import { COMPANY_NAME } from '@/constants/company'
+import { useSettings } from '@/store/SettingsContext'
 import styles from './MainLayout.module.css'
 
 const SIDEBAR_WIDTH = 220
@@ -15,6 +15,7 @@ export default function MainLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuth()
+  const { settings } = useSettings()
 
   const openKey = location.pathname.split('/')[1] || 'sales'
 
@@ -33,7 +34,7 @@ export default function MainLayout() {
     <div className={styles.root}>
       {/* Top navbar */}
       <header className={styles.topbar}>
-        <span className={styles.brand}>{COMPANY_NAME} ERP</span>
+        <span className={styles.brand}>{settings.company_name} ERP</span>
         <Dropdown menu={userMenu} placement="bottomRight">
           <span className={styles.userInfo}>
             <UserOutlined style={{ marginRight: 6 }} />

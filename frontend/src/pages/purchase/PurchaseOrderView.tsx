@@ -6,8 +6,7 @@ import { useReactToPrint } from 'react-to-print'
 import { getPurchaseOrder, type PurchaseOrder } from '@/api/purchase'
 import { getErrorMessage } from '@/utils/error'
 import styles from './PurchaseOrderView.module.css'
-
-import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE } from '@/constants/company'
+import { useSettings } from '@/store/SettingsContext'
 import {toChineseAmount} from "@/utils/chineseAmount.ts";
 
 export default function PurchaseOrderView() {
@@ -16,6 +15,7 @@ export default function PurchaseOrderView() {
   const { message } = App.useApp()
   const printRef = useRef<HTMLDivElement>(null)
 
+  const { settings } = useSettings()
   const [order, setOrder] = useState<PurchaseOrder | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -42,9 +42,9 @@ export default function PurchaseOrderView() {
       </div>
 
       <div ref={printRef} className={styles.printArea}>
-        <div className={styles.printTitle}>{COMPANY_NAME}进货单</div>
+        <div className={styles.printTitle}>{settings.print_title}进货单</div>
         <div className={styles.printSubtitle}>
-          地址：{COMPANY_ADDRESS}&emsp;电话：{COMPANY_PHONE}
+          地址：{settings.company_address}&emsp;电话：{settings.company_phone}
         </div>
 
         <div className={styles.printMeta}>

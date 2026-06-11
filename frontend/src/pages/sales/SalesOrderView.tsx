@@ -7,7 +7,7 @@ import { getSalesOrder, type SalesOrder } from '@/api/sales'
 import { getErrorMessage } from '@/utils/error'
 import { toChineseAmount } from '@/utils/chineseAmount'
 import styles from './SalesOrderView.module.css'
-import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE } from '@/constants/company'
+import { useSettings } from '@/store/SettingsContext'
 
 
 export default function SalesOrderView() {
@@ -16,6 +16,7 @@ export default function SalesOrderView() {
   const { message } = App.useApp()
   const printRef = useRef<HTMLDivElement>(null)
 
+  const { settings } = useSettings()
   const [order, setOrder] = useState<SalesOrder | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -42,9 +43,9 @@ export default function SalesOrderView() {
       </div>
 
       <div ref={printRef} className={styles.printArea}>
-        <div className={styles.printTitle}>{COMPANY_NAME}送货单</div>
+        <div className={styles.printTitle}>{settings.print_title}送货单</div>
         <div className={styles.printSubtitle}>
-          地址：{COMPANY_ADDRESS}&emsp;电话：{COMPANY_PHONE}
+          地址：{settings.company_address}&emsp;电话：{settings.company_phone}
         </div>
 
         <div className={styles.printMeta}>

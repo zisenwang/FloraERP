@@ -1,30 +1,45 @@
-import { useState } from 'react'
-import { Form, Input, Button, App, Divider } from 'antd'
-import { COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE } from '@/constants/company'
+import { useEffect, useState } from 'react'
+import { Form, Input, Button, App, Divider, Spin } from 'antd'
+import { updateSettings } from '@/api/settings'
+import { useSettings } from '@/store/SettingsContext'
+import { getErrorMessage } from '@/utils/error'
 import styles from './Settings.module.css'
-
-const DEFAULT_SETTINGS = {
-  company_name: COMPANY_NAME,
-  company_address: COMPANY_ADDRESS,
-  company_phone: COMPANY_PHONE,
-  print_title: COMPANY_NAME,
-}
 
 export default function Settings() {
   const { message } = App.useApp()
+  const { settings, reload } = useSettings()
   const [form] = Form.useForm()
   const [saving, setSaving] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    if (settings.company_name) {
+      form.setFieldsValue({
+        company_name: settings.company_name,
+        company_address: settings.company_address,
+        company_phone: settings.company_phone,
+        print_title: settings.print_title,
+      })
+      setLoaded(true)
+    }
+  }, [settings, form])
 
   const handleSave = () => {
-    form.validateFields().then(() => {
+    form.validateFields().then(async (values) => {
       setSaving(true)
-      // TODO: persist to backend
-      setTimeout(() => {
+      try {
+        await updateSettings(values)
+        await reload()
         message.success('设置已保存')
+      } catch (err) {
+        message.error(getErrorMessage(err, '保存失败'))
+      } finally {
         setSaving(false)
-      }, 400)
+      }
     })
   }
+
+  if (!loaded) return <Spin size="large" style={{ display: 'block', margin: '80px auto' }} />
 
   return (
     <>
@@ -32,7 +47,7 @@ export default function Settings() {
 
       <div className={styles.card}>
         <div className={styles.sectionTitle}>公司信息</div>
-        <Form form={form} layout="vertical" initialValues={DEFAULT_SETTINGS} style={{ maxWidth: 480 }}>
+        <Form form={form} layout="vertical" style={{ maxWidth: 480 }}>
           <Form.Item name="company_name" label="公司名称" rules={[{ required: true }]}>
             <Input />
           </Form.Item>

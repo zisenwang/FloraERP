@@ -16,6 +16,7 @@ import inventoryRouter from './routes/inventory'
 import lossRouter from './routes/loss'
 import reportsRouter from './routes/reports'
 import paymentsRouter from './routes/payments'
+import settingsRouter from './routes/settings'
 
 const app = express()
 
@@ -34,6 +35,7 @@ app.use('/api/inventory', inventoryRouter)
 app.use('/api/loss', lossRouter)
 app.use('/api/reports', reportsRouter)
 app.use('/api/payments', paymentsRouter)
+app.use('/api/settings', settingsRouter)
 
 app.use(errorHandler)
 
