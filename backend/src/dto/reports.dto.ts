@@ -16,6 +16,7 @@ export interface SalesReportResult {
   totalPieces: number
   totalPaid: number
   totalUnpaid: number
+  totalProfit: number
   orders: SalesReportOrder[]
 }
 

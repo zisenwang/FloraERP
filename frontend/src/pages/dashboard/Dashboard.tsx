@@ -37,6 +37,20 @@ export default function Dashboard() {
     { title: '进货数量', dataIndex: 'totalQty', align: 'right' as const, width: 90 },
   ]
 
+  const productProfitRankColumns = [
+    { title: '排名', key: 'rank', render: (_: unknown, __: unknown, i: number) => i + 1, width: 55 },
+    { title: '货品', render: (_: unknown, r: { productCode: string; productName: string }) => `${r.productCode} ${r.productName}`, width: 180 },
+    { title: '供应商', render: (_: unknown, r: { supplierCode: string; supplierName: string }) => `${r.supplierCode} ${r.supplierName}`, width: 150 },
+    {
+      title: '毛利', dataIndex: 'totalProfit', align: 'right' as const, width: 110,
+      render: (v: number) => (
+        <span style={{ color: v >= 0 ? '#389e0d' : '#cf1322', fontWeight: 600 }}>
+          {v >= 0 ? '+' : ''}¥{v.toFixed(2)}
+        </span>
+      ),
+    },
+  ]
+
   return (
     <div className={styles.page}>
       {/* KPI Cards */}
@@ -87,12 +101,27 @@ export default function Dashboard() {
             size="small"
           />
         </div>
+      </div>
+
+
+      <div className={styles.rankRow}>
+        {/* Profit Rank */}
         <div className={styles.section}>
           <div className={styles.sectionTitle}>本月进货排行（供应商）</div>
           <Table
-            columns={purchaseSupplierRankColumns}
-            dataSource={data.monthlyPurchaseSupplierRank}
-            rowKey="supplierName"
+              columns={purchaseSupplierRankColumns}
+              dataSource={data.monthlyPurchaseSupplierRank}
+              rowKey="supplierName"
+              pagination={false}
+              size="small"
+          />
+        </div>
+        <div className={styles.section}>
+          <div className={styles.sectionTitle}>本月毛利排行（货品）</div>
+          <Table
+            columns={productProfitRankColumns}
+            dataSource={data.monthlyProductProfitRank}
+            rowKey="productCode"
             pagination={false}
             size="small"
           />

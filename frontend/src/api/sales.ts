@@ -14,6 +14,7 @@ export interface SalesOrderItem {
   amount: number
   discount: number
   finalAmount: number
+  costPrice: number | null
   pieces: number
   notes: string
 }
@@ -30,6 +31,7 @@ export interface SalesOrder {
   totalQty: number
   totalAmount: number
   totalPieces: number
+  totalProfit: number
   paymentStatus: string   // "未收款" | "部分收款" | "已收款"
   operator: string
   notes: string
@@ -50,6 +52,7 @@ export interface SalesOrderPayload {
     discount?: number
     pieces?: number
     notes?: string
+    costPrice?: number | null
   }[]
 }
 

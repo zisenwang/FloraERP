@@ -183,7 +183,7 @@ export default function SalesOrderNew() {
         customerId: values.customerId,
         orderDate: values.orderDate.format('YYYY-MM-DD'),
         notes: values.notes,
-        items: validLines.map(({ productId, supplierId, qty, unitPrice, discount, pieces, notes }) => ({
+        items: validLines.map(({ productId, supplierId, qty, unitPrice, discount, pieces, notes, costPrice }) => ({
           productId: productId!,
           supplierId: supplierId!,
           qty,
@@ -191,6 +191,7 @@ export default function SalesOrderNew() {
           discount,
           pieces: pieces ?? 0,
           notes: notes || null,
+          costPrice: costPrice ?? null,
         })),
       }
       const req = isEdit

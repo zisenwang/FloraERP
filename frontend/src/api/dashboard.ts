@@ -23,6 +23,14 @@ export interface DashboardSummary {
     supplierName: string;
     totalQty: number;
   }[];
+  monthlyProductProfitRank: {
+    productCode: string;
+    productName: string;
+    supplierCode: string;
+    supplierName: string;
+    totalProfit: number;
+    totalQty: number;
+  }[];
 }
 
 export const getDashboardSummary = async (): Promise<DashboardSummary> => {

@@ -10,15 +10,17 @@ export async function getSalesReport(filters: {
   endDate?: string
   customerId?: number
 }): Promise<SalesReportResult> {
-  const [orders, stats, totalPaid] = await Promise.all([
+  const [orders, stats, totalPaid, totalProfit] = await Promise.all([
     repo.getSalesOrders(filters),
     repo.getSalesStats(filters),
     repo.getSalesPaid(filters),
+    repo.getSalesProfit(filters),
   ])
   return {
     ...stats,
     totalPaid,
     totalUnpaid: +(stats.totalAmount - totalPaid).toFixed(2),
+    totalProfit: +totalProfit.toFixed(2),
     orders,
   }
 }

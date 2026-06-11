@@ -91,6 +91,14 @@ export default function SalesOrderList() {
       render: (v: number) => `¥${v.toFixed(2)}`,
     },
     {
+      title: '总毛利', dataIndex: 'totalProfit', width: 110, align: 'right',
+      render: (v: number) => (
+        <span style={{ color: v >= 0 ? '#389e0d' : '#cf1322', fontWeight: 600 }}>
+          {v >= 0 ? '+' : ''}¥{v.toFixed(2)}
+        </span>
+      ),
+    },
+    {
       title: '收款状态', dataIndex: 'paymentStatus', width: 100, align: 'center',
       render: (v: string) => {
         const s = PAY_STATUS_MAP[v] ?? { color: 'default' }
@@ -120,10 +128,22 @@ export default function SalesOrderList() {
     { title: '单位',     dataIndex: 'unit',         width: 60,  align: 'center' },
     { title: '数量',     dataIndex: 'qty',          width: 70,  align: 'center' },
     { title: '件数',     dataIndex: 'pieces',       width: 70,  align: 'center' },
+    { title: '进价',     dataIndex: 'costPrice',    width: 90,  align: 'right',  render: (v: number | null) => v != null ? `¥${v.toFixed(2)}` : '—' },
     { title: '单价',     dataIndex: 'unitPrice',    width: 90,  align: 'right',  render: (v: number) => `¥${v}` },
     { title: '折扣',     dataIndex: 'discount',     width: 65,  align: 'center', render: (v: number) => `${v ?? 100}%` },
-    { title: '金额',     dataIndex: 'amount',       width: 100, align: 'right',  render: (v: number) => `¥${v.toFixed(2)}` },
     { title: '折后金额', dataIndex: 'finalAmount',  width: 110, align: 'right',  render: (v: number) => `¥${v.toFixed(2)}` },
+    {
+      title: '毛利', width: 110, align: 'right',
+      render: (_: unknown, r: SalesOrderItem) => {
+        r.costPrice ??= 0
+        const profit = +(r.finalAmount - r.costPrice * r.qty).toFixed(2)
+        return (
+          <span style={{ color: profit >= 0 ? '#389e0d' : '#cf1322', fontWeight: 600 }}>
+            {profit >= 0 ? '+' : ''}¥{profit.toFixed(2)}
+          </span>
+        )
+      },
+    },
   ]
 
   return (
@@ -170,7 +190,7 @@ export default function SalesOrderList() {
         dataSource={filteredOrders}
         loading={loading}
         size="middle"
-        scroll={{ x: 900 }}
+        scroll={{ x: 1050 }}
         pagination={{ pageSize: 20, showTotal: total => `共 ${total} 条` }}
         expandable={{
           onExpand: handleExpand,

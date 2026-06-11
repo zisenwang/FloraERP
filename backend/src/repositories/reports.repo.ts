@@ -58,6 +58,27 @@ export async function getSalesStats(
   }
 }
 
+export async function getSalesProfit(f: SalesFilters): Promise<number> {
+  let sql = `SELECT COALESCE(SUM(soi.final_amount - COALESCE(soi.cost_price, 0) * soi.qty), 0) AS total_profit
+             FROM sales_order_items soi
+             JOIN sales_orders so ON so.id = soi.order_id WHERE 1=1`
+  const p: unknown[] = []
+  if (f.startDate) {
+    sql += ' AND so.date >= ?'
+    p.push(f.startDate)
+  }
+  if (f.endDate) {
+    sql += ' AND so.date <= ?'
+    p.push(f.endDate)
+  }
+  if (f.customerId) {
+    sql += ' AND so.customer_id = ?'
+    p.push(f.customerId)
+  }
+  const [rows] = await pool.query<RowDataPacket[]>(sql, p)
+  return Number((rows as RowDataPacket[])[0]?.total_profit ?? 0)
+}
+
 export async function getSalesPaid(f: SalesFilters): Promise<number> {
   let sql = `SELECT COALESCE(SUM(p.amount), 0) AS total_paid
              FROM payments p JOIN sales_orders so ON so.id = p.sales_order_id WHERE 1=1`

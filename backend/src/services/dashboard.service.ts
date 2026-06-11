@@ -5,11 +5,12 @@ export async function getSummary(): Promise<DashboardSummary> {
   const today = new Date().toISOString().slice(0, 10)
   const monthStart = today.slice(0, 7) + '-01'
 
-  const [stats, salesRank, purchaseSupplierRank, purchaseProductRank] = await Promise.all([
+  const [stats, salesRank, purchaseSupplierRank, purchaseProductRank, productProfitRank] = await Promise.all([
     repo.getTodayStats(today),
     repo.getMonthlySalesRank(monthStart),
     repo.getMonthlyPurchaseSupplierRank(monthStart),
     repo.getMonthlyPurchaseProductRank(monthStart),
+    repo.getMonthlyProductProfitRank(monthStart),
   ])
 
   return {
@@ -17,5 +18,6 @@ export async function getSummary(): Promise<DashboardSummary> {
     monthlySalesRank: salesRank,
     monthlyPurchaseSupplierRank: purchaseSupplierRank,
     monthlyPurchaseProductRank: purchaseProductRank,
+    monthlyProductProfitRank: productProfitRank,
   }
 }

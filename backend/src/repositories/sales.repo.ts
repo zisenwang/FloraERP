@@ -13,11 +13,23 @@ const ORDER_SELECT = `
   FROM sales_orders so
   JOIN customers c ON c.id = so.customer_id`
 
+// Used for list queries — includes per-order profit aggregated from items
+const ORDER_SELECT_LIST = `
+  SELECT so.id, so.order_no, so.customer_id, c.name AS customer_name, c.code AS customer_code,
+         c.phone AS customer_phone, c.address AS customer_address,
+         DATE_FORMAT(so.date, '%Y-%m-%d') AS order_date,
+         so.total_qty, so.total_amount, so.total_pieces,
+         so.payment_status, so.operator, so.notes, so.status, so.created_at,
+         COALESCE(SUM(soi.final_amount - COALESCE(soi.cost_price, 0) * soi.qty), 0) AS total_profit
+  FROM sales_orders so
+  JOIN customers c ON c.id = so.customer_id
+  LEFT JOIN sales_order_items soi ON soi.order_id = so.id`
+
 const ITEM_SELECT = `
   SELECT soi.id, soi.product_id, p.code AS product_code, p.name AS product_name,
          soi.supplier_id, s.code AS supplier_code, s.name AS supplier_name,
          p.unit, soi.qty, soi.unit_price, soi.amount,
-         soi.discount, soi.final_amount, soi.pieces, soi.notes
+         soi.discount, soi.final_amount, soi.cost_price, soi.pieces, soi.notes
   FROM sales_order_items soi
   JOIN products p ON p.id = soi.product_id
   JOIN suppliers s ON s.id = soi.supplier_id
@@ -33,7 +45,7 @@ export async function findAll(
     search?: string
   } = {},
 ): Promise<SalesOrder[]> {
-  let sql = ORDER_SELECT + ' WHERE 1=1'
+  let sql = ORDER_SELECT_LIST + ' WHERE 1=1'
   const params: unknown[] = []
   if (filters.customerId) {
     sql += ' AND so.customer_id = ?'
@@ -55,6 +67,7 @@ export async function findAll(
     sql += ' AND (c.name LIKE ? OR c.code LIKE ? OR so.order_no LIKE ?)'
     params.push(`%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`)
   }
+  sql += ' GROUP BY so.id, so.order_no, so.customer_id, c.name, c.code, c.phone, c.address, so.date, so.total_qty, so.total_amount, so.total_pieces, so.payment_status, so.operator, so.notes, so.status, so.created_at'
   sql += ' ORDER BY so.date DESC, so.id DESC'
   const [rows] = await pool.query<RowDataPacket[]>(sql, params)
   return rowsToCamel<SalesOrder>(rows as Record<string, unknown>[])
@@ -132,6 +145,7 @@ export async function insertItem(
     amount: number
     discount: number
     finalAmount: number
+    costPrice: number | null
     pieces: number
     notes: string | null
   },
@@ -139,8 +153,8 @@ export async function insertItem(
 ): Promise<void> {
   await conn.query(
     `INSERT INTO sales_order_items
-       (order_id, product_id, supplier_id, qty, unit_price, amount, discount, final_amount, pieces, notes)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (order_id, product_id, supplier_id, qty, unit_price, amount, discount, final_amount, cost_price, pieces, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       orderId,
       item.productId,
@@ -150,6 +164,7 @@ export async function insertItem(
       item.amount,
       item.discount,
       item.finalAmount,
+      item.costPrice ?? null,
       item.pieces,
       item.notes,
     ],

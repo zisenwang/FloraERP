@@ -99,6 +99,12 @@ export default function SalesReport() {
               ¥{data.totalUnpaid.toFixed(2)}
             </div>
           </div>
+          <div className={styles.statCard}>
+            <div className={styles.statLabel}>毛利合计</div>
+            <div className={data.totalProfit >= 0 ? styles.statValueGreen : styles.statValueRed}>
+              {data.totalProfit >= 0 ? '+' : ''}¥{data.totalProfit.toFixed(2)}
+            </div>
+          </div>
         </div>
       )}
 

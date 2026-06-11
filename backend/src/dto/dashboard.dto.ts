@@ -19,6 +19,15 @@ export interface PurchaseProductRankRow {
   totalQty: number
 }
 
+export interface ProductProfitRankRow {
+  productCode: string
+  productName: string
+  supplierCode: string
+  supplierName: string
+  totalProfit: number
+  totalQty: number
+}
+
 export interface DashboardSummary {
   todaySales: number
   todayIncome: number
@@ -27,4 +36,5 @@ export interface DashboardSummary {
   monthlySalesRank: SalesRankRow[]
   monthlyPurchaseSupplierRank: PurchaseSupplierRankRow[]
   monthlyPurchaseProductRank: PurchaseProductRankRow[]
+  monthlyProductProfitRank: ProductProfitRankRow[]
 }
