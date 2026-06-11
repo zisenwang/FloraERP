@@ -190,7 +190,7 @@ export default function SalesOrderNew() {
           unitPrice,
           discount,
           pieces: pieces ?? 0,
-          notes: notes || null,
+          notes: notes || undefined,
           costPrice: costPrice ?? null,
         })),
       }

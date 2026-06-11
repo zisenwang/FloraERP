@@ -57,7 +57,7 @@ export default function MainLayout() {
             selectedKeys={[location.pathname]}
             defaultOpenKeys={[openKey]}
             items={menuItems.filter(item =>
-              'key' in item && item.key === '/settings' ? isAdmin : true
+              item && 'key' in item && item.key === '/settings' ? isAdmin : true
             )}
             onClick={({ key }) => navigate(key)}
             style={{ border: 'none', flex: 1 }}

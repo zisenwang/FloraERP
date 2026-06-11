@@ -9,10 +9,10 @@ export interface SystemSettings {
 
 export const getSettings = async (): Promise<SystemSettings> => {
   const res = await client.get<{ data: Record<string, string> }>('/settings')
-  return res.data.data as SystemSettings
+  return res.data.data as unknown as SystemSettings
 }
 
 export const updateSettings = async (data: Partial<SystemSettings>): Promise<SystemSettings> => {
   const res = await client.put<{ data: Record<string, string> }>('/settings', data)
-  return res.data.data as SystemSettings
+  return res.data.data as unknown as SystemSettings
 }
