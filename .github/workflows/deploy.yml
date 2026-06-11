@@ -1,0 +1,42 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to Aliyun
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.ALIYUN_HOST }}
+          username: ${{ secrets.ALIYUN_USER }}
+          key: ${{ secrets.ALIYUN_SSH_KEY }}
+          port: ${{ secrets.ALIYUN_PORT }}
+
+          script: |
+            set -e
+
+            cd /www/FloraERP
+
+            git pull origin main
+
+            echo "Frontend"
+            cd frontend
+            npm install
+            npm run build
+
+            echo "Backend"
+            cd ../backend
+            npm install
+            npm run build
+
+            pm2 restart flora-backend || pm2 start dist/server.js --name flora-backend
+
+            pm2 save
+
+            echo "Done"
