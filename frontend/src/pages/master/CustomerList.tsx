@@ -3,7 +3,7 @@ import { Table, Button, Input, Modal, Form, App, Tag } from 'antd'
 import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import {
-  getCustomers, createCustomer, updateCustomer, deleteCustomer,
+  getCustomers, createCustomer, updateCustomer, deleteCustomer, getNextCustomerCode,
   type Customer, type CustomerPayload,
 } from '@/api/customers'
 import { getErrorMessage } from '@/utils/error'
@@ -33,6 +33,7 @@ export default function CustomerList() {
   const openAdd = () => {
     setEditing(null)
     form.resetFields()
+    getNextCustomerCode().then(code => form.setFieldValue('code', code)).catch(() => {})
     setModalOpen(true)
   }
 

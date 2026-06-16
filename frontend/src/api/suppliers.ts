@@ -29,3 +29,8 @@ export const updateSupplier = async (id: number, payload: SupplierPayload): Prom
 export const deleteSupplier = async (id: number): Promise<void> => {
   await client.delete(`/suppliers/${id}`)
 }
+
+export const getNextSupplierCode = async (): Promise<string> => {
+  const res = await client.get<{ data: string }>('/suppliers/next-code')
+  return res.data.data
+}

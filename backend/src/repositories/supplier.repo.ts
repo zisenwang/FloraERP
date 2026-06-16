@@ -50,6 +50,17 @@ export async function update(id: number, dto: UpdateSupplierDto): Promise<Suppli
   }
 }
 
+export async function getNextCode(): Promise<string> {
+  const [allRows] = await pool.query<RowDataPacket[]>(
+    'SELECT code FROM suppliers ORDER BY updated_at DESC',
+  )
+  const lastCode = Number(allRows[0]?.code ?? 0)
+  const occupied = new Set(allRows.map((r: RowDataPacket) => String(r.code)))
+  let candidate = lastCode + 1
+  while (occupied.has(String(candidate))) candidate++
+  return String(candidate)
+}
+
 export async function remove(id: number): Promise<boolean> {
   try {
     const [result] = await pool.query<ResultSetHeader>('DELETE FROM suppliers WHERE id = ?', [id])

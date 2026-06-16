@@ -26,3 +26,8 @@ export async function remove(req: AuthRequest, res: Response): Promise<void> {
   await service.deleteSupplier(Number(req.params.id))
   res.json({ data: { message: '删除成功' } })
 }
+
+export async function nextCode(_req: AuthRequest, res: Response): Promise<void> {
+  const data = await service.getNextCode()
+  res.json({ data })
+}

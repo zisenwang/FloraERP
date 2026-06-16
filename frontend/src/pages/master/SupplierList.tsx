@@ -3,7 +3,7 @@ import { Table, Button, Input, Modal, Form, App, Tag } from 'antd'
 import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import {
-  getSuppliers, createSupplier, updateSupplier, deleteSupplier,
+  getSuppliers, createSupplier, updateSupplier, deleteSupplier, getNextSupplierCode,
   type Supplier, type SupplierPayload,
 } from '@/api/suppliers'
 import { getErrorMessage } from '@/utils/error'
@@ -33,6 +33,7 @@ export default function SupplierList() {
   const openAdd = () => {
     setEditing(null)
     form.resetFields()
+    getNextSupplierCode().then(code => form.setFieldValue('code', code)).catch(() => {})
     setModalOpen(true)
   }
 

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Table, Button, Input, Modal, Form, App, Tag, Select, InputNumber } from 'antd'
+import { Table, Button, Input, Modal, Form, App, Tag, Select, InputNumber, Space } from 'antd'
 import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import {
-  getProducts, createProduct, updateProduct, deleteProduct,
+  getProducts, createProduct, updateProduct, deleteProduct, getNextProductCode,
   type Product, type ProductPayload,
 } from '@/api/products'
 import { getSuppliers, type Supplier } from '@/api/suppliers'
@@ -23,6 +23,11 @@ export default function ProductList() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Product | null>(null)
   const [saving, setSaving] = useState(false)
+  const [codeLoading, setCodeLoading] = useState(false)
+
+  // Split code state: prefix is the supplier code (read-only), seq is the editable part
+  const [supplierCodePrefix, setSupplierCodePrefix] = useState('')
+  const [codeSeq, setCodeSeq] = useState('')
 
   const fetchProducts = (kw?: string, supplierId?: number) => {
     setLoading(true)
@@ -37,16 +42,52 @@ export default function ProductList() {
     getSuppliers().then(setSuppliers).catch(() => {})
   }, [])
 
+  const applyNextCode = (supplierId: number) => {
+    setCodeLoading(true)
+    getNextProductCode(supplierId).then(code => {
+      const seq = code.split('.').slice(1).join('.')
+      setCodeSeq(seq)
+      form.setFieldValue('code', code)
+    }).catch(() => {}).finally(() => setCodeLoading(false))
+  }
+
   const openAdd = () => {
     setEditing(null)
     form.resetFields()
+    setSupplierCodePrefix('')
+    setCodeSeq('')
+    if (filterSupplierId) {
+      const supplier = suppliers.find(s => s.id === filterSupplierId)
+      setSupplierCodePrefix(supplier?.code ?? '')
+      applyNextCode(filterSupplierId)
+    }
     setModalOpen(true)
   }
 
   const openEdit = (record: Product) => {
     setEditing(record)
+    setSupplierCodePrefix(record.supplierCode ?? '')
+    setCodeSeq(record.code.split('.').slice(1).join('.'))
     form.setFieldsValue(record)
     setModalOpen(true)
+  }
+
+  const handleSupplierChange = (supplierId: number) => {
+    const supplier = suppliers.find(s => s.id === supplierId)
+    const prefix = supplier?.code ?? ''
+    setSupplierCodePrefix(prefix)
+    if (!editing) {
+      applyNextCode(supplierId)
+    } else {
+      // When editing and supplier changes, update prefix but keep seq
+      form.setFieldValue('code', prefix ? `${prefix}.${codeSeq}` : codeSeq)
+    }
+  }
+
+  const handleSeqChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const seq = e.target.value
+    setCodeSeq(seq)
+    form.setFieldValue('code', supplierCodePrefix ? `${supplierCodePrefix}.${seq}` : seq)
   }
 
   const handleSave = () => {
@@ -167,11 +208,34 @@ export default function ProductList() {
             <Select
               placeholder="选择供应商"
               options={suppliers.map(s => ({ value: s.id, label: `${s.code} ${s.name}` }))}
+              onChange={handleSupplierChange}
             />
           </Form.Item>
-          <Form.Item name="code" label="货品编码" rules={[{ required: true, message: '请输入编码' }]}>
-            <Input placeholder="如：133.51" />
+
+          {/* Hidden field holds the full combined code for form validation */}
+          <Form.Item name="code" hidden rules={[{ required: true, message: '请输入货品编码' }]}>
+            <Input />
           </Form.Item>
+          {/* Visual split input */}
+          <Form.Item label="货品编码" required>
+            <Space.Compact style={{ width: '100%' }}>
+              <Input
+                value={supplierCodePrefix ? `${supplierCodePrefix}.` : ''}
+                disabled
+                style={{ width: '40%', color: '#888', background: '#f5f5f5', cursor: 'not-allowed' }}
+                placeholder="供应商编码"
+              />
+              <Input
+                value={codeSeq}
+                onChange={handleSeqChange}
+                placeholder="如：01"
+                disabled={codeLoading}
+                suffix={codeLoading ? <span style={{ fontSize: 11, color: '#999' }}>加载中…</span> : null}
+                style={{ width: '60%' }}
+              />
+            </Space.Compact>
+          </Form.Item>
+
           <Form.Item name="name" label="货品名称" rules={[{ required: true, message: '请输入名称' }]}>
             <Input placeholder="如：金钱树小型" />
           </Form.Item>

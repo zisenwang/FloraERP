@@ -42,3 +42,7 @@ export async function deleteProduct(id: number): Promise<void> {
   const ok = await repo.remove(id)
   if (!ok) throw new AppError(404, '货品不存在')
 }
+
+export async function getNextProductCode(supplierId: number): Promise<string> {
+  return repo.getNextCode(supplierId)
+}

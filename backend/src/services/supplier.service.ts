@@ -34,3 +34,7 @@ export async function deleteSupplier(id: number): Promise<void> {
   const ok = await repo.remove(id)
   if (!ok) throw new AppError(404, '供应商不存在')
 }
+
+export async function getNextCode(): Promise<string> {
+  return repo.getNextCode()
+}

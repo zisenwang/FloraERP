@@ -89,6 +89,27 @@ export async function update(id: number, dto: UpdateProductDto): Promise<Product
   }
 }
 
+export async function getNextCode(supplierId: number): Promise<string> {
+  const [supRows] = await pool.query<RowDataPacket[]>(
+    'SELECT code FROM suppliers WHERE id = ? LIMIT 1',
+    [supplierId],
+  )
+  const supplierCode = String(supRows[0]?.code ?? '')
+
+  const [allRows] = await pool.query<RowDataPacket[]>(
+    'SELECT code FROM products WHERE supplier_id = ? ORDER BY updated_at DESC',
+    [supplierId],
+  )
+  // Parse sequence as number regardless of zero-padding in stored code
+  const lastSeq = allRows[0]?.code ? Number(String(allRows[0].code).split('.')[1]) || 0 : 0
+  const occupied = new Set(allRows.map((r: RowDataPacket) => String(r.code)))
+
+  const fmt = (n: number) => `${supplierCode}.${String(n).padStart(2, '0')}`
+  let candidate = lastSeq + 1
+  while (occupied.has(fmt(candidate))) candidate++
+  return fmt(candidate)
+}
+
 export async function updateCostPrice(
   id: number,
   costPrice: number,

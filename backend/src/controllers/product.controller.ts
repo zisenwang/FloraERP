@@ -68,3 +68,10 @@ export async function remove(req: AuthRequest, res: Response): Promise<void> {
   await service.deleteProduct(Number(req.params.id))
   res.json({ data: { message: '删除成功' } })
 }
+
+export async function nextCode(req: AuthRequest, res: Response): Promise<void> {
+  const supplierId = Number(req.query.supplierId)
+  if (!supplierId) { res.status(400).json({ message: '缺少 supplierId' }); return }
+  const data = await service.getNextProductCode(supplierId)
+  res.json({ data })
+}

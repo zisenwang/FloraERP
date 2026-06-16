@@ -26,3 +26,7 @@ export async function deleteCustomer(id: number): Promise<void> {
   const ok = await repo.remove(id)
   if (!ok) throw new AppError(404, '客户不存在')
 }
+
+export async function getNextCode(): Promise<string> {
+  return repo.getNextCode()
+}

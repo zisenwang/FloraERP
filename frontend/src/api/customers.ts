@@ -34,5 +34,10 @@ export const updateCustomer = async (
 };
 
 export const deleteCustomer = async (id: number): Promise<void> => {
-  await client.delete(`/customers/${id}`);
-};
+  await client.delete(`/customers/${id}`)
+}
+
+export const getNextCustomerCode = async (): Promise<string> => {
+  const res = await client.get<{ data: string }>('/customers/next-code')
+  return res.data.data
+}

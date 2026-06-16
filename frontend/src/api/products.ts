@@ -50,3 +50,8 @@ export const updateProduct = async (id: number, payload: ProductPayload): Promis
 export const deleteProduct = async (id: number): Promise<void> => {
   await client.delete(`/products/${id}`)
 }
+
+export const getNextProductCode = async (supplierId: number): Promise<string> => {
+  const res = await client.get<{ data: string }>('/products/next-code', { params: { supplierId } })
+  return res.data.data
+}
