@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
-import { Table, InputNumber, Button, Tag, App, Popconfirm } from 'antd'
-import { CheckOutlined } from '@ant-design/icons'
+import { useEffect, useState, useMemo } from 'react'
+import { Table, InputNumber, Button, Tag, App, Popconfirm, Input, Select } from 'antd'
+import { CheckOutlined, SearchOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { getInventory, createAdjustment, type InventoryRow } from '@/api/inventory'
 import { getErrorMessage } from '@/utils/error'
@@ -15,6 +15,26 @@ export default function InventoryCheck() {
   const [rows, setRows] = useState<CheckRow[]>([])
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [search, setSearch] = useState('')
+  const [supplierFilter, setSupplierFilter] = useState<string | undefined>(undefined)
+
+  const supplierOptions = useMemo(() => {
+    const seen = new Map<string, string>()
+    rows.forEach(r => { if (r.supplierCode) seen.set(r.supplierCode, r.supplierName) })
+    return Array.from(seen.entries()).map(([code, name]) => ({
+      label: `${code} ${name}`,
+      value: code,
+    }))
+  }, [rows])
+
+  const filteredRows = useMemo(() => rows.filter(r => {
+    const kw = search.toLowerCase()
+    const matchSearch = !kw ||
+      r.productName.toLowerCase().includes(kw) ||
+      r.productCode.toLowerCase().includes(kw)
+    const matchSupplier = !supplierFilter || r.supplierCode === supplierFilter
+    return matchSearch && matchSupplier
+  }), [rows, search, supplierFilter])
 
   useEffect(() => {
     setLoading(true)
@@ -55,6 +75,7 @@ export default function InventoryCheck() {
 
   const countedRows = rows.filter(r => r.actual !== null)
   const diffRows = rows.filter(r => r.actual !== null && r.actual !== r.stock)
+  const countedInView = filteredRows.filter(r => r.actual !== null).length
 
   const columns: ColumnsType<CheckRow> = [
     { title: '编码', dataIndex: 'productCode', width: 100 },
@@ -96,9 +117,24 @@ export default function InventoryCheck() {
     <>
       <div className={styles.pageTitle}>库存盘点</div>
 
-      <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <Input
+          placeholder="搜索编码或名称"
+          prefix={<SearchOutlined />}
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          allowClear
+          style={{ width: 200 }}
+        />
+        <Select
+          placeholder="按供应商筛选"
+          allowClear
+          style={{ width: 160 }}
+          options={supplierOptions}
+          onChange={val => setSupplierFilter(val)}
+        />
         <span style={{ fontSize: 13, color: '#555' }}>
-          已盘点：<strong>{countedRows.length}</strong> / {rows.length}&emsp;
+          已盘点：<strong>{countedRows.length}</strong> / {rows.length}（当前视图 {countedInView}/{filteredRows.length}）&emsp;
           有差异：<strong style={{ color: diffRows.length > 0 ? '#cf1322' : '#389e0d' }}>{diffRows.length}</strong>
         </span>
         <Popconfirm
@@ -122,7 +158,7 @@ export default function InventoryCheck() {
       <Table
         rowKey="productId"
         columns={columns}
-        dataSource={rows}
+        dataSource={filteredRows}
         loading={loading}
         pagination={{ pageSize: 20, showTotal: total => `共 ${total} 条` }}
         size="small"
