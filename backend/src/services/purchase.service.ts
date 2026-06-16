@@ -12,18 +12,21 @@ import type {
 
 function computeLineTotals(items: CreatePurchaseOrderDto['items'], orderDiscount: number) {
   let totalQty = 0,
+    totalPieces = 0,
     totalAmount = 0
   const lines = items.map((item) => {
     const discount = item.discount ?? 100
     const amount = +(item.qty * item.unitPrice).toFixed(2)
     const finalAmount = +((amount * discount) / 100).toFixed(2)
+    const pieces = item.pieces ?? 0
     totalQty += item.qty
+    totalPieces += pieces
     totalAmount += finalAmount
-    return { ...item, discount, amount, finalAmount }
+    return { ...item, discount, amount, finalAmount, pieces }
   })
   totalAmount = +totalAmount.toFixed(2)
   const finalAmount = +((totalAmount * orderDiscount) / 100).toFixed(2)
-  return { lines, totalQty, totalAmount, finalAmount }
+  return { lines, totalQty, totalPieces, totalAmount, finalAmount }
 }
 
 export async function listOrders(
@@ -43,7 +46,7 @@ export async function createOrder(
   operator: string | null,
 ): Promise<PurchaseOrder> {
   const orderDiscount = dto.discount ?? 100
-  const { lines, totalQty, totalAmount, finalAmount } = computeLineTotals(dto.items, orderDiscount)
+  const { lines, totalQty, totalPieces, totalAmount, finalAmount } = computeLineTotals(dto.items, orderDiscount)
 
   const conn = await pool.getConnection()
   try {
@@ -54,6 +57,7 @@ export async function createOrder(
         supplierId: dto.supplierId,
         date: dto.orderDate,
         totalQty,
+        totalPieces,
         totalAmount,
         discount: orderDiscount,
         finalAmount,
@@ -70,6 +74,7 @@ export async function createOrder(
         {
           productId: line.productId,
           qty: line.qty,
+          pieces: line.pieces,
           unitPrice: line.unitPrice,
           amount: line.amount,
           discount: line.discount,
@@ -129,7 +134,7 @@ export async function deleteOrder(id: number): Promise<void> {
 
 export async function updateOrder(id: number, dto: UpdatePurchaseOrderDto): Promise<PurchaseOrder> {
   const orderDiscount = dto.discount ?? 100
-  const { lines, totalQty, totalAmount, finalAmount } = computeLineTotals(dto.items, orderDiscount)
+  const { lines, totalQty, totalPieces, totalAmount, finalAmount } = computeLineTotals(dto.items, orderDiscount)
 
   const conn = await pool.getConnection()
   try {
@@ -146,6 +151,7 @@ export async function updateOrder(id: number, dto: UpdatePurchaseOrderDto): Prom
         supplierId: dto.supplierId,
         date: dto.orderDate,
         totalQty,
+        totalPieces,
         totalAmount,
         discount: orderDiscount,
         finalAmount,
@@ -160,6 +166,7 @@ export async function updateOrder(id: number, dto: UpdatePurchaseOrderDto): Prom
         {
           productId: line.productId,
           qty: line.qty,
+          pieces: line.pieces,
           unitPrice: line.unitPrice,
           amount: line.amount,
           discount: line.discount,

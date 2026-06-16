@@ -14,7 +14,9 @@ interface LineItem {
   productId?: number
   productCode: string
   productName: string
+  unitsPerPiece?: number
   qty: number
+  pieces: number
   unitPrice: number
   discount: number
   amount: number
@@ -27,6 +29,7 @@ const newLine = (): LineItem => ({
   productCode: '',
   productName: '',
   qty: 0,
+  pieces: 0,
   unitPrice: 0,
   discount: 100,
   amount: 0,
@@ -66,6 +69,7 @@ export default function PurchaseOrderNew() {
           productCode: item.productCode,
           productName: item.productName,
           qty: item.qty,
+          pieces: item.pieces ?? 0,
           unitPrice: item.unitPrice,
           discount: item.discount,
           amount: item.amount,
@@ -87,6 +91,10 @@ export default function PurchaseOrderNew() {
       if (line.key !== key) return line
       const updated = { ...line, ...changes }
       updated.amount = +(updated.qty * updated.unitPrice * (updated.discount / 100)).toFixed(2)
+      // Auto-recalc pieces when qty changes and user hasn't manually overridden
+      if ('qty' in changes && updated.unitsPerPiece && !('pieces' in changes)) {
+        updated.pieces = Math.ceil(updated.qty / updated.unitsPerPiece)
+      }
       return updated
     }))
   }
@@ -94,7 +102,17 @@ export default function PurchaseOrderNew() {
   const handleProductSelect = (key: number, productId: number) => {
     const p = products.find(p => p.id === productId)
     if (!p) return
-    updateLine(key, { productId, productCode: p.code, productName: p.name, unitPrice: p.costPrice ?? p.price })
+    const currentLine = lines.find(l => l.key === key)
+    const qty = currentLine?.qty ?? 0
+    const pieces = p.unitsPerPiece && qty > 0 ? Math.ceil(qty / p.unitsPerPiece) : 0
+    updateLine(key, {
+      productId,
+      productCode: p.code,
+      productName: p.name,
+      unitPrice: p.costPrice ?? p.price,
+      unitsPerPiece: p.unitsPerPiece ?? undefined,
+      pieces,
+    })
   }
 
   const removeLine = (key: number) => {
@@ -102,6 +120,7 @@ export default function PurchaseOrderNew() {
   }
 
   const totalQty = lines.reduce((s, l) => s + (l.qty || 0), 0)
+  const totalPieces = lines.reduce((s, l) => s + (l.pieces || 0), 0)
   const totalAmount = lines.reduce((s, l) => s + (l.amount || 0), 0)
 
   const handleSubmit = () => {
@@ -116,9 +135,10 @@ export default function PurchaseOrderNew() {
         supplierId: values.supplierId,
         orderDate: values.orderDate.format('YYYY-MM-DD'),
         notes: values.notes,
-        items: validLines.map(({ productId, qty, unitPrice, discount, notes }) => ({
+        items: validLines.map(({ productId, qty, pieces, unitPrice, discount, notes }) => ({
           productId: productId!,
           qty,
+          pieces: pieces || 0,
           unitPrice,
           discount,
           notes: notes || undefined,
@@ -162,6 +182,13 @@ export default function PurchaseOrderNew() {
       render: (_: unknown, record: LineItem) => (
         <InputNumber min={0} value={record.qty} style={{ width: '100%' }}
           onChange={val => updateLine(record.key, { qty: val ?? 0 })} />
+      ),
+    },
+    {
+      title: '件数', width: 80,
+      render: (_: unknown, record: LineItem) => (
+        <InputNumber min={0} value={record.pieces} style={{ width: '100%' }}
+          onChange={val => updateLine(record.key, { pieces: val ?? 0 })} />
       ),
     },
     {
@@ -238,6 +265,7 @@ export default function PurchaseOrderNew() {
             </Button>
             <div className={styles.totals}>
               合计数量：<strong>{totalQty}</strong>
+              &emsp;合计件数：<strong>{totalPieces}</strong>
               &emsp;合计金额：<strong>¥{totalAmount.toFixed(2)}</strong>
             </div>
           </div>

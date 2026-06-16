@@ -7,6 +7,7 @@ export interface PurchaseOrderItem {
   grade: string | null
   unit: string
   qty: number
+  pieces: number
   unitPrice: number
   amount: number
   discount: number
@@ -24,6 +25,7 @@ export interface PurchaseOrder {
   supplierAddress: string | null
   orderDate: string
   totalQty: number
+  totalPieces: number
   totalAmount: number
   discount: number
   finalAmount: number
@@ -37,6 +39,7 @@ export interface PurchaseOrder {
 export interface CreatePurchaseItemDto {
   productId: number
   qty: number
+  pieces?: number
   unitPrice: number
   discount?: number // default 100
   notes?: string

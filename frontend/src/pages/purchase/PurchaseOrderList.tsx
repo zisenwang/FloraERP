@@ -79,9 +79,8 @@ export default function PurchaseOrderList() {
     { title: '单号', dataIndex: 'orderNo', width: 160, align: 'center' },
     { title: '供应商', width: 150, align: 'center', render: (_: unknown, r: PurchaseOrder) => `${r.supplierCode} ${r.supplierName}` },
     { title: '日期', dataIndex: 'orderDate', width: 110, align: 'center' },
-    {
-      title: '数量', dataIndex: 'totalQty', width: 90, align: 'center',
-    },
+    { title: '数量', dataIndex: 'totalQty', width: 90, align: 'center' },
+    { title: '件数', dataIndex: 'totalPieces', width: 80, align: 'center', render: (v: number) => v || '—' },
     {
       title: '金额', dataIndex: 'totalAmount', width: 110,
       render: (v: number) => `¥${v.toLocaleString()}`,
@@ -115,6 +114,7 @@ export default function PurchaseOrderList() {
     { title: '等级',     dataIndex: 'grade',        width: 70,  align: 'center', render: (v: string) => v ?? '—' },
     { title: '单位',     dataIndex: 'unit',         width: 60,  align: 'center' },
     { title: '数量',     dataIndex: 'qty',          width: 70,  align: 'center' },
+    { title: '件数',     dataIndex: 'pieces',       width: 70,  align: 'center', render: (v: number) => v || '—' },
     { title: '单价',     dataIndex: 'unitPrice',    width: 90,  align: 'center',  render: (v: number) => `¥${v}` },
     { title: '金额',     dataIndex: 'amount',       width: 100, align: 'center',  render: (v: number) => `¥${v.toLocaleString()}` },
     { title: '折扣',     dataIndex: 'discount',     width: 65,  align: 'center', render: (v: number) => `${v}%` },

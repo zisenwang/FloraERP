@@ -7,14 +7,14 @@ const ORDER_SELECT = `
   SELECT po.id, po.order_no, po.supplier_id, s.name AS supplier_name, s.code AS supplier_code,
          s.phone AS supplier_phone,
          DATE_FORMAT(po.date, '%Y-%m-%d') AS order_date,
-         po.total_qty, po.total_amount, po.discount, po.final_amount,
+         po.total_qty, po.total_pieces, po.total_amount, po.discount, po.final_amount,
          po.operator, po.notes, po.status, po.created_at
   FROM purchase_orders po
   JOIN suppliers s ON s.id = po.supplier_id`
 
 const ITEM_SELECT = `
   SELECT poi.id, poi.product_id, p.code AS product_code, p.name AS product_name,
-         p.category, p.grade, p.unit, poi.qty, poi.unit_price, poi.amount,
+         p.category, p.grade, p.unit, poi.qty, poi.pieces, poi.unit_price, poi.amount,
          poi.discount, poi.final_amount, poi.notes
   FROM purchase_order_items poi
   JOIN products p ON p.id = poi.product_id
@@ -66,6 +66,7 @@ export async function insertOrder(
     supplierId: number
     date: string
     totalQty: number
+    totalPieces: number
     totalAmount: number
     discount: number
     finalAmount: number
@@ -76,12 +77,13 @@ export async function insertOrder(
 ): Promise<number> {
   const [result] = await conn.query<ResultSetHeader>(
     `INSERT INTO purchase_orders
-       (order_no, supplier_id, date, total_qty, total_amount, discount, final_amount, operator, notes)
-     VALUES ('PENDING', ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (order_no, supplier_id, date, total_qty, total_pieces, total_amount, discount, final_amount, operator, notes)
+     VALUES ('PENDING', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.supplierId,
       data.date,
       data.totalQty,
+      data.totalPieces,
       data.totalAmount,
       data.discount,
       data.finalAmount,
@@ -102,6 +104,7 @@ export async function updateOrderTotals(
     supplierId: number
     date: string
     totalQty: number
+    totalPieces: number
     totalAmount: number
     discount: number
     finalAmount: number
@@ -111,12 +114,13 @@ export async function updateOrderTotals(
 ): Promise<void> {
   await conn.query(
     `UPDATE purchase_orders
-     SET supplier_id=?, date=?, total_qty=?, total_amount=?, discount=?, final_amount=?, notes=?
+     SET supplier_id=?, date=?, total_qty=?, total_pieces=?, total_amount=?, discount=?, final_amount=?, notes=?
      WHERE id=?`,
     [
       data.supplierId,
       data.date,
       data.totalQty,
+      data.totalPieces,
       data.totalAmount,
       data.discount,
       data.finalAmount,
@@ -131,6 +135,7 @@ export async function insertItem(
   item: {
     productId: number
     qty: number
+    pieces: number
     unitPrice: number
     amount: number
     discount: number
@@ -141,9 +146,9 @@ export async function insertItem(
 ): Promise<void> {
   await conn.query(
     `INSERT INTO purchase_order_items
-       (order_id, product_id, qty, unit_price, amount, discount, final_amount, notes)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [orderId, item.productId, item.qty, item.unitPrice, item.amount, item.discount, item.finalAmount, item.notes],
+       (order_id, product_id, qty, pieces, unit_price, amount, discount, final_amount, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [orderId, item.productId, item.qty, item.pieces, item.unitPrice, item.amount, item.discount, item.finalAmount, item.notes],
   )
 }
 

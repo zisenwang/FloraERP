@@ -33,6 +33,7 @@ export default function PurchaseOrderView() {
 
   const items = order.items ?? []
   const totalQty = items.reduce((s, i) => s + i.qty, 0)
+  const totalPieces = items.reduce((s, i) => s + (i.pieces || 0), 0)
 
   return (
     <div className={styles.page}>
@@ -55,16 +56,17 @@ export default function PurchaseOrderView() {
         <table className={styles.printTable}>
           <colgroup>
             <col style={{ width: '9%' }} />   {/* 编码 */}
-            <col style={{ width: '18%' }} />  {/* 货品名称 */}
-            <col style={{ width: '9%' }} />   {/* 品类 */}
+            <col style={{ width: '16%' }} />  {/* 货品名称 */}
+            <col style={{ width: '8%' }} />   {/* 品类 */}
             <col style={{ width: '6%' }} />   {/* 等级 */}
             <col style={{ width: '5%' }} />   {/* 单位 */}
-            <col style={{ width: '6%' }} />   {/* 数量 */}
-            <col style={{ width: '9%' }} />   {/* 单价 */}
-            <col style={{ width: '10%' }} />  {/* 金额 */}
+            <col style={{ width: '5%' }} />   {/* 数量 */}
+            <col style={{ width: '5%' }} />   {/* 件数 */}
+            <col style={{ width: '8%' }} />   {/* 单价 */}
+            <col style={{ width: '9%' }} />   {/* 金额 */}
             <col style={{ width: '6%' }} />   {/* 折扣 */}
-            <col style={{ width: '11%' }} />  {/* 折后金额 */}
-            <col style={{ width: '11%' }} />  {/* 备注 */}
+            <col style={{ width: '10%' }} />  {/* 折后金额 */}
+            <col style={{ width: '13%' }} />  {/* 备注 */}
           </colgroup>
           <thead>
             <tr>
@@ -74,6 +76,7 @@ export default function PurchaseOrderView() {
               <th>等级</th>
               <th>单位</th>
               <th>数量</th>
+              <th>件数</th>
               <th>单价</th>
               <th>金额</th>
               <th>折扣</th>
@@ -93,6 +96,7 @@ export default function PurchaseOrderView() {
                   <td>{item.grade ?? '—'}</td>
                   <td>{item.unit}</td>
                   <td>{item.qty}</td>
+                  <td>{item.pieces || '—'}</td>
                   <td>¥{item.unitPrice}</td>
                   <td>¥{item.amount.toFixed(2)}</td>
                   <td>{discount}%</td>
@@ -104,6 +108,7 @@ export default function PurchaseOrderView() {
             <tr>
               <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600 }}>小计</td>
               <td><strong>{totalQty}</strong></td>
+              <td><strong>{totalPieces || '—'}</strong></td>
               <td></td>
               <td><strong>¥{order.totalAmount.toFixed(2)}</strong></td>
               <td colSpan={3}></td>
@@ -113,6 +118,7 @@ export default function PurchaseOrderView() {
 
         <div className={styles.printSummary}>
       合计数量 &nbsp;<strong>{totalQty}</strong>&emsp;
+          合计件数 &nbsp;<strong>{totalPieces || '—'}</strong>&emsp;
           人民币：小写 &nbsp;<strong>¥{order.totalAmount.toFixed(2)}</strong>&emsp;
           大写 &nbsp;<strong>{toChineseAmount(order.totalAmount)}</strong>
           {order.notes && <><br />备注：{order.notes}</>}
