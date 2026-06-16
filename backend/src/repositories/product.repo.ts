@@ -97,6 +97,14 @@ export async function updateCostPrice(
   await conn.query('UPDATE products SET cost_price = ? WHERE id = ?', [costPrice, id])
 }
 
+export async function updatePrice(
+  id: number,
+  price: number,
+  conn: PoolConnection,
+): Promise<void> {
+  await conn.query('UPDATE products SET price = ? WHERE id = ?', [price, id])
+}
+
 export async function remove(id: number): Promise<boolean> {
   try {
     const [result] = await pool.query<ResultSetHeader>('DELETE FROM products WHERE id = ?', [id])
