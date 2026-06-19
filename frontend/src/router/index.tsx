@@ -13,12 +13,16 @@ import PurchaseOrderList from '@/pages/purchase/PurchaseOrderList'
 import PurchaseOrderNew from '@/pages/purchase/PurchaseOrderNew'
 import PurchaseOrderView from '@/pages/purchase/PurchaseOrderView'
 import PurchaseReturnList from '@/pages/purchase/PurchaseReturnList'
+import PurchaseReturnNew from '@/pages/purchase/PurchaseReturnNew'
+import PurchaseReturnView from '@/pages/purchase/PurchaseReturnView'
 
 // 销售管理
 import SalesOrderList from '@/pages/sales/SalesOrderList'
 import SalesOrderNew from '@/pages/sales/SalesOrderNew'
 import SalesOrderView from '@/pages/sales/SalesOrderView'
 import SalesReturnList from '@/pages/sales/SalesReturnList'
+import SalesReturnNew from '@/pages/sales/SalesReturnNew'
+import SalesReturnView from '@/pages/sales/SalesReturnView'
 
 // 库存管理
 import InventoryList from '@/pages/inventory/InventoryList'
@@ -83,6 +87,9 @@ const router = createBrowserRouter([
       { path: 'purchase/orders/:id', element: <PurchaseOrderView /> },
       { path: 'purchase/orders/:id/edit', element: <PurchaseOrderNew /> },
       { path: 'purchase/returns', element: <PurchaseReturnList /> },
+      { path: 'purchase/returns/new', element: <PurchaseReturnNew /> },
+      { path: 'purchase/returns/:id', element: <PurchaseReturnView /> },
+      { path: 'purchase/returns/:id/edit', element: <PurchaseReturnNew /> },
 
       // 销售管理
       { path: 'sales/orders', element: <SalesOrderList /> },
@@ -90,6 +97,9 @@ const router = createBrowserRouter([
       { path: 'sales/orders/:id', element: <SalesOrderView /> },
       { path: 'sales/orders/:id/edit', element: <SalesOrderNew /> },
       { path: 'sales/returns', element: <SalesReturnList /> },
+      { path: 'sales/returns/new', element: <SalesReturnNew /> },
+      { path: 'sales/returns/:id', element: <SalesReturnView /> },
+      { path: 'sales/returns/:id/edit', element: <SalesReturnNew /> },
 
       // 库存管理
       { path: 'inventory', element: <InventoryList /> },

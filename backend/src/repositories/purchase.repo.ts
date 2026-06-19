@@ -44,8 +44,13 @@ export async function findAll(
     params.push(filters.endDate)
   }
   if (filters.search) {
-    sql += ' AND (s.name LIKE ? OR s.code LIKE ? OR po.order_no LIKE ?)'
-    params.push(`%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`)
+    sql += ` AND (s.name LIKE ? OR s.code LIKE ? OR po.order_no LIKE ?
+      OR EXISTS (
+        SELECT 1 FROM purchase_order_items poi2
+        JOIN products p2 ON p2.id = poi2.product_id
+        WHERE poi2.order_id = po.id AND (p2.name LIKE ? OR p2.code LIKE ?)
+      ))`
+    params.push(`%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`)
   }
   sql += ' ORDER BY po.date DESC, po.id DESC'
   const [rows] = await pool.query<RowDataPacket[]>(sql, params)

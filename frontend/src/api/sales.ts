@@ -85,3 +85,80 @@ export const updateSalesOrder = async (id: number, payload: SalesOrderPayload): 
 export const deleteSalesOrder = async (id: number): Promise<void> => {
   await client.delete(`/sales/orders/${id}`)
 }
+
+// ——— Sales Returns ———
+
+export interface SalesReturnItem {
+  id: number
+  productId: number
+  productCode: string
+  productName: string
+  unit: string
+  qty: number
+  pieces: number
+  unitPrice: number
+  amount: number
+  notes: string | null
+}
+
+export interface SalesReturn {
+  id: number
+  returnNo: string
+  customerId: number
+  customerName: string
+  customerCode: string
+  customerPhone: string | null
+  customerAddress: string | null
+  originalOrderId: number | null
+  returnDate: string
+  totalQty: number
+  totalPieces: number
+  totalAmount: number
+  operator: string | null
+  notes: string | null
+  createdAt: string
+  items?: SalesReturnItem[]
+}
+
+export interface SalesReturnPayload {
+  customerId: number
+  returnDate: string
+  originalOrderId?: number
+  notes?: string
+  items: {
+    productId: number
+    qty: number
+    pieces?: number
+    unitPrice: number
+    notes?: string
+  }[]
+}
+
+export const getSalesReturns = async (params?: {
+  customerId?: number
+  startDate?: string
+  endDate?: string
+  search?: string
+}): Promise<SalesReturn[]> => {
+  const res = await client.get<{ data: SalesReturn[] }>('/sales/returns', { params })
+  return res.data.data
+}
+
+export const getSalesReturn = async (id: number): Promise<SalesReturn> => {
+  const res = await client.get<{ data: SalesReturn }>(`/sales/returns/${id}`)
+  return res.data.data
+}
+
+export const createSalesReturn = async (payload: SalesReturnPayload): Promise<SalesReturn> => {
+  const res = await client.post<{ data: SalesReturn }>('/sales/returns', payload)
+  return res.data.data
+}
+
+export const updateSalesReturn = async (id: number, payload: SalesReturnPayload): Promise<SalesReturn> => {
+  const res = await client.put<{ data: SalesReturn }>(`/sales/returns/${id}`, payload)
+  return res.data.data
+}
+
+export const deleteSalesReturn = async (id: number): Promise<void> => {
+  await client.delete(`/sales/returns/${id}`)
+}

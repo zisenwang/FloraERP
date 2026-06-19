@@ -64,8 +64,13 @@ export async function findAll(
     params.push(filters.endDate)
   }
   if (filters.search) {
-    sql += ' AND (c.name LIKE ? OR c.code LIKE ? OR so.order_no LIKE ?)'
-    params.push(`%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`)
+    sql += ` AND (c.name LIKE ? OR c.code LIKE ? OR so.order_no LIKE ?
+      OR EXISTS (
+        SELECT 1 FROM sales_order_items soi2
+        JOIN products p2 ON p2.id = soi2.product_id
+        WHERE soi2.order_id = so.id AND (p2.name LIKE ? OR p2.code LIKE ?)
+      ))`
+    params.push(`%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`)
   }
   sql += ' GROUP BY so.id, so.order_no, so.customer_id, c.name, c.code, c.phone, c.address, so.date, so.total_qty, so.total_amount, so.total_pieces, so.payment_status, so.operator, so.notes, so.status, so.created_at'
   sql += ' ORDER BY so.date DESC, so.id DESC'

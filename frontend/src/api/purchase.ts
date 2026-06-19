@@ -76,3 +76,82 @@ export const updatePurchaseOrder = async (id: number, payload: PurchaseOrderPayl
 export const deletePurchaseOrder = async (id: number): Promise<void> => {
   await client.delete(`/purchase/orders/${id}`)
 }
+
+// ——— Purchase Returns ———
+
+export interface PurchaseReturnItem {
+  id: number
+  productId: number
+  productCode: string
+  productName: string
+  category: string | null
+  grade: string | null
+  unit: string
+  qty: number
+  pieces: number
+  unitPrice: number
+  amount: number
+  notes: string | null
+}
+
+export interface PurchaseReturn {
+  id: number
+  returnNo: string
+  supplierId: number
+  supplierName: string
+  supplierCode: string
+  supplierPhone: string | null
+  supplierAddress: string | null
+  originalOrderId: number | null
+  returnDate: string
+  totalQty: number
+  totalPieces: number
+  totalAmount: number
+  operator: string | null
+  notes: string | null
+  createdAt: string
+  items?: PurchaseReturnItem[]
+}
+
+export interface PurchaseReturnPayload {
+  supplierId: number
+  returnDate: string
+  originalOrderId?: number
+  notes?: string
+  items: {
+    productId: number
+    qty: number
+    pieces?: number
+    unitPrice: number
+    notes?: string
+  }[]
+}
+
+export const getPurchaseReturns = async (params?: {
+  supplierId?: number
+  startDate?: string
+  endDate?: string
+  search?: string
+}): Promise<PurchaseReturn[]> => {
+  const res = await client.get<{ data: PurchaseReturn[] }>('/purchase/returns', { params })
+  return res.data.data
+}
+
+export const getPurchaseReturn = async (id: number): Promise<PurchaseReturn> => {
+  const res = await client.get<{ data: PurchaseReturn }>(`/purchase/returns/${id}`)
+  return res.data.data
+}
+
+export const createPurchaseReturn = async (payload: PurchaseReturnPayload): Promise<PurchaseReturn> => {
+  const res = await client.post<{ data: PurchaseReturn }>('/purchase/returns', payload)
+  return res.data.data
+}
+
+export const updatePurchaseReturn = async (id: number, payload: PurchaseReturnPayload): Promise<PurchaseReturn> => {
+  const res = await client.put<{ data: PurchaseReturn }>(`/purchase/returns/${id}`, payload)
+  return res.data.data
+}
+
+export const deletePurchaseReturn = async (id: number): Promise<void> => {
+  await client.delete(`/purchase/returns/${id}`)
+}

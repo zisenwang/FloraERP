@@ -39,6 +39,7 @@ const menuItems: MenuItem[] = [
     children: [
       { key: '/purchase/orders', label: '采购单据' },
       { key: '/purchase/orders/new', label: '采购入库' },
+      { key: '/purchase/returns', label: '采购退货' },
     ],
   },
   {
@@ -48,6 +49,7 @@ const menuItems: MenuItem[] = [
     children: [
       { key: '/sales/orders', label: '销售单据' },
       { key: '/sales/orders/new', label: '销售开单' },
+      { key: '/sales/returns', label: '销售退货' },
     ],
   },
   {

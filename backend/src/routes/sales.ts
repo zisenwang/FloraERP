@@ -10,4 +10,8 @@ router.post('/orders', ctrl.createOrder)
 router.put('/orders/:id', ctrl.updateOrder)
 router.delete('/orders/:id', ctrl.deleteOrder)
 router.get('/returns', ctrl.listReturns)
+router.get('/returns/:id', ctrl.getReturn)
+router.post('/returns', ctrl.createReturn)
+router.put('/returns/:id', ctrl.updateReturn)
+router.delete('/returns/:id', ctrl.deleteReturn)
 export default router
