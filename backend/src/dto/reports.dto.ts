@@ -55,3 +55,30 @@ export interface InventoryReportResult {
   totalStock: number
   inventory: InventoryReportRow[]
 }
+
+// ── Aggregated report types ───────────────────────────────────────────────────
+
+export interface ReportGroupRow {
+  id: number
+  name: string          // always "{code} {name}" for customers/suppliers; "{code} {name}" for products
+  unit?: string         // only for products
+  orderCount: number
+  totalQty: number
+  totalPieces: number
+  totalAmount: number
+  totalProfit?: number  // sales only
+}
+
+export interface ReportOrderRow {
+  orderId: number
+  orderNo: string
+  orderDate: string
+  qty: number
+  pieces: number
+  unitPrice: number
+  amount: number
+  discount: number
+  finalAmount: number
+  costPrice?: number | null   // sales only
+  profit?: number             // sales only
+}

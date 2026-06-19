@@ -9,6 +9,7 @@ export interface PurchaseOrderItem {
   grade: string | null
   unit: string
   qty: number
+  pieces: number
   unitPrice: number
   amount: number
   discount: number

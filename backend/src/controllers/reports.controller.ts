@@ -30,3 +30,48 @@ export async function inventoryReport(req: AuthRequest, res: Response): Promise<
   })
   res.json({ data })
 }
+
+export async function salesGroup(req: AuthRequest, res: Response): Promise<void> {
+  const { by, startDate, endDate } = req.query as Record<string, string>
+  const data = await service.getSalesGroup(by as 'customer' | 'product' | 'supplier', startDate, endDate)
+  res.json({ data })
+}
+
+export async function salesSubgroup(req: AuthRequest, res: Response): Promise<void> {
+  const { by, parentId, startDate, endDate } = req.query as Record<string, string>
+  const data = await service.getSalesSubgroup(by as 'customer' | 'product' | 'supplier', Number(parentId), startDate, endDate)
+  res.json({ data })
+}
+
+export async function salesOrders(req: AuthRequest, res: Response): Promise<void> {
+  const { startDate, endDate, customerId, productId, supplierId } = req.query as Record<string, string>
+  const data = await service.getSalesOrderRows({
+    startDate, endDate,
+    customerId: customerId ? Number(customerId) : undefined,
+    productId: productId ? Number(productId) : undefined,
+    supplierId: supplierId ? Number(supplierId) : undefined,
+  })
+  res.json({ data })
+}
+
+export async function purchaseGroup(req: AuthRequest, res: Response): Promise<void> {
+  const { by, startDate, endDate } = req.query as Record<string, string>
+  const data = await service.getPurchaseGroup(by as 'supplier' | 'product', startDate, endDate)
+  res.json({ data })
+}
+
+export async function purchaseSubgroup(req: AuthRequest, res: Response): Promise<void> {
+  const { by, parentId, startDate, endDate } = req.query as Record<string, string>
+  const data = await service.getPurchaseSubgroup(by as 'supplier' | 'product', Number(parentId), startDate, endDate)
+  res.json({ data })
+}
+
+export async function purchaseOrders(req: AuthRequest, res: Response): Promise<void> {
+  const { startDate, endDate, supplierId, productId } = req.query as Record<string, string>
+  const data = await service.getPurchaseOrderRows({
+    startDate, endDate,
+    supplierId: supplierId ? Number(supplierId) : undefined,
+    productId: productId ? Number(productId) : undefined,
+  })
+  res.json({ data })
+}

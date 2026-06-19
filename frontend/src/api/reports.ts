@@ -61,3 +61,89 @@ export const getInventoryReport = async (params?: {
   const res = await client.get<{ data: InventoryReportData }>('/reports/inventory', { params })
   return res.data.data
 }
+
+// ── Aggregated drill-down report types ───────────────────────────────────────
+
+export interface ReportGroupRow {
+  id: number
+  name: string
+  unit?: string
+  orderCount: number
+  totalQty: number
+  totalPieces: number
+  totalAmount: number
+  totalProfit?: number
+}
+
+export interface ReportOrderRow {
+  orderId: number
+  orderNo: string
+  orderDate: string
+  qty: number
+  pieces: number
+  unitPrice: number
+  amount: number
+  discount: number
+  finalAmount: number
+  costPrice?: number | null
+  profit?: number
+}
+
+export const getSalesGroup = async (params: {
+  by: 'customer' | 'product' | 'supplier'
+  startDate: string
+  endDate: string
+}): Promise<ReportGroupRow[]> => {
+  const res = await client.get<{ data: ReportGroupRow[] }>('/reports/sales/group', { params })
+  return res.data.data
+}
+
+export const getSalesSubgroup = async (params: {
+  by: 'customer' | 'product' | 'supplier'
+  parentId: number
+  startDate: string
+  endDate: string
+}): Promise<ReportGroupRow[]> => {
+  const res = await client.get<{ data: ReportGroupRow[] }>('/reports/sales/subgroup', { params })
+  return res.data.data
+}
+
+export const getSalesOrderRows = async (params: {
+  startDate: string
+  endDate: string
+  customerId?: number
+  productId?: number
+  supplierId?: number
+}): Promise<ReportOrderRow[]> => {
+  const res = await client.get<{ data: ReportOrderRow[] }>('/reports/sales/orders', { params })
+  return res.data.data
+}
+
+export const getPurchaseGroup = async (params: {
+  by: 'supplier' | 'product'
+  startDate: string
+  endDate: string
+}): Promise<ReportGroupRow[]> => {
+  const res = await client.get<{ data: ReportGroupRow[] }>('/reports/purchase/group', { params })
+  return res.data.data
+}
+
+export const getPurchaseSubgroup = async (params: {
+  by: 'supplier' | 'product'
+  parentId: number
+  startDate: string
+  endDate: string
+}): Promise<ReportGroupRow[]> => {
+  const res = await client.get<{ data: ReportGroupRow[] }>('/reports/purchase/subgroup', { params })
+  return res.data.data
+}
+
+export const getPurchaseOrderRows = async (params: {
+  startDate: string
+  endDate: string
+  supplierId?: number
+  productId?: number
+}): Promise<ReportOrderRow[]> => {
+  const res = await client.get<{ data: ReportOrderRow[] }>('/reports/purchase/orders', { params })
+  return res.data.data
+}

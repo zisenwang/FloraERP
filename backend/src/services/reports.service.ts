@@ -3,6 +3,8 @@ import type {
   SalesReportResult,
   PurchaseReportResult,
   InventoryReportResult,
+  ReportGroupRow,
+  ReportOrderRow,
 } from '@/dto/reports.dto'
 
 export async function getSalesReport(filters: {
@@ -44,4 +46,50 @@ export async function getInventoryReport(filters: {
   const inventory = await repo.getInventoryRows(filters)
   const totalStock = inventory.reduce((s, r) => s + Number(r.stock), 0)
   return { totalItems: inventory.length, totalStock, inventory }
+}
+
+export async function getSalesGroup(
+  by: 'customer' | 'product' | 'supplier',
+  startDate: string,
+  endDate: string,
+): Promise<ReportGroupRow[]> {
+  return repo.getSalesL1(by, { startDate, endDate })
+}
+
+export async function getSalesSubgroup(
+  by: 'customer' | 'product' | 'supplier',
+  parentId: number,
+  startDate: string,
+  endDate: string,
+): Promise<ReportGroupRow[]> {
+  return repo.getSalesL2(by, parentId, { startDate, endDate })
+}
+
+export async function getSalesOrderRows(
+  filters: { startDate: string; endDate: string; customerId?: number; productId?: number; supplierId?: number },
+): Promise<ReportOrderRow[]> {
+  return repo.getSalesL3(filters)
+}
+
+export async function getPurchaseGroup(
+  by: 'supplier' | 'product',
+  startDate: string,
+  endDate: string,
+): Promise<ReportGroupRow[]> {
+  return repo.getPurchaseL1(by, { startDate, endDate })
+}
+
+export async function getPurchaseSubgroup(
+  by: 'supplier' | 'product',
+  parentId: number,
+  startDate: string,
+  endDate: string,
+): Promise<ReportGroupRow[]> {
+  return repo.getPurchaseL2(by, parentId, { startDate, endDate })
+}
+
+export async function getPurchaseOrderRows(
+  filters: { startDate: string; endDate: string; supplierId?: number; productId?: number },
+): Promise<ReportOrderRow[]> {
+  return repo.getPurchaseL3(filters)
 }

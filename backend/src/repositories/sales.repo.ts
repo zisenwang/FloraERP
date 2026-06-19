@@ -84,6 +84,9 @@ export async function findById(id: number): Promise<SalesOrder | null> {
   const order = rowToCamel<SalesOrder>(rows[0] as Record<string, unknown>)
   const [itemRows] = await pool.query<RowDataPacket[]>(ITEM_SELECT, [id])
   order.items = rowsToCamel<SalesOrderItem>(itemRows as Record<string, unknown>[])
+  order.totalProfit = +order.items
+    .reduce((s, i) => s + i.finalAmount - (i.costPrice ?? 0) * i.qty, 0)
+    .toFixed(2)
   return order
 }
 
