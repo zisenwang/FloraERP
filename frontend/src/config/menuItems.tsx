@@ -27,8 +27,8 @@ const menuItems: MenuItem[] = [
     icon: <AppstoreOutlined />,
     label: '基础资料',
     children: [
-      { key: '/master/suppliers', label: '供应商管理', icon: <ShopOutlined /> },
       { key: '/master/customers', label: '客户管理', icon: <UserOutlined /> },
+      { key: '/master/suppliers', label: '供应商管理', icon: <ShopOutlined /> },
       { key: '/master/products', label: '货品管理', icon: <TeamOutlined /> },
     ],
   },
