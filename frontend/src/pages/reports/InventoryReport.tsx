@@ -97,11 +97,11 @@ export default function InventoryReport() {
       </div>
 
       <div className={styles.statsRow}>
-        <div className={styles.statCard}>
+        <div className={styles.statCard} style={{ flex: 'none', minWidth: 300 }}>
           <div className={styles.statLabel}>品种数</div>
           <div className={styles.statValue}>{filteredItems.length}</div>
         </div>
-        <div className={styles.statCard}>
+        <div className={styles.statCard} style={{ flex: 'none', minWidth: 300 }}>
           <div className={styles.statLabel}>库存总量</div>
           <div className={styles.statValue}>{totalStock}</div>
         </div>

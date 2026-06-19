@@ -79,6 +79,11 @@ export interface ReportOrderRow {
   orderId: number
   orderNo: string
   orderDate: string
+  customerName?: string
+  productCode?: string
+  productName?: string
+  supplierCode?: string
+  supplierName?: string
   qty: number
   pieces: number
   unitPrice: number

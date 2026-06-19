@@ -34,8 +34,8 @@ import LossRecordList from '@/pages/loss/LossRecordList'
 import LossRecordNew from '@/pages/loss/LossRecordNew'
 
 // 报表中心
-import SalesReport from '@/pages/reports/SalesReport'
-import PurchaseReport from '@/pages/reports/PurchaseReport'
+import SalesReport from '@/pages/reports/sale/SalesReport'
+import PurchaseReport from '@/pages/reports/purchase/PurchaseReport'
 import InventoryReport from '@/pages/reports/InventoryReport'
 
 // 收支管理

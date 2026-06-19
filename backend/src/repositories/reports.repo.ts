@@ -288,11 +288,17 @@ export async function getSalesL3(
 ): Promise<ReportOrderRow[]> {
   let sql = `
     SELECT so.id AS order_id, so.order_no, DATE_FORMAT(so.date, '%Y-%m-%d') AS order_date,
+           CONCAT(c.code, ' ', c.name) AS customer_name,
+           p.code AS product_code, p.name AS product_name,
+           s.code AS supplier_code, CONCAT(s.code, ' ', s.name) AS supplier_name,
            soi.qty, soi.pieces, soi.unit_price, soi.amount, soi.discount, soi.final_amount,
            soi.cost_price,
            (soi.final_amount - COALESCE(soi.cost_price, 0) * soi.qty) AS profit
     FROM sales_order_items soi
     JOIN sales_orders so ON so.id = soi.order_id
+    JOIN customers c ON c.id = so.customer_id
+    JOIN products p ON p.id = soi.product_id
+    JOIN suppliers s ON s.id = soi.supplier_id
     WHERE so.date BETWEEN ? AND ?`
   const params: unknown[] = [f.startDate, f.endDate]
   if (f.customerId) { sql += ' AND so.customer_id = ?'; params.push(f.customerId) }
@@ -384,9 +390,13 @@ export async function getPurchaseL3(
 ): Promise<ReportOrderRow[]> {
   let sql = `
     SELECT po.id AS order_id, po.order_no, DATE_FORMAT(po.date, '%Y-%m-%d') AS order_date,
+           CONCAT(s.code, ' ', s.name) AS supplier_name,
+           p.code AS product_code, p.name AS product_name,
            poi.qty, poi.pieces, poi.unit_price, poi.amount, poi.discount, poi.final_amount
     FROM purchase_order_items poi
     JOIN purchase_orders po ON po.id = poi.order_id
+    JOIN suppliers s ON s.id = po.supplier_id
+    JOIN products p ON p.id = poi.product_id
     WHERE po.date BETWEEN ? AND ?`
   const params: unknown[] = [f.startDate, f.endDate]
   if (f.supplierId) { sql += ' AND po.supplier_id = ?'; params.push(f.supplierId) }
