@@ -5,10 +5,11 @@ import type { RowDataPacket, ResultSetHeader, PoolConnection } from 'mysql2/prom
 
 const SELECT = `
   SELECT lr.id, lr.product_id, p.code AS product_code, p.name AS product_name,
-         p.unit, lr.qty, lr.reason, lr.operator,
+         p.unit, lr.qty, lr.reason, COALESCE(u.name, lr.operator) AS operator,
          DATE_FORMAT(lr.date, '%Y-%m-%d') AS date, lr.notes
   FROM loss_records lr
-  JOIN products p ON p.id = lr.product_id`
+  JOIN products p ON p.id = lr.product_id
+  LEFT JOIN users u ON u.username = lr.operator`
 
 export async function findAll(
   filters: { startDate?: string; endDate?: string } = {},

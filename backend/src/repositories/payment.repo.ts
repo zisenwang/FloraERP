@@ -7,10 +7,11 @@ const SELECT = `
   SELECT p.id, p.sales_order_id, so.order_no, p.customer_id,
          c.name AS customer_name, p.amount, p.method,
          DATE_FORMAT(p.payment_date, '%Y-%m-%d') AS payment_date,
-         p.notes, p.operator
+         p.notes, COALESCE(u.name, p.operator) AS operator
   FROM payments p
   JOIN sales_orders so ON so.id = p.sales_order_id
-  JOIN customers c ON c.id = p.customer_id`
+  JOIN customers c ON c.id = p.customer_id
+  LEFT JOIN users u ON u.username = p.operator`
 
 export async function findAll(
   filters: {

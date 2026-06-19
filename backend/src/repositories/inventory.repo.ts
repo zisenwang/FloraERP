@@ -37,10 +37,11 @@ export async function findAdjustments(productId?: number): Promise<InventoryAdju
   let sql = `
     SELECT ia.id, ia.product_id, p.code AS product_code, p.name AS product_name,
            ia.type, ia.qty_before, ia.qty_change, ia.qty_after,
-           ia.reason, ia.ref_type, ia.ref_id, ia.operator,
+           ia.reason, ia.ref_type, ia.ref_id, COALESCE(u.name, ia.operator) AS operator,
            DATE_FORMAT(ia.created_at, '%Y-%m-%d %H:%i') AS created_at
     FROM inventory_adjustments ia
     JOIN products p ON p.id = ia.product_id
+    LEFT JOIN users u ON u.username = ia.operator
     WHERE 1=1`
   const params: unknown[] = []
   if (productId) {
