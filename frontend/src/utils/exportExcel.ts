@@ -24,7 +24,7 @@ export function exportSalesExcel(
   endDate: string,
   label?: string,
 ) {
-  const sheetData = rows.map(r => ({
+  const sheetData: Record<string, string | number>[] = rows.map(r => ({
     '日期': r.orderDate,
     '单号': r.orderNo,
     '客户': r.customerName ?? '',
@@ -34,8 +34,24 @@ export function exportSalesExcel(
     '数量': r.qty,
     '件数': r.pieces || 0,
     '单价': r.unitPrice,
-    '折后金额': r.finalAmount,
+    '金额': r.finalAmount,
   }))
+
+  const totalQty    = rows.reduce((s, r) => s + r.qty, 0)
+  const totalPieces = rows.reduce((s, r) => s + (r.pieces || 0), 0)
+  const totalAmount = rows.reduce((s, r) => s + r.finalAmount, 0)
+  sheetData.push({
+    '日期': '',
+    '单号': '',
+    '客户': '',
+    '货品编码': '',
+    '货品名称': '合计',
+    '供应商': '',
+    '数量': totalQty,
+    '件数': totalPieces,
+    '单价': '',
+    '金额': totalAmount,
+  })
 
   const ws = XLSX.utils.json_to_sheet(sheetData)
   autoWidth(ws)
