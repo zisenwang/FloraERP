@@ -5,7 +5,6 @@ import { ArrowLeftOutlined, PrinterOutlined } from '@ant-design/icons'
 import { useReactToPrint } from 'react-to-print'
 import { getSalesOrder, type SalesOrder } from '@/api/sales'
 import { getErrorMessage } from '@/utils/error'
-import { toChineseAmount } from '@/utils/chineseAmount'
 import styles from './SalesOrderView.module.css'
 import { useSettings } from '@/store/SettingsContext'
 
@@ -105,12 +104,11 @@ export default function SalesOrderView() {
           </tbody>
         </table>
 
-        <div className={styles.printSummary}>
-          合计数量 &nbsp;<strong>{totalQty}</strong>&emsp;
-          人民币：小写 &nbsp;<strong>¥{order.totalAmount.toFixed(2)}</strong>&emsp;
-          大写 &nbsp;<strong>{toChineseAmount(order.totalAmount)}</strong>
-          {order.notes && <><br /><span className={styles.printNotes}>备注：{order.notes}</span></>}
-        </div>
+        {order.notes && (
+          <div className={styles.printSummary}>
+            <span className={styles.printNotes}>备注：{order.notes}</span>
+          </div>
+        )}
 
         <div className={styles.printFooter}>
           <span>开单人：___________</span>

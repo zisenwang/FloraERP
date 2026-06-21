@@ -75,7 +75,7 @@
 
 .printTable th,
 .printTable td {
-  border: 1px solid #bbb;
+  border: 2px solid #555;
   padding: 8px 10px;
   text-align: left;
   font-size: 15px;
@@ -179,6 +179,7 @@
   .printTable td {
     padding: 4pt 7pt;
     font-size: 15pt;
+    border: 2pt solid #333;
   }
 
   .printTable td {
