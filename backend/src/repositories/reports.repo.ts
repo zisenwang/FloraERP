@@ -152,7 +152,7 @@ export async function getPurchaseStats(
 
 export async function getInventoryRows(f: InventoryFilters): Promise<InventoryReportRow[]> {
   let sql = `
-    SELECT p.id AS product_id, p.code AS product_code, p.name AS product_name,
+    SELECT p.id AS product_id, CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
            s.name AS supplier_name, p.category, p.unit,
            COALESCE(i.quantity, 0) AS stock, p.price
     FROM products p
@@ -168,7 +168,7 @@ export async function getInventoryRows(f: InventoryFilters): Promise<InventoryRe
     sql += ' AND p.supplier_id = ?'
     p.push(f.supplierId)
   }
-  sql += ' ORDER BY p.code ASC'
+  sql += ' ORDER BY s.code ASC, p.code ASC'
   const [rows] = await pool.query<RowDataPacket[]>(sql, p)
   return rowsToCamel<InventoryReportRow>(rows as Record<string, unknown>[])
 }
@@ -197,7 +197,7 @@ export async function getSalesL1(
       ORDER BY total_amount DESC`
   } else if (by === 'product') {
     sql = `
-      SELECT p.id, CONCAT(p.code, ' ', p.name) AS name, p.unit,
+      SELECT p.id, CONCAT(s.code, '.', p.code, ' ', p.name) AS name, p.unit,
              COUNT(DISTINCT so.id) AS order_count,
              SUM(soi.qty) AS total_qty, SUM(soi.pieces) AS total_pieces,
              SUM(soi.final_amount) AS total_amount,
@@ -205,8 +205,9 @@ export async function getSalesL1(
       FROM sales_order_items soi
       JOIN sales_orders so ON so.id = soi.order_id
       JOIN products p ON p.id = soi.product_id
+      JOIN suppliers s ON s.id = p.supplier_id
       WHERE so.date BETWEEN ? AND ?
-      GROUP BY p.id, p.code, p.name, p.unit
+      GROUP BY p.id, s.code, p.code, p.name, p.unit
       ORDER BY total_amount DESC`
   } else {
     sql = `
@@ -236,7 +237,7 @@ export async function getSalesL2(
   if (by === 'customer') {
     // parent = customer → show products
     sql = `
-      SELECT p.id, CONCAT(p.code, ' ', p.name) AS name, p.unit,
+      SELECT p.id, CONCAT(s.code, '.', p.code, ' ', p.name) AS name, p.unit,
              COUNT(DISTINCT so.id) AS order_count,
              SUM(soi.qty) AS total_qty, SUM(soi.pieces) AS total_pieces,
              SUM(soi.final_amount) AS total_amount,
@@ -244,8 +245,9 @@ export async function getSalesL2(
       FROM sales_order_items soi
       JOIN sales_orders so ON so.id = soi.order_id
       JOIN products p ON p.id = soi.product_id
+      JOIN suppliers s ON s.id = p.supplier_id
       WHERE so.date BETWEEN ? AND ? AND so.customer_id = ?
-      GROUP BY p.id, p.code, p.name, p.unit
+      GROUP BY p.id, s.code, p.code, p.name, p.unit
       ORDER BY total_amount DESC`
     params = [f.startDate, f.endDate, parentId]
   } else if (by === 'product') {
@@ -266,7 +268,7 @@ export async function getSalesL2(
   } else {
     // parent = supplier → show products
     sql = `
-      SELECT p.id, CONCAT(p.code, ' ', p.name) AS name, p.unit,
+      SELECT p.id, CONCAT(s.code, '.', p.code, ' ', p.name) AS name, p.unit,
              COUNT(DISTINCT so.id) AS order_count,
              SUM(soi.qty) AS total_qty, SUM(soi.pieces) AS total_pieces,
              SUM(soi.final_amount) AS total_amount,
@@ -274,8 +276,9 @@ export async function getSalesL2(
       FROM sales_order_items soi
       JOIN sales_orders so ON so.id = soi.order_id
       JOIN products p ON p.id = soi.product_id
+      JOIN suppliers s ON s.id = soi.supplier_id
       WHERE so.date BETWEEN ? AND ? AND soi.supplier_id = ?
-      GROUP BY p.id, p.code, p.name, p.unit
+      GROUP BY p.id, s.code, p.code, p.name, p.unit
       ORDER BY total_amount DESC`
     params = [f.startDate, f.endDate, parentId]
   }
@@ -289,7 +292,7 @@ export async function getSalesL3(
   let sql = `
     SELECT so.id AS order_id, so.order_no, DATE_FORMAT(so.date, '%Y-%m-%d') AS order_date,
            CONCAT(c.code, ' ', c.name) AS customer_name,
-           p.code AS product_code, p.name AS product_name,
+           CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
            s.code AS supplier_code, CONCAT(s.code, ' ', s.name) AS supplier_name,
            soi.qty, soi.pieces, soi.unit_price, soi.amount, soi.discount, soi.final_amount,
            soi.cost_price, soi.notes,
@@ -330,15 +333,16 @@ export async function getPurchaseL1(
       ORDER BY total_amount DESC`
   } else {
     sql = `
-      SELECT p.id, CONCAT(p.code, ' ', p.name) AS name, p.unit,
+      SELECT p.id, CONCAT(s.code, '.', p.code, ' ', p.name) AS name, p.unit,
              COUNT(DISTINCT po.id) AS order_count,
              SUM(poi.qty) AS total_qty, SUM(poi.pieces) AS total_pieces,
              SUM(poi.final_amount) AS total_amount
       FROM purchase_order_items poi
       JOIN purchase_orders po ON po.id = poi.order_id
       JOIN products p ON p.id = poi.product_id
+      JOIN suppliers s ON s.id = p.supplier_id
       WHERE po.date BETWEEN ? AND ?
-      GROUP BY p.id, p.code, p.name, p.unit
+      GROUP BY p.id, s.code, p.code, p.name, p.unit
       ORDER BY total_amount DESC`
   }
   const [rows] = await pool.query<RowDataPacket[]>(sql, [f.startDate, f.endDate])
@@ -355,15 +359,16 @@ export async function getPurchaseL2(
   if (by === 'supplier') {
     // parent = supplier → show products
     sql = `
-      SELECT p.id, CONCAT(p.code, ' ', p.name) AS name, p.unit,
+      SELECT p.id, CONCAT(s.code, '.', p.code, ' ', p.name) AS name, p.unit,
              COUNT(DISTINCT po.id) AS order_count,
              SUM(poi.qty) AS total_qty, SUM(poi.pieces) AS total_pieces,
              SUM(poi.final_amount) AS total_amount
       FROM purchase_order_items poi
       JOIN purchase_orders po ON po.id = poi.order_id
       JOIN products p ON p.id = poi.product_id
+      JOIN suppliers s ON s.id = po.supplier_id
       WHERE po.date BETWEEN ? AND ? AND po.supplier_id = ?
-      GROUP BY p.id, p.code, p.name, p.unit
+      GROUP BY p.id, s.code, p.code, p.name, p.unit
       ORDER BY total_amount DESC`
     params = [f.startDate, f.endDate, parentId]
   } else {
@@ -391,7 +396,7 @@ export async function getPurchaseL3(
   let sql = `
     SELECT po.id AS order_id, po.order_no, DATE_FORMAT(po.date, '%Y-%m-%d') AS order_date,
            CONCAT(s.code, ' ', s.name) AS supplier_name,
-           p.code AS product_code, p.name AS product_name,
+           CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
            poi.qty, poi.pieces, poi.unit_price, poi.amount, poi.discount, poi.final_amount
     FROM purchase_order_items poi
     JOIN purchase_orders po ON po.id = poi.order_id

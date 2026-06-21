@@ -39,8 +39,25 @@ export async function updateProduct(id: number, dto: UpdateProductDto): Promise<
 }
 
 export async function deleteProduct(id: number): Promise<void> {
-  const ok = await repo.remove(id)
-  if (!ok) throw new AppError(404, '货品不存在')
+  const conn = await pool.getConnection()
+  try {
+    await conn.beginTransaction()
+    // Clean up operational inventory records before deleting the product.
+    // Sales/purchase order items still have FK constraints and will throw if referenced.
+    await conn.query('DELETE FROM inventory_adjustments WHERE product_id = ?', [id])
+    await conn.query('DELETE FROM inventory WHERE product_id = ?', [id])
+    const [result] = await conn.query<import('mysql2/promise').ResultSetHeader>(
+      'DELETE FROM products WHERE id = ?', [id],
+    )
+    if (result.affectedRows === 0) throw new AppError(404, '货品不存在')
+    await conn.commit()
+  } catch (e: any) {
+    await conn.rollback()
+    if (e.code === 'ER_ROW_IS_REFERENCED_2') throw new AppError(409, `该货品有关联订单数据，无法删除（${e.sqlMessage}）`)
+    throw e
+  } finally {
+    conn.release()
+  }
 }
 
 export async function getNextProductCode(supplierId: number): Promise<string> {

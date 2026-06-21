@@ -114,6 +114,7 @@ export async function deleteOrder(id: number): Promise<void> {
     for (const old of oldItems) {
       await invRepo.incrementQuantity(old.productId, old.qty, conn)
     }
+    await conn.query('DELETE FROM payments WHERE sales_order_id = ?', [id])
     await conn.query('DELETE FROM sales_orders WHERE id = ?', [id])
     await conn.commit()
   } catch (e) {

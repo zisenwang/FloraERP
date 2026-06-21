@@ -7,7 +7,7 @@ export async function findAll(
   filters: { supplierId?: number; category?: string; search?: string } = {},
 ): Promise<InventoryRow[]> {
   let sql = `
-    SELECT i.product_id, p.code AS product_code, p.name AS product_name,
+    SELECT i.product_id, CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
            s.name AS supplier_name, s.code AS supplier_code,
            p.category, p.unit, i.quantity AS stock,
            DATE_FORMAT(i.updated_at, '%Y-%m-%d') AS last_updated
@@ -25,22 +25,23 @@ export async function findAll(
     params.push(filters.category)
   }
   if (filters.search) {
-    sql += ' AND (p.name LIKE ? OR p.code LIKE ?)'
+    sql += ' AND (p.name LIKE ? OR CONCAT(s.code, \'.\', p.code) LIKE ?)'
     params.push(`%${filters.search}%`, `%${filters.search}%`)
   }
-  sql += ' ORDER BY p.code ASC'
+  sql += ' ORDER BY s.code ASC, p.code ASC'
   const [rows] = await pool.query<RowDataPacket[]>(sql, params)
   return rowsToCamel<InventoryRow>(rows as Record<string, unknown>[])
 }
 
 export async function findAdjustments(productId?: number): Promise<InventoryAdjustment[]> {
   let sql = `
-    SELECT ia.id, ia.product_id, p.code AS product_code, p.name AS product_name,
+    SELECT ia.id, ia.product_id, CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
            ia.type, ia.qty_before, ia.qty_change, ia.qty_after,
            ia.reason, ia.ref_type, ia.ref_id, COALESCE(u.name, ia.operator) AS operator,
            DATE_FORMAT(ia.created_at, '%Y-%m-%d %H:%i') AS created_at
     FROM inventory_adjustments ia
     JOIN products p ON p.id = ia.product_id
+    JOIN suppliers s ON s.id = p.supplier_id
     LEFT JOIN users u ON u.username = ia.operator
     WHERE 1=1`
   const params: unknown[] = []

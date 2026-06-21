@@ -5,7 +5,8 @@ import type { RowDataPacket, ResultSetHeader, PoolConnection } from 'mysql2/prom
 import { AppError } from '@/services/supplier.service'
 
 const SELECT = `
-  SELECT p.id, p.code, p.name, p.supplier_id, s.name AS supplier_name, s.code AS supplier_code,
+  SELECT p.id, CONCAT(s.code, '.', p.code) AS code, p.name, p.supplier_id,
+         s.name AS supplier_name, s.code AS supplier_code,
          p.category, p.grade, p.spec, p.unit, p.cost_price, p.price, p.units_per_piece,
          p.status, COALESCE(i.quantity, 0) AS stock
   FROM products p
@@ -22,10 +23,10 @@ export async function findAll(
     params.push(filters.supplierId)
   }
   if (filters.search) {
-    sql += ' AND (p.name LIKE ? OR p.code LIKE ?)'
+    sql += ' AND (p.name LIKE ? OR CONCAT(s.code, \'.\', p.code) LIKE ?)'
     params.push(`%${filters.search}%`, `%${filters.search}%`)
   }
-  sql += ' ORDER BY p.code ASC'
+  sql += ' ORDER BY s.code ASC, p.code ASC'
   const [rows] = await pool.query<RowDataPacket[]>(sql, params)
   return rowsToCamel<Product>(rows as Record<string, unknown>[])
 }
@@ -90,24 +91,16 @@ export async function update(id: number, dto: UpdateProductDto): Promise<Product
 }
 
 export async function getNextCode(supplierId: number): Promise<string> {
-  const [supRows] = await pool.query<RowDataPacket[]>(
-    'SELECT code FROM suppliers WHERE id = ? LIMIT 1',
-    [supplierId],
-  )
-  const supplierCode = String(supRows[0]?.code ?? '')
-
   const [allRows] = await pool.query<RowDataPacket[]>(
     'SELECT code FROM products WHERE supplier_id = ? ORDER BY updated_at DESC',
     [supplierId],
   )
-  // Parse sequence as number regardless of zero-padding in stored code
-  const lastSeq = allRows[0]?.code ? Number(String(allRows[0].code).split('.')[1]) || 0 : 0
+  const lastSeq = allRows[0]?.code ? Number(allRows[0].code) || 0 : 0
   const occupied = new Set(allRows.map((r: RowDataPacket) => String(r.code)))
 
-  const fmt = (n: number) => `${supplierCode}.${String(n).padStart(2, '0')}`
   let candidate = lastSeq + 1
-  while (occupied.has(fmt(candidate))) candidate++
-  return fmt(candidate)
+  while (occupied.has(String(candidate))) candidate++
+  return String(candidate)
 }
 
 export async function updateCostPrice(
@@ -127,11 +120,6 @@ export async function updatePrice(
 }
 
 export async function remove(id: number): Promise<boolean> {
-  try {
-    const [result] = await pool.query<ResultSetHeader>('DELETE FROM products WHERE id = ?', [id])
-    return result.affectedRows > 0
-  } catch (err: any) {
-    if (err.code === 'ER_ROW_IS_REFERENCED_2') throw new AppError(409, '该货品有关联数据，无法删除')
-    throw err
-  }
+  const [result] = await pool.query<ResultSetHeader>('DELETE FROM products WHERE id = ?', [id])
+  return result.affectedRows > 0
 }

@@ -4,11 +4,12 @@ import type { LossRecord, CreateLossDto } from '@/dto/loss.dto'
 import type { RowDataPacket, ResultSetHeader, PoolConnection } from 'mysql2/promise'
 
 const SELECT = `
-  SELECT lr.id, lr.product_id, p.code AS product_code, p.name AS product_name,
+  SELECT lr.id, lr.product_id, CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
          p.unit, lr.qty, lr.reason, COALESCE(u.name, lr.operator) AS operator,
          DATE_FORMAT(lr.date, '%Y-%m-%d') AS date, lr.notes
   FROM loss_records lr
   JOIN products p ON p.id = lr.product_id
+  JOIN suppliers s ON s.id = p.supplier_id
   LEFT JOIN users u ON u.username = lr.operator`
 
 export async function findAll(

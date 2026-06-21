@@ -33,7 +33,7 @@ export default function SupplierList() {
   const openAdd = () => {
     setEditing(null)
     form.resetFields()
-    getNextSupplierCode().then(code => form.setFieldValue('code', code)).catch(() => {})
+    getNextSupplierCode().then(code => form.setFieldValue('code', code.padStart(3, '0'))).catch(() => {})
     setModalOpen(true)
   }
 

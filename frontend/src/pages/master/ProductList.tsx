@@ -44,10 +44,10 @@ export default function ProductList() {
 
   const applyNextCode = (supplierId: number) => {
     setCodeLoading(true)
-    getNextProductCode(supplierId).then(code => {
-      const seq = code.split('.').slice(1).join('.')
-      setCodeSeq(seq)
-      form.setFieldValue('code', code)
+    getNextProductCode(supplierId).then(seq => {
+      const padded = seq.padStart(2, '0')
+      setCodeSeq(padded)
+      form.setFieldValue('code', padded)
     }).catch(() => {}).finally(() => setCodeLoading(false))
   }
 
@@ -67,8 +67,10 @@ export default function ProductList() {
   const openEdit = (record: Product) => {
     setEditing(record)
     setSupplierCodePrefix(record.supplierCode ?? '')
-    setCodeSeq(record.code.split('.').slice(1).join('.'))
-    form.setFieldsValue(record)
+    // record.code from API is already full 'XXX.yy'; extract the seq part for the editable field
+    const seq = record.code.split('.').slice(1).join('.')
+    setCodeSeq(seq)
+    form.setFieldsValue({ ...record, code: seq })
     setModalOpen(true)
   }
 
@@ -79,15 +81,15 @@ export default function ProductList() {
     if (!editing) {
       applyNextCode(supplierId)
     } else {
-      // When editing and supplier changes, update prefix but keep seq
-      form.setFieldValue('code', prefix ? `${prefix}.${codeSeq}` : codeSeq)
+      // When editing and supplier changes, keep seq as-is (code field holds seq only)
+      form.setFieldValue('code', codeSeq)
     }
   }
 
   const handleSeqChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const seq = e.target.value
     setCodeSeq(seq)
-    form.setFieldValue('code', supplierCodePrefix ? `${supplierCodePrefix}.${seq}` : seq)
+    form.setFieldValue('code', seq)
   }
 
   const handleSave = () => {

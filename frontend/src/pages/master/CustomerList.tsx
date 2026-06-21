@@ -33,7 +33,7 @@ export default function CustomerList() {
   const openAdd = () => {
     setEditing(null)
     form.resetFields()
-    getNextCustomerCode().then(code => form.setFieldValue('code', code)).catch(() => {})
+    getNextCustomerCode().then(code => form.setFieldValue('code', code.padStart(3, '0'))).catch(() => {})
     setModalOpen(true)
   }
 

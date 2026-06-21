@@ -61,7 +61,7 @@ export async function getMonthlyPurchaseSupplierRank(monthStart: string): Promis
 
 export async function getMonthlyPurchaseProductRank(monthStart: string): Promise<PurchaseProductRankRow[]> {
   const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT p.code AS product_code, p.name AS product_name,
+    `SELECT CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
             s.code AS supplier_code, s.name AS supplier_name,
             SUM(poi.qty) AS total_qty
      FROM purchase_order_items poi
@@ -78,7 +78,7 @@ export async function getMonthlyPurchaseProductRank(monthStart: string): Promise
 
 export async function getMonthlyProductProfitRank(monthStart: string): Promise<ProductProfitRankRow[]> {
   const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT p.code AS product_code, p.name AS product_name,
+    `SELECT CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
             s.code AS supplier_code, s.name AS supplier_name,
             SUM(soi.final_amount - COALESCE(soi.cost_price, 0) * soi.qty) AS total_profit,
             SUM(soi.qty) AS total_qty

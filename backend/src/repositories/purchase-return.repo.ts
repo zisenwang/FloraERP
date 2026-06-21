@@ -14,10 +14,11 @@ const RETURN_SELECT = `
   JOIN suppliers s ON s.id = pr.supplier_id`
 
 const ITEM_SELECT = `
-  SELECT pri.id, pri.product_id, p.code AS product_code, p.name AS product_name,
+  SELECT pri.id, pri.product_id, CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
          p.category, p.grade, p.unit, pri.qty, pri.pieces, pri.unit_price, pri.amount, pri.notes
   FROM purchase_return_items pri
   JOIN products p ON p.id = pri.product_id
+  JOIN suppliers s ON s.id = p.supplier_id
   WHERE pri.return_id = ?
   ORDER BY pri.id ASC`
 
