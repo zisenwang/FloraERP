@@ -23,12 +23,12 @@
   display: grid;
   grid-template-columns: 90px 1fr 90px;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 5px;
 }
 
 .printLogo {
-  width: 90px;
-  height: 90px;
+  width: 120px;
+  height: 120px;
   object-fit: contain;
 }
 
@@ -61,7 +61,7 @@
 }
 
 .printCustomerName {
-  font-size: 40px;
+  font-size: 26px;
   font-weight: 800;
   color: #111;
   line-height: 1.2;
@@ -108,10 +108,11 @@
 }
 
 .printNotes {
-  font-size: 26px;
+  font-size: 20px;
   font-weight: 700;
   color: #111;
 }
+
 
 .printFooter {
   display: flex;
@@ -124,7 +125,7 @@
 /* ── Print-specific overrides ── */
 @media print {
   @page {
-    size: A4 landscape;
+    size: 279mm 241mm;
     margin: 8mm 10mm 8mm 3mm;
   }
 
@@ -145,12 +146,11 @@
 
   .printHeader {
     grid-template-columns: 72pt 1fr 72pt;
-    margin-bottom: 10pt;
   }
 
   .printLogo {
-    width: 72pt;
-    height: 72pt;
+    width: 120pt;
+    height: 120pt;
   }
 
   .printTitle {
@@ -171,7 +171,7 @@
   }
 
   .printCustomerName {
-    font-size: 36pt;
+    font-size: 26pt;
     font-weight: 800;
   }
 
@@ -193,8 +193,9 @@
   }
 
   .printNotes {
-    font-size: 22pt;
+    font-size: 20pt;
     font-weight: 700;
+    color: #111;
   }
 
   .printFooter {

@@ -47,7 +47,8 @@ export default function SalesOrderView() {
           <div className={styles.printHeaderCenter}>
             <div className={styles.printTitle}>{settings.print_title}送货单</div>
             <div className={styles.printSubtitle}>
-              地址：{settings.company_address}&emsp;电话：{settings.company_phone}
+              <div>地址：{settings.company_address}</div>
+              <div>电话：{settings.company_phone}</div>
             </div>
           </div>
           <div />
