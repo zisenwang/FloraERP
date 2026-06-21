@@ -86,4 +86,5 @@ export interface ReportOrderRow {
   finalAmount: number
   costPrice?: number | null   // sales only
   profit?: number             // sales only
+  notes?: string | null       // sales item notes
 }

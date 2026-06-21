@@ -35,6 +35,7 @@ export function exportSalesExcel(
     '件数': r.pieces || 0,
     '单价': r.unitPrice,
     '金额': r.finalAmount,
+    '备注': r.notes ?? '',
   }))
 
   const totalQty    = rows.reduce((s, r) => s + r.qty, 0)
@@ -51,6 +52,7 @@ export function exportSalesExcel(
     '件数': totalPieces,
     '单价': '',
     '金额': totalAmount,
+    '备注': '',
   })
 
   const ws = XLSX.utils.json_to_sheet(sheetData)

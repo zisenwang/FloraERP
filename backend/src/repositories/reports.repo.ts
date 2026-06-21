@@ -292,7 +292,7 @@ export async function getSalesL3(
            p.code AS product_code, p.name AS product_name,
            s.code AS supplier_code, CONCAT(s.code, ' ', s.name) AS supplier_name,
            soi.qty, soi.pieces, soi.unit_price, soi.amount, soi.discount, soi.final_amount,
-           soi.cost_price,
+           soi.cost_price, soi.notes,
            (soi.final_amount - COALESCE(soi.cost_price, 0) * soi.qty) AS profit
     FROM sales_order_items soi
     JOIN sales_orders so ON so.id = soi.order_id

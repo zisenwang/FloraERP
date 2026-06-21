@@ -92,6 +92,7 @@ export interface ReportOrderRow {
   finalAmount: number
   costPrice?: number | null
   profit?: number
+  notes?: string | null
 }
 
 export const getSalesGroup = async (params: {
