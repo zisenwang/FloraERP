@@ -61,7 +61,7 @@ export async function createReturn(dto: CreateSalesReturnDto, operator: string |
         qtyBefore,
         qtyChange: line.qty,
         qtyAfter: qtyBefore + line.qty,
-        refType: 'sales_return',
+        refType: 'sale_return',
         refId: returnId,
         operator: operator ?? undefined,
       }, conn)
