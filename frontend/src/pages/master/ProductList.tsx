@@ -207,10 +207,9 @@ export default function ProductList() {
           <Form.Item name="supplierId" label="供应商" rules={[{ required: true, message: '请选择供应商' }]}>
             <Select
               placeholder="选择供应商"
-              showSearch
-              filterOption={(input, opt) =>
+              showSearch={{ filterOption: (input, opt) =>
                 (opt?.label as string ?? '').toLowerCase().includes(input.toLowerCase())
-              }
+              }}
               options={suppliers.map(s => ({ value: s.id, label: `${s.code} ${s.name}` }))}
               onChange={handleSupplierChange}
             />

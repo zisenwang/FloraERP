@@ -163,6 +163,9 @@ export default function PurchaseOrderNew() {
       title: '货品', width: 220,
       render: (_: unknown, record: LineItem) => (
         <Select
+          showSearch={{ filterOption: (input, option) =>
+            String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+          }}
           placeholder="选择货品"
           style={{ width: '100%' }}
           value={record.productId}
@@ -237,6 +240,9 @@ export default function PurchaseOrderNew() {
       <Form form={form} layout="inline" className={styles.headerForm}>
         <Form.Item name="supplierId" label="供应商" rules={[{ required: true, message: '请选择供应商' }]}>
           <Select
+            showSearch={{ filterOption: (input, option) =>
+              String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+            }}
             placeholder="选择供应商"
             style={{ width: 200 }}
             options={suppliers.map(s => ({ value: s.id, label: `${s.code} ${s.name}` }))}

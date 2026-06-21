@@ -213,6 +213,9 @@ export default function SalesOrderNew() {
       title: '供应商', width: 160,
       render: (_: unknown, record: LineItem) => (
         <Select
+          showSearch={{ filterOption: (input, option) =>
+            String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+          }}
           placeholder="选择供应商"
           style={{ width: '100%' }}
           value={record.supplierId}
@@ -225,14 +228,13 @@ export default function SalesOrderNew() {
       title: '货品', width: 200,
       render: (_: unknown, record: LineItem) => (
         <Select
-          showSearch
+          showSearch={{ filterOption: (input, option) =>
+            String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+          }}
           placeholder={record.supplierId ? '选择货品' : '请先选供应商'}
           style={{ width: '100%' }}
           value={record.productId}
           disabled={!record.supplierId}
-          filterOption={(input, option) =>
-            String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-          }
           options={productsForLine(record.supplierId).map(p => ({
             value: p.id,
             label: `${p.code} ${p.name}`,
@@ -315,12 +317,11 @@ export default function SalesOrderNew() {
       <Form form={form} layout="inline" className={styles.headerForm}>
         <Form.Item name="customerId" label="客户" rules={[{ required: true, message: '请选择客户' }]}>
           <Select
-            showSearch
+            showSearch={{ filterOption: (input, option) =>
+              String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+            }}
             placeholder="选择客户"
             style={{ width: 200 }}
-            filterOption={(input, option) =>
-              String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-            }
             options={customers.map(c => ({ value: c.id, label: `${c.code} ${c.name}` }))}
           />
         </Form.Item>

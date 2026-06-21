@@ -79,13 +79,12 @@ export default function InventoryReport() {
         />
         <Select
           allowClear
-          showSearch
+          showSearch={{ filterOption: (input, opt) =>
+            (opt?.label as string ?? '').toLowerCase().includes(input.toLowerCase())
+          }}
           placeholder="所有供应商"
           style={{ width: 200 }}
           options={supplierOptions}
-          filterOption={(input, opt) =>
-            (opt?.label as string ?? '').toLowerCase().includes(input.toLowerCase())
-          }
           onChange={val => setSupplierId(val ?? undefined)}
         />
         <Select

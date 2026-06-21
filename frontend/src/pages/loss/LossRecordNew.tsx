@@ -58,12 +58,11 @@ export default function LossRecordNew() {
         <Form form={form} layout="vertical">
           <Form.Item label="供应商">
             <Select
-              showSearch
+              showSearch={{ filterOption: (input, option) =>
+                String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              }}
               allowClear
               placeholder="按供应商筛选（可选）"
-              filterOption={(input, option) =>
-                String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-              }
               options={suppliers.map(s => ({ value: s.id, label: `${s.code} ${s.name}` }))}
               onChange={handleSupplierChange}
             />
@@ -71,11 +70,10 @@ export default function LossRecordNew() {
 
           <Form.Item name="productId" label="货品" rules={[{ required: true, message: '请选择货品' }]}>
             <Select
-              showSearch
-              placeholder={supplierId ? '选择货品' : '选择货品（可先筛选供应商）'}
-              filterOption={(input, option) =>
+              showSearch={{ filterOption: (input, option) =>
                 String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-              }
+              }}
+              placeholder={supplierId ? '选择货品' : '选择货品（可先筛选供应商）'}
               options={filteredProducts.map(p => ({
                 value: p.id,
                 label: `${p.code} ${p.name}（库存 ${p.stock}）`,

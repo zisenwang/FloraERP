@@ -85,12 +85,11 @@ export default function InventoryAdjust() {
         <Form form={form} layout="inline">
           <Form.Item name="productId" label="货品" rules={[{ required: true, message: '请选择货品' }]}>
             <Select
-              showSearch
+              showSearch={{ filterOption: (input, option) =>
+                String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              }}
               placeholder="选择货品"
               style={{ width: 220 }}
-              filterOption={(input, option) =>
-                String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-              }
               options={products.map(p => ({
                 value: p.productId,
                 label: `${p.productCode} ${p.productName}`,
