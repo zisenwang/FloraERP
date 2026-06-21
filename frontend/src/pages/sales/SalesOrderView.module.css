@@ -19,20 +19,34 @@
   line-height: 1.8;
 }
 
-.printTitle {
+.printHeader {
+  display: grid;
+  grid-template-columns: 90px 1fr 90px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.printLogo {
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+}
+
+.printHeaderCenter {
   text-align: center;
+}
+
+.printTitle {
   font-size: 22px;
   font-weight: 700;
   letter-spacing: 4px;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .printSubtitle {
-  text-align: center;
   font-size: 15px;
   font-weight: 600;
   color: #333;
-  margin-bottom: 20px;
   line-height: 1.6;
 }
 
@@ -46,6 +60,13 @@
   padding-bottom: 10px;
 }
 
+.printCustomerName {
+  font-size: 40px;
+  font-weight: 800;
+  color: #111;
+  line-height: 1.2;
+}
+
 .printTable {
   width: 100%;
   border-collapse: collapse;
@@ -57,7 +78,11 @@
   border: 1px solid #bbb;
   padding: 8px 10px;
   text-align: left;
-  font-size: 13px;
+  font-size: 15px;
+}
+
+.printTable td {
+  font-weight: 600;
 }
 
 .printTable th {
@@ -80,6 +105,12 @@
   padding: 8px 0;
   border-top: 1px solid #ddd;
   border-bottom: 1px solid #ddd;
+}
+
+.printNotes {
+  font-size: 26px;
+  font-weight: 700;
+  color: #111;
 }
 
 .printFooter {
@@ -109,41 +140,64 @@
     border: none;
     border-radius: 0;
     padding: 0;
-    font-size: 11pt;
+    font-size: 15pt;
+  }
+
+  .printHeader {
+    grid-template-columns: 72pt 1fr 72pt;
+    margin-bottom: 10pt;
+  }
+
+  .printLogo {
+    width: 72pt;
+    height: 72pt;
   }
 
   .printTitle {
-    font-size: 18pt;
-    margin-bottom: 6pt;
+    font-size: 22pt;
+    margin-bottom: 3pt;
   }
 
   .printSubtitle {
-    font-size: 13pt;
+    font-size: 15pt;
     font-weight: 600;
-    margin-bottom: 14pt;
   }
 
   .printMeta {
-    font-size: 14pt;
+    font-size: 16pt;
     font-weight: 700;
-    margin-bottom: 10pt;
-    padding-bottom: 6pt;
+    margin-bottom: 8pt;
+    padding-bottom: 5pt;
+  }
+
+  .printCustomerName {
+    font-size: 36pt;
+    font-weight: 800;
   }
 
   .printTable th,
   .printTable td {
-    padding: 5pt 8pt;
-    font-size: 10pt;
+    padding: 4pt 7pt;
+    font-size: 15pt;
+  }
+
+  .printTable td {
+    font-weight: 600;
   }
 
   .printSummary {
-    font-size: 11pt;
-    margin-bottom: 20pt;
-    padding: 5pt 0;
+    font-size: 15pt;
+    margin-bottom: 16pt;
+    padding: 4pt 0;
+  }
+
+  .printNotes {
+    font-size: 22pt;
+    font-weight: 700;
   }
 
   .printFooter {
-    font-size: 11pt;
-    margin-top: 28pt;
+    font-size: 14pt;
+    margin-top: 20pt;
   }
 }

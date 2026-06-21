@@ -43,18 +43,24 @@ export default function SalesOrderView() {
       </div>
 
       <div ref={printRef} className={styles.printArea}>
-        <div className={styles.printTitle}>{settings.print_title}送货单</div>
-        <div className={styles.printSubtitle}>
-          地址：{settings.company_address}&emsp;电话：{settings.company_phone}
+        <div className={styles.printHeader}>
+          <img src="/logo.png" alt="logo" className={styles.printLogo} />
+          <div className={styles.printHeaderCenter}>
+            <div className={styles.printTitle}>{settings.print_title}送货单</div>
+            <div className={styles.printSubtitle}>
+              地址：{settings.company_address}&emsp;电话：{settings.company_phone}
+            </div>
+          </div>
+          <div />
         </div>
 
         <div className={styles.printMeta}>
           <span>
-            客户：{order.customerCode} {order.customerName}
-            {order.customerPhone && <>&emsp; {order.customerPhone}</>}
+            客户：{order.customerCode} <span className={styles.printCustomerName}>{order.customerName}</span>
+            {order.customerPhone && <><br />{order.customerPhone}</>}
             {order.customerAddress && <><br />地址：{order.customerAddress}</>}
           </span>
-          <span>日期：{order.orderDate}&emsp;单号：{order.orderNo}</span>
+          <span style={{ alignSelf: 'flex-end' }}>日期：{order.orderDate}&emsp;单号：{order.orderNo}</span>
         </div>
 
         <table className={styles.printTable}>
@@ -103,7 +109,7 @@ export default function SalesOrderView() {
           合计数量 &nbsp;<strong>{totalQty}</strong>&emsp;
           人民币：小写 &nbsp;<strong>¥{order.totalAmount.toFixed(2)}</strong>&emsp;
           大写 &nbsp;<strong>{toChineseAmount(order.totalAmount)}</strong>
-          {order.notes && <><br />备注：{order.notes}</>}
+          {order.notes && <><br /><span className={styles.printNotes}>备注：{order.notes}</span></>}
         </div>
 
         <div className={styles.printFooter}>

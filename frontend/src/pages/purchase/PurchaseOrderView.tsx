@@ -43,9 +43,12 @@ export default function PurchaseOrderView() {
       </div>
 
       <div ref={printRef} className={styles.printArea}>
-        <div className={styles.printTitle}>{settings.print_title}进货单</div>
-        <div className={styles.printSubtitle}>
-          地址：{settings.company_address}&emsp;电话：{settings.company_phone}
+        <div className={styles.printHeader}>
+          <img src="/logo.png" alt="logo" className={styles.printLogo} />
+          <div className={styles.printTitle}>{settings.print_title}进货单</div>
+          <div className={styles.printSubtitle}>
+            地址：{settings.company_address}&emsp;电话：{settings.company_phone}
+          </div>
         </div>
 
         <div className={styles.printMeta}>
@@ -121,7 +124,7 @@ export default function PurchaseOrderView() {
           合计件数 &nbsp;<strong>{totalPieces || '—'}</strong>&emsp;
           人民币：小写 &nbsp;<strong>¥{order.totalAmount.toFixed(2)}</strong>&emsp;
           大写 &nbsp;<strong>{toChineseAmount(order.totalAmount)}</strong>
-          {order.notes && <><br />备注：{order.notes}</>}
+          {order.notes && <><br /><span className={styles.printNotes}>备注：{order.notes}</span></>}
         </div>
 
         <div className={styles.printFooter}>

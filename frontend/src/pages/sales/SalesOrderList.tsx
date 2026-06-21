@@ -91,19 +91,19 @@ export default function SalesOrderList() {
       render: (v: number) => `¥${v.toFixed(2)}`,
     },
     {
+      title: '收款状态', dataIndex: 'paymentStatus', width: 100, align: 'center',
+      render: (v: string) => {
+        const s = PAY_STATUS_MAP[v] ?? { color: 'default' }
+        return <Tag color={s.color}>{v}</Tag>
+      },
+    },
+    {
       title: '总毛利', dataIndex: 'totalProfit', width: 110, align: 'right',
       render: (v: number) => (
         <span style={{ color: v >= 0 ? '#389e0d' : '#cf1322', fontWeight: 600 }}>
           {v >= 0 ? '+' : ''}¥{v.toFixed(2)}
         </span>
       ),
-    },
-    {
-      title: '收款状态', dataIndex: 'paymentStatus', width: 100, align: 'center',
-      render: (v: string) => {
-        const s = PAY_STATUS_MAP[v] ?? { color: 'default' }
-        return <Tag color={s.color}>{v}</Tag>
-      },
     },
     {
       title: '操作', width: 140, fixed: 'right', align: 'center',
@@ -192,6 +192,29 @@ export default function SalesOrderList() {
         size="middle"
         scroll={{ x: 1050 }}
         pagination={{ pageSize: 20, showTotal: total => `共 ${total} 条` }}
+        summary={pageData => {
+          const qty    = pageData.reduce((s, r) => s + (r.totalQty    ?? 0), 0)
+          const pieces = pageData.reduce((s, r) => s + (r.totalPieces ?? 0), 0)
+          const amount = pageData.reduce((s, r) => s + (r.totalAmount  ?? 0), 0)
+          const profit = pageData.reduce((s, r) => s + (r.totalProfit  ?? 0), 0)
+          return (
+            <Table.Summary fixed>
+              <Table.Summary.Row style={{ background: '#fafafa', fontWeight: 600 }}>
+                <Table.Summary.Cell index={0} colSpan={4} align="right">本页合计</Table.Summary.Cell>
+                <Table.Summary.Cell index={4} align="center">{qty}</Table.Summary.Cell>
+                <Table.Summary.Cell index={5} align="center">{pieces}</Table.Summary.Cell>
+                <Table.Summary.Cell index={6} align="center">¥{amount.toFixed(2)}</Table.Summary.Cell>
+                <Table.Summary.Cell index={7} />
+                <Table.Summary.Cell index={8} align="center">
+                  <span style={{ color: profit >= 0 ? '#389e0d' : '#cf1322' }}>
+                    {profit >= 0 ? '+' : ''}¥{profit.toFixed(2)}
+                  </span>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={8} />
+              </Table.Summary.Row>
+            </Table.Summary>
+          )
+        }}
         expandable={{
           onExpand: handleExpand,
           expandedRowRender: record => {

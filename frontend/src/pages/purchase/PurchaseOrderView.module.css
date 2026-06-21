@@ -19,20 +19,32 @@
   line-height: 1.8;
 }
 
-.printTitle {
+.printHeader {
+  position: relative;
   text-align: center;
+  margin-bottom: 20px;
+}
+
+.printLogo {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+}
+
+.printTitle {
   font-size: 22px;
   font-weight: 700;
   letter-spacing: 4px;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .printSubtitle {
-  text-align: center;
   font-size: 15px;
   font-weight: 600;
   color: #333;
-  margin-bottom: 20px;
   line-height: 1.6;
 }
 
@@ -57,13 +69,23 @@
   border: 1px solid #bbb;
   padding: 6px 8px;
   text-align: center;
-  font-size: 13px;
+  font-size: 15px;
   white-space: nowrap;
 }
 
 .printTable th {
   background: #f5f5f5;
   font-weight: 600;
+}
+
+.printTable td {
+  font-weight: 600;
+}
+
+.printNotes {
+  font-size: 26px;
+  font-weight: 700;
+  color: #111;
 }
 
 .printTable td.right {
@@ -108,15 +130,23 @@
     font-size: 12pt;
   }
 
+  .printHeader {
+    margin-bottom: 12pt;
+  }
+
+  .printLogo {
+    width: 72pt;
+    height: 72pt;
+  }
+
   .printTitle {
     font-size: 18pt;
-    margin-bottom: 6pt;
+    margin-bottom: 3pt;
   }
 
   .printSubtitle {
     font-size: 13pt;
     font-weight: 600;
-    margin-bottom: 16pt;
   }
 
   .printMeta {
@@ -129,13 +159,22 @@
   .printTable th,
   .printTable td {
     padding: 6pt 10pt;
-    font-size: 11pt;
+    font-size: 12pt;
+  }
+
+  .printTable td {
+    font-weight: 600;
   }
 
   .printSummary {
     font-size: 11pt;
     margin-bottom: 24pt;
     padding: 6pt 0;
+  }
+
+  .printNotes {
+    font-size: 20pt;
+    font-weight: 700;
   }
 
   .printFooter {
