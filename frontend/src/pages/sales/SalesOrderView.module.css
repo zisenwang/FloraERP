@@ -21,7 +21,7 @@
 
 .printHeader {
   display: grid;
-  grid-template-columns: 90px 1fr 90px;
+  grid-template-columns: 120px 1fr 120px;
   align-items: center;
   margin-bottom: 5px;
 }
@@ -125,8 +125,8 @@
 /* ── Print-specific overrides ── */
 @media print {
   @page {
-    size: 279mm 241mm;
-    margin: 8mm 10mm 8mm 3mm;
+    size: 241mm 279mm ;
+    margin: 0;
   }
 
   .actions {
@@ -145,7 +145,7 @@
   }
 
   .printHeader {
-    grid-template-columns: 72pt 1fr 72pt;
+    grid-template-columns: 120pt 1fr 120pt;
   }
 
   .printLogo {

@@ -45,10 +45,14 @@ export default function PurchaseOrderView() {
       <div ref={printRef} className={styles.printArea}>
         <div className={styles.printHeader}>
           <img src="/logo.png" alt="logo" className={styles.printLogo} />
-          <div className={styles.printTitle}>{settings.print_title}进货单</div>
-          <div className={styles.printSubtitle}>
-            地址：{settings.company_address}&emsp;电话：{settings.company_phone}
+          <div className={styles.printHeaderCenter}>
+            <div className={styles.printTitle}>{settings.print_title}进货单</div>
+            <div className={styles.printSubtitle}>
+              <div>地址：{settings.company_address}</div>
+              <div>电话：{settings.company_phone}</div>
+            </div>
           </div>
+          <div />
         </div>
 
         <div className={styles.printMeta}>
