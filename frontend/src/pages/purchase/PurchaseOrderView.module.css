@@ -44,7 +44,7 @@
 }
 
 .printSubtitle {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 600;
   color: #000;
   line-height: 1.6;
@@ -69,9 +69,9 @@
 .printTable th,
 .printTable td {
   border: 1px solid #bbb;
-  padding: 6px 8px;
+  padding: 1px 8px;
   text-align: center;
-  font-size: 15px;
+  font-size: 18px;
   white-space: nowrap;
 }
 
@@ -129,7 +129,7 @@
     border: none;
     border-radius: 0;
     padding: 0;
-    font-size: 15pt;
+    font-size: 18pt;
     color: #000;
     width: 100%;
   }
@@ -151,7 +151,7 @@
   }
 
   .printSubtitle {
-    font-size: 15pt;
+    font-size: 18pt;
     font-weight: 600;
   }
 
@@ -164,13 +164,13 @@
 
   .printTable th,
   .printTable td {
-    padding: 4pt 7pt;
-    font-size: 15pt;
+    padding: 1pt 7pt;
+    font-size: 18pt;
     border: 2pt solid #333;
   }
 
   .printTable td {
-    font-weight: 600;
+    font-weight: 500;
   }
 
   .printSummary {

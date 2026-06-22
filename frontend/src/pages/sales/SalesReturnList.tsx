@@ -101,7 +101,6 @@ export default function SalesReturnList() {
             onPressEnter={() => fetchReturns(dateRange, search)}
             onClear={() => fetchReturns(dateRange, '')}
           />
-          <Button onClick={() => fetchReturns(dateRange, search)}>搜索</Button>
           <RangePicker
             onChange={(_, strs) => {
               const range = strs[0] && strs[1] ? [strs[0], strs[1]] as [string, string] : undefined
@@ -109,6 +108,7 @@ export default function SalesReturnList() {
               fetchReturns(range, search)
             }}
           />
+          <Button onClick={() => fetchReturns(dateRange, search)}>搜索</Button>
         </div>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/sales/returns/new')}>
           新增退货
