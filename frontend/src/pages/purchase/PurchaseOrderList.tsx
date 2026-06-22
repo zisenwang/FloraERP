@@ -76,16 +76,16 @@ export default function PurchaseOrderList() {
     : orders
 
   const columns: ColumnsType<PurchaseOrder> = [
-    { title: '单号', dataIndex: 'orderNo', width: 160, align: 'center' },
-    { title: '供应商', width: 150, align: 'center', render: (_: unknown, r: PurchaseOrder) => `${r.supplierCode} ${r.supplierName}` },
     { title: '日期', dataIndex: 'orderDate', width: 110, align: 'center' },
+    { title: '供应商', width: 150, align: 'center', render: (_: unknown, r: PurchaseOrder) => `${r.supplierCode} ${r.supplierName}` },
+    { title: '单号', dataIndex: 'orderNo', width: 160, align: 'center' },
     { title: '数量', dataIndex: 'totalQty', width: 90, align: 'center' },
-    { title: '件数', dataIndex: 'totalPieces', width: 80, align: 'center', render: (v: number) => v || '—' },
     {
       title: '金额', dataIndex: 'totalAmount', width: 110,
       render: (v: number) => `¥${v.toLocaleString()}`,
       align: 'center',
     },
+    { title: '件数', dataIndex: 'totalPieces', width: 80, align: 'center', render: (v: number) => v || '—' },
     {
       title: '状态', dataIndex: 'status', width: 90, align: 'center',
       render: (v: string) => <Tag color={STATUS_COLOR[v] ?? 'default'}>{v}</Tag>,
@@ -156,6 +156,23 @@ export default function PurchaseOrderList() {
         size="middle"
         scroll={{ x: 700 }}
         pagination={{ pageSize: 20, showTotal: total => `共 ${total} 条` }}
+        summary={pageData => {
+          const qty    = pageData.reduce((s, r) => s + (r.totalQty     ?? 0), 0)
+          const pieces = pageData.reduce((s, r) => s + (r.totalPieces  ?? 0), 0)
+          const amount = pageData.reduce((s, r) => s + (r.totalAmount  ?? 0), 0)
+          return (
+            <Table.Summary fixed>
+              <Table.Summary.Row style={{ background: '#fafafa', fontWeight: 600 }}>
+                <Table.Summary.Cell index={0} colSpan={4} align="right">本页合计</Table.Summary.Cell>
+                <Table.Summary.Cell index={3} align="center">{qty}</Table.Summary.Cell>
+                <Table.Summary.Cell index={4} align="center">¥{amount.toFixed(2)}</Table.Summary.Cell>
+                <Table.Summary.Cell index={5} align="center">{pieces}</Table.Summary.Cell>
+                <Table.Summary.Cell index={6} />
+                <Table.Summary.Cell index={7} />
+              </Table.Summary.Row>
+            </Table.Summary>
+          )
+        }}
         expandable={{
           onExpand: handleExpand,
           expandedRowRender: record => {

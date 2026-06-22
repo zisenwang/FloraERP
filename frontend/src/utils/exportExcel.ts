@@ -32,9 +32,9 @@ export function exportSalesExcel(
     '货品名称': r.productName ?? '',
     '供应商': r.supplierCode ?? '',   // code only, no name
     '数量': r.qty,
-    '件数': r.pieces || 0,
     '单价': r.unitPrice,
     '金额': r.finalAmount,
+    '件数': r.pieces || 0,
     '备注': r.notes ?? '',
   }))
 
@@ -49,9 +49,9 @@ export function exportSalesExcel(
     '货品名称': '合计',
     '供应商': '',
     '数量': totalQty,
-    '件数': totalPieces,
     '单价': '',
     '金额': totalAmount,
+    '件数': totalPieces,
     '备注': '',
   })
 
@@ -73,19 +73,31 @@ export function exportPurchaseExcel(
   endDate: string,
   label?: string,
 ) {
-  const sheetData = rows.map(r => ({
+  const sheetData: Record<string, string | number>[] = rows.map(r => ({
     '日期': r.orderDate,
     '单号': r.orderNo,
     '供应商': r.supplierName ?? '',
     '货品编码': r.productCode ?? '',
     '货品名称': r.productName ?? '',
     '数量': r.qty,
-    '件数': r.pieces || 0,
     '单价': r.unitPrice,
     '原价金额': r.amount,
     '折扣(%)': r.discount,
     '折后金额': r.finalAmount,
+    '件数': r.pieces || 0,
   }))
+
+  const totalQty    = rows.reduce((s, r) => s + r.qty, 0)
+  const totalPieces = rows.reduce((s, r) => s + (r.pieces || 0), 0)
+  const totalAmount = rows.reduce((s, r) => s + r.finalAmount, 0)
+  sheetData.push({
+    '日期': '', '单号': '', '供应商': '', '货品编码': '',
+    '货品名称': '合计',
+    '数量': totalQty,
+    '单价': '', '原价金额': '', '折扣(%)': '',
+    '折后金额': totalAmount,
+    '件数': totalPieces,
+  })
 
   const ws = XLSX.utils.json_to_sheet(sheetData)
   autoWidth(ws)

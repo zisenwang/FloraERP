@@ -81,15 +81,15 @@ export default function SalesOrderList() {
     : orders
 
   const columns: ColumnsType<SalesOrder> = [
-    { title: '单号',     dataIndex: 'orderNo',      width: 160, align: 'center' },
-    { title: '客户', width: 150, align: 'center', render: (_: unknown, r: SalesOrder) => `${r.customerCode} ${r.customerName}` },
     { title: '日期',     dataIndex: 'orderDate',    width: 110, align: 'center' },
+    { title: '客户', width: 150, align: 'center', render: (_: unknown, r: SalesOrder) => `${r.customerCode} ${r.customerName}` },
+    { title: '单号',     dataIndex: 'orderNo',      width: 160, align: 'center' },
     { title: '数量',     dataIndex: 'totalQty',     width: 80,  align: 'center' },
-    { title: '件数',     dataIndex: 'totalPieces',  width: 80,  align: 'center' },
     {
-      title: '合计金额', dataIndex: 'totalAmount', width: 110, align: 'right',
+      title: '合计金额', dataIndex: 'totalAmount', width: 110, align: 'center',
       render: (v: number) => `¥${v.toFixed(2)}`,
     },
+    { title: '件数',     dataIndex: 'totalPieces',  width: 80,  align: 'center' },
     {
       title: '收款状态', dataIndex: 'paymentStatus', width: 100, align: 'center',
       render: (v: string) => {
@@ -98,7 +98,7 @@ export default function SalesOrderList() {
       },
     },
     {
-      title: '总毛利', dataIndex: 'totalProfit', width: 110, align: 'right',
+      title: '总毛利', dataIndex: 'totalProfit', width: 110, align: 'center',
       render: (v: number) => (
         <span style={{ color: v >= 0 ? '#389e0d' : '#cf1322', fontWeight: 600 }}>
           {v >= 0 ? '+' : ''}¥{v.toFixed(2)}
@@ -128,12 +128,12 @@ export default function SalesOrderList() {
     { title: '单位',     dataIndex: 'unit',         width: 60,  align: 'center' },
     { title: '数量',     dataIndex: 'qty',          width: 70,  align: 'center' },
     { title: '件数',     dataIndex: 'pieces',       width: 70,  align: 'center' },
-    { title: '进价',     dataIndex: 'costPrice',    width: 90,  align: 'right',  render: (v: number | null) => v != null ? `¥${v.toFixed(2)}` : '—' },
-    { title: '单价',     dataIndex: 'unitPrice',    width: 90,  align: 'right',  render: (v: number) => `¥${v}` },
+    { title: '进价',     dataIndex: 'costPrice',    width: 90,  align: 'center',  render: (v: number | null) => v != null ? `¥${v.toFixed(2)}` : '—' },
+    { title: '单价',     dataIndex: 'unitPrice',    width: 90,  align: 'center',  render: (v: number) => `¥${v}` },
     { title: '折扣',     dataIndex: 'discount',     width: 65,  align: 'center', render: (v: number) => `${v ?? 100}%` },
-    { title: '折后金额', dataIndex: 'finalAmount',  width: 110, align: 'right',  render: (v: number) => `¥${v.toFixed(2)}` },
+    { title: '折后金额', dataIndex: 'finalAmount',  width: 110, align: 'center',  render: (v: number) => `¥${v.toFixed(2)}` },
     {
-      title: '毛利', width: 110, align: 'right',
+      title: '毛利', width: 110, align: 'center',
       render: (_: unknown, r: SalesOrderItem) => {
         r.costPrice ??= 0
         const profit = +(r.finalAmount - r.costPrice * r.qty).toFixed(2)
@@ -201,11 +201,11 @@ export default function SalesOrderList() {
             <Table.Summary fixed>
               <Table.Summary.Row style={{ background: '#fafafa', fontWeight: 600 }}>
                 <Table.Summary.Cell index={0} colSpan={4} align="right">本页合计</Table.Summary.Cell>
-                <Table.Summary.Cell index={4} align="center">{qty}</Table.Summary.Cell>
+                <Table.Summary.Cell index={3} align="center">{qty}</Table.Summary.Cell>
+                <Table.Summary.Cell index={4} align="center">¥{amount.toFixed(2)}</Table.Summary.Cell>
                 <Table.Summary.Cell index={5} align="center">{pieces}</Table.Summary.Cell>
-                <Table.Summary.Cell index={6} align="center">¥{amount.toFixed(2)}</Table.Summary.Cell>
-                <Table.Summary.Cell index={7} />
-                <Table.Summary.Cell index={8} align="center">
+                <Table.Summary.Cell index={6} />
+                <Table.Summary.Cell index={7} align="center">
                   <span style={{ color: profit >= 0 ? '#389e0d' : '#cf1322' }}>
                     {profit >= 0 ? '+' : ''}¥{profit.toFixed(2)}
                   </span>
