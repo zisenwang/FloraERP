@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Table, Button, DatePicker, Input, Tag, Select, App, Spin } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
+import dayjs from 'dayjs'
+import type { Dayjs } from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
 import {
   getPurchaseOrders, getPurchaseOrder, deletePurchaseOrder,
@@ -24,6 +26,7 @@ interface UnifiedRow {
   rowType: 'order' | 'return'
   id: number
   date: string
+  time: string
   no: string
   supplierName: string
   supplierCode: string
@@ -40,6 +43,7 @@ function toUnified(o: PurchaseOrder): UnifiedRow {
     rowType: 'order',
     id: o.id,
     date: o.orderDate,
+    time: o.createdAt,
     no: o.orderNo,
     supplierName: o.supplierName,
     supplierCode: o.supplierCode,
@@ -57,6 +61,7 @@ function toUnifiedReturn(r: PurchaseReturn): UnifiedRow {
     rowType: 'return',
     id: r.id,
     date: r.returnDate,
+    time: r.createdAt,
     no: r.returnNo,
     supplierName: r.supplierName,
     supplierCode: r.supplierCode,
@@ -75,7 +80,10 @@ export default function PurchaseOrderList() {
   const [returns, setReturns] = useState<PurchaseReturn[]>([])
   const [loading, setLoading] = useState(false)
   const [supplierSearch, setSupplierSearch] = useState('')
-  const [dateRange, setDateRange] = useState<[string, string] | undefined>()
+  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
+    dayjs().subtract(1, 'month').startOf('month'),
+    dayjs().endOf('month'),
+  ])
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
 
   const [orderItemsMap, setOrderItemsMap] = useState<Record<number, PurchaseOrderItem[]>>({})
@@ -83,10 +91,10 @@ export default function PurchaseOrderList() {
   const [expandLoading, setExpandLoading] = useState<Record<string, boolean>>({})
   const [deleting, setDeleting] = useState<Record<string, boolean>>({})
 
-  const fetchAll = (range?: [string, string], sf = statusFilter) => {
+  const fetchAll = (range = dateRange, sf = statusFilter) => {
     setLoading(true)
-    const startDate = range?.[0]
-    const endDate   = range?.[1]
+    const startDate = range[0].format('YYYY-MM-DD')
+    const endDate   = range[1].format('YYYY-MM-DD')
     const fetchOrders = sf !== '退货'
       ? getPurchaseOrders({ startDate, endDate })
       : Promise.resolve([] as PurchaseOrder[])
@@ -133,7 +141,7 @@ export default function PurchaseOrderList() {
           ? deletePurchaseOrder(row.id)
           : deletePurchaseReturn(row.id)
         return req
-          .then(() => { message.success('删除成功'); fetchAll(dateRange) })
+          .then(() => { message.success('删除成功'); fetchAll() })
           .catch(err => message.error(getErrorMessage(err)))
           .finally(() => setDeleting(prev => ({ ...prev, [row._key]: false })))
       },
@@ -146,7 +154,7 @@ export default function PurchaseOrderList() {
     ...returns.map(toUnifiedReturn),
   ]
     .filter(r => !kw || r.supplierName?.toLowerCase().includes(kw) || r.supplierCode?.toLowerCase().includes(kw))
-    .sort((a, b) => b.date.localeCompare(a.date))
+    .sort((a, b) => b.time.localeCompare(a.time))
 
   const columns: ColumnsType<UnifiedRow> = [
     { title: '日期', dataIndex: 'date', width: 110, align: 'center' },
@@ -242,8 +250,15 @@ export default function PurchaseOrderList() {
             onChange={e => setSupplierSearch(e.target.value)}
           />
           <RangePicker
-            onChange={(_, strs) => {
-              const range = strs[0] && strs[1] ? [strs[0], strs[1]] as [string, string] : undefined
+            value={dateRange}
+            presets={[
+              { label: '本月', value: [dayjs().startOf('month'), dayjs().endOf('month')] },
+              { label: '上月', value: [dayjs().subtract(1, 'month').startOf('month'), dayjs().subtract(1, 'month').endOf('month')] },
+            ]}
+            onChange={v => {
+              const range: [Dayjs, Dayjs] = v && v[0] && v[1]
+                ? [v[0], v[1]]
+                : [dayjs().subtract(1, 'month').startOf('month'), dayjs().endOf('month')]
               setDateRange(range)
               fetchAll(range)
             }}

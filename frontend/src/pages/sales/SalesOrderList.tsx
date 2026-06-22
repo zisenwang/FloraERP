@@ -83,7 +83,10 @@ export default function SalesOrderList() {
   const [returns, setReturns] = useState<SalesReturn[]>([])
   const [loading, setLoading] = useState(false)
   const [customerSearch, setCustomerSearch] = useState('')
-  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>(null)
+  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
+    dayjs().subtract(1, 'month').startOf('month'),
+    dayjs().endOf('month'),
+  ])
   const [paymentStatus, setPaymentStatus] = useState<string | undefined>()
 
   // expand detail cache
@@ -94,8 +97,8 @@ export default function SalesOrderList() {
 
   const fetchAll = () => {
     setLoading(true)
-    const startDate = dateRange?.[0].format('YYYY-MM-DD')
-    const endDate   = dateRange?.[1].format('YYYY-MM-DD')
+    const startDate = dateRange[0].format('YYYY-MM-DD')
+    const endDate   = dateRange[1].format('YYYY-MM-DD')
     const fetchOrders = paymentStatus !== '退货'
       ? getSalesOrders({ startDate, endDate, paymentStatus })
       : Promise.resolve([] as SalesOrder[])
@@ -269,7 +272,12 @@ export default function SalesOrderList() {
           />
           <DatePicker.RangePicker
             value={dateRange}
-            onChange={v => setDateRange(v as [Dayjs, Dayjs] | null)}
+            onChange={v => {
+              const range: [Dayjs, Dayjs] = v && v[0] && v[1]
+                ? [v[0], v[1]]
+                : [dayjs().subtract(1, 'month').startOf('month'), dayjs().endOf('month')]
+              setDateRange(range)
+            }}
             presets={[
               { label: '本月', value: [dayjs().startOf('month'), dayjs().endOf('month')] },
               { label: '上月', value: [dayjs().subtract(1, 'month').startOf('month'), dayjs().subtract(1, 'month').endOf('month')] },
