@@ -5,9 +5,9 @@ import { ArrowLeftOutlined, PrinterOutlined } from '@ant-design/icons'
 import { useReactToPrint } from 'react-to-print'
 import { getPurchaseReturn, type PurchaseReturn } from '@/api/purchase'
 import { getErrorMessage } from '@/utils/error'
-import styles from './PurchaseOrderView.module.css'
 import { useSettings } from '@/store/SettingsContext'
 import { toChineseAmount } from '@/utils/chineseAmount'
+import styles from './PurchaseOrderView.module.css'
 
 export default function PurchaseReturnView() {
   const { id } = useParams<{ id: string }>()
@@ -37,27 +37,38 @@ export default function PurchaseReturnView() {
   return (
     <div className={styles.page}>
       <div className={styles.actions}>
-        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/purchase/returns')}>返回</Button>
+        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/purchase/orders')}>返回</Button>
         <Button type="primary" icon={<PrinterOutlined />} onClick={() => handlePrint()}>打印退货单</Button>
       </div>
+
       <div ref={printRef} className={styles.printArea}>
-        <div className={styles.printTitle}>{settings.print_title}采购退货单</div>
-        <div className={styles.printSubtitle}>
-          地址：{settings.company_address}&emsp;电话：{settings.company_phone}
+        <div className={styles.printHeader}>
+          <img src="/logo.png" alt="logo" className={styles.printLogo} />
+          <div className={styles.printHeaderCenter}>
+            <div className={styles.printTitle}>{settings.print_title}退货单</div>
+            <div className={styles.printSubtitle}>
+              <div>地址：{settings.company_address}</div>
+              <div>电话：{settings.company_phone}</div>
+            </div>
+          </div>
+          <div />
         </div>
+
         <div className={styles.printMeta}>
           <span>供应商：{ret.supplierCode} {ret.supplierName}</span>
           <span>日期：{ret.returnDate}&emsp;单号：{ret.returnNo}</span>
         </div>
+
         <table className={styles.printTable}>
           <colgroup>
-            <col style={{ width: '10%' }} />
-            <col style={{ width: '20%' }} />
+            <col style={{ width: '9%' }} />
+            <col style={{ width: '18%' }} />
             <col style={{ width: '8%' }} />
             <col style={{ width: '6%' }} />
+            <col style={{ width: '5%' }} />
+            <col style={{ width: '5%' }} />
             <col style={{ width: '6%' }} />
-            <col style={{ width: '6%' }} />
-            <col style={{ width: '10%' }} />
+            <col style={{ width: '9%' }} />
             <col style={{ width: '10%' }} />
             <col style={{ width: '14%' }} />
           </colgroup>
@@ -72,6 +83,7 @@ export default function PurchaseReturnView() {
               <th>件数</th>
               <th>单价</th>
               <th>金额</th>
+              <th>备注</th>
             </tr>
           </thead>
           <tbody>
@@ -86,6 +98,7 @@ export default function PurchaseReturnView() {
                 <td>{item.pieces || '—'}</td>
                 <td>¥{item.unitPrice}</td>
                 <td>¥{item.amount.toFixed(2)}</td>
+                <td>{item.notes || ''}</td>
               </tr>
             ))}
             <tr>
@@ -94,16 +107,19 @@ export default function PurchaseReturnView() {
               <td><strong>{totalPieces || '—'}</strong></td>
               <td></td>
               <td><strong>¥{ret.totalAmount.toFixed(2)}</strong></td>
+              <td></td>
             </tr>
           </tbody>
         </table>
+
         <div className={styles.printSummary}>
           合计数量 &nbsp;<strong>{totalQty}</strong>&emsp;
           合计件数 &nbsp;<strong>{totalPieces || '—'}</strong>&emsp;
           人民币：小写 &nbsp;<strong>¥{ret.totalAmount.toFixed(2)}</strong>&emsp;
           大写 &nbsp;<strong>{toChineseAmount(ret.totalAmount)}</strong>
-          {ret.notes && <><br />备注：{ret.notes}</>}
+          {ret.notes && <><br /><span className={styles.printNotes}>备注：{ret.notes}</span></>}
         </div>
+
         <div className={styles.printFooter}>
           <span>开单人：___________</span>
           <span>经手人：___________</span>

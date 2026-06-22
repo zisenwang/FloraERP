@@ -93,6 +93,7 @@ export interface SalesReturnItem {
   productId: number
   productCode: string
   productName: string
+  supplierCode: string
   unit: string
   qty: number
   pieces: number

@@ -26,6 +26,7 @@ export interface PurchaseOrder {
   orderDate: string
   totalQty: number
   totalAmount: number
+  totalPieces: number
   discount: number
   finalAmount: number
   operator: string

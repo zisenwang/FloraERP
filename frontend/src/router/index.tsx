@@ -12,7 +12,6 @@ import ProductList from '@/pages/master/ProductList'
 import PurchaseOrderList from '@/pages/purchase/PurchaseOrderList'
 import PurchaseOrderNew from '@/pages/purchase/PurchaseOrderNew'
 import PurchaseOrderView from '@/pages/purchase/PurchaseOrderView'
-import PurchaseReturnList from '@/pages/purchase/PurchaseReturnList'
 import PurchaseReturnNew from '@/pages/purchase/PurchaseReturnNew'
 import PurchaseReturnView from '@/pages/purchase/PurchaseReturnView'
 
@@ -20,7 +19,6 @@ import PurchaseReturnView from '@/pages/purchase/PurchaseReturnView'
 import SalesOrderList from '@/pages/sales/SalesOrderList'
 import SalesOrderNew from '@/pages/sales/SalesOrderNew'
 import SalesOrderView from '@/pages/sales/SalesOrderView'
-import SalesReturnList from '@/pages/sales/SalesReturnList'
 import SalesReturnNew from '@/pages/sales/SalesReturnNew'
 import SalesReturnView from '@/pages/sales/SalesReturnView'
 
@@ -86,7 +84,7 @@ const router = createBrowserRouter([
       { path: 'purchase/orders/new', element: <PurchaseOrderNew /> },
       { path: 'purchase/orders/:id', element: <PurchaseOrderView /> },
       { path: 'purchase/orders/:id/edit', element: <PurchaseOrderNew /> },
-      { path: 'purchase/returns', element: <PurchaseReturnList /> },
+      { path: 'purchase/returns', element: <Navigate to="/purchase/orders" replace /> },
       { path: 'purchase/returns/new', element: <PurchaseReturnNew /> },
       { path: 'purchase/returns/:id', element: <PurchaseReturnView /> },
       { path: 'purchase/returns/:id/edit', element: <PurchaseReturnNew /> },
@@ -96,7 +94,7 @@ const router = createBrowserRouter([
       { path: 'sales/orders/new', element: <SalesOrderNew /> },
       { path: 'sales/orders/:id', element: <SalesOrderView /> },
       { path: 'sales/orders/:id/edit', element: <SalesOrderNew /> },
-      { path: 'sales/returns', element: <SalesReturnList /> },
+      { path: 'sales/returns', element: <Navigate to="/sales/orders" replace /> },
       { path: 'sales/returns/new', element: <SalesReturnNew /> },
       { path: 'sales/returns/:id', element: <SalesReturnView /> },
       { path: 'sales/returns/:id/edit', element: <SalesReturnNew /> },
