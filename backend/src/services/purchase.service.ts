@@ -106,7 +106,7 @@ export async function createOrder(
     await conn.commit()
     return getOrder(orderId)
   } catch (e) {
-    await conn.rollback()
+    try { await conn.rollback() } catch { conn.destroy() }
     throw e
   } finally {
     conn.release()
@@ -126,7 +126,7 @@ export async function deleteOrder(id: number): Promise<void> {
     await conn.query('DELETE FROM purchase_orders WHERE id = ?', [id])
     await conn.commit()
   } catch (e) {
-    await conn.rollback()
+    try { await conn.rollback() } catch { conn.destroy() }
     throw e
   } finally {
     conn.release()
@@ -183,7 +183,7 @@ export async function updateOrder(id: number, dto: UpdatePurchaseOrderDto): Prom
     await conn.commit()
     return getOrder(id)
   } catch (e) {
-    await conn.rollback()
+    try { await conn.rollback() } catch { conn.destroy() }
     throw e
   } finally {
     conn.release()

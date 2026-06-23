@@ -70,7 +70,7 @@ export async function createReturn(dto: CreatePurchaseReturnDto, operator: strin
     await conn.commit()
     return getReturn(returnId)
   } catch (e) {
-    await conn.rollback()
+    try { await conn.rollback() } catch { conn.destroy() }
     throw e
   } finally {
     conn.release()
@@ -91,7 +91,7 @@ export async function deleteReturn(id: number): Promise<void> {
     await conn.query('DELETE FROM purchase_returns WHERE id = ?', [id])
     await conn.commit()
   } catch (e) {
-    await conn.rollback()
+    try { await conn.rollback() } catch { conn.destroy() }
     throw e
   } finally {
     conn.release()
@@ -131,7 +131,7 @@ export async function updateReturn(id: number, dto: UpdatePurchaseReturnDto): Pr
     await conn.commit()
     return getReturn(id)
   } catch (e) {
-    await conn.rollback()
+    try { await conn.rollback() } catch { conn.destroy() }
     throw e
   } finally {
     conn.release()
