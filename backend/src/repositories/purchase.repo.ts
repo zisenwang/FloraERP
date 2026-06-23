@@ -104,6 +104,14 @@ export async function setOrderNo(id: number, orderNo: string, conn: PoolConnecti
   await conn.query('UPDATE purchase_orders SET order_no = ? WHERE id = ?', [orderNo, id])
 }
 
+export async function countByDate(date: string, id: number, conn: PoolConnection): Promise<number> {
+  const [rows] = await conn.query<RowDataPacket[]>(
+    'SELECT COUNT(*) AS cnt FROM purchase_orders WHERE date = ? AND id <= ?',
+    [date, id],
+  )
+  return Number((rows as RowDataPacket[])[0].cnt)
+}
+
 export async function updateOrderTotals(
   id: number,
   data: {

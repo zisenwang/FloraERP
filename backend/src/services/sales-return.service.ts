@@ -42,7 +42,8 @@ export async function createReturn(dto: CreateSalesReturnDto, operator: string |
       operator,
       notes: dto.notes ?? null,
     }, conn)
-    await repo.setReturnNo(returnId, genSalesReturnNo(returnId, new Date(dto.returnDate)), conn)
+    const seq = await repo.countByDate(dto.returnDate, returnId, conn)
+    await repo.setReturnNo(returnId, genSalesReturnNo(seq, new Date(dto.returnDate)), conn)
     for (const line of lines) {
       await repo.insertItem(returnId, {
         productId: line.productId,

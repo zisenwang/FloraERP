@@ -56,7 +56,8 @@ export async function createOrder(
       },
       conn,
     )
-    await salesRepo.setOrderNo(orderId, genSalesNo(orderId, new Date(dto.orderDate)), conn)
+    const seq = await salesRepo.countByDate(dto.orderDate, orderId, conn)
+    await salesRepo.setOrderNo(orderId, genSalesNo(seq, new Date(dto.orderDate)), conn)
 
     for (const line of lines) {
       await salesRepo.insertItem(

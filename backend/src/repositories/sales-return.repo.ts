@@ -79,6 +79,14 @@ export async function setReturnNo(id: number, returnNo: string, conn: PoolConnec
   await conn.query('UPDATE sales_returns SET return_no = ? WHERE id = ?', [returnNo, id])
 }
 
+export async function countByDate(date: string, id: number, conn: PoolConnection): Promise<number> {
+  const [rows] = await conn.query<RowDataPacket[]>(
+    'SELECT COUNT(*) AS cnt FROM sales_returns WHERE date = ? AND id <= ?',
+    [date, id],
+  )
+  return Number((rows as RowDataPacket[])[0].cnt)
+}
+
 export async function updateReturnTotals(id: number, data: {
   customerId: number
   originalOrderId: number | null
