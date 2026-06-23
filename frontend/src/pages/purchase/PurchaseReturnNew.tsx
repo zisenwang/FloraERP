@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Form, Select, DatePicker, Input, Button, Table, InputNumber, App, Spin } from 'antd'
-import { PlusOutlined, DeleteOutlined, ArrowLeftOutlined } from '@ant-design/icons'
+import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useNavigate, useParams } from 'react-router-dom'
 import dayjs from 'dayjs'
 import {

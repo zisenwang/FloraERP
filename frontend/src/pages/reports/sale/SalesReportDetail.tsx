@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Table, App, Button, Spin } from 'antd'
+import { Table, App, Button, Spin, Tag } from 'antd'
 import { ArrowLeftOutlined, EyeOutlined, DownloadOutlined } from '@ant-design/icons'
+import { useNavigate } from 'react-router-dom'
 import type { ColumnsType } from 'antd/es/table'
 import {
   getSalesSubgroup, getSalesOrderRows,
@@ -29,6 +30,7 @@ export default function SalesReportDetail({
   onBack, onOpenDrawer,
 }: Props) {
   const { message } = App.useApp()
+  const navigate = useNavigate()
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailExpandedKeys, setDetailExpandedKeys] = useState<number[]>([])
   const [l3Loading, setL3Loading] = useState<Record<string, boolean>>({})
@@ -103,14 +105,25 @@ export default function SalesReportDetail({
 
   // ── Columns ─────────────────────────────────────────────────────────────────
   const l3Columns: ColumnsType<ReportOrderRow> = [
-    { title: '单号', dataIndex: 'orderNo', width: 180 },
+    {
+      title: '单号', dataIndex: 'orderNo', width: 190,
+      render: (v: string, r: ReportOrderRow) => (
+        <span>
+          {r.isReturn ? <Tag color="orange" style={{ marginRight: 4 }}>退</Tag> : null}
+          {v}
+        </span>
+      ),
+    },
     { title: '日期', dataIndex: 'orderDate', width: 100 },
     { title: '数量', dataIndex: 'qty', width: 70, align: 'center' },
     { title: '件数', dataIndex: 'pieces', width: 70, align: 'center', render: v => v || '—' },
     { title: '单价', dataIndex: 'unitPrice', width: 85, align: 'right', render: (v: number) => `¥${v.toFixed(2)}` },
-    { title: '原价小计', dataIndex: 'amount', width: 95, align: 'right', render: (v: number) => `¥${v.toFixed(2)}` },
-    { title: '折扣', dataIndex: 'discount', width: 65, align: 'center', render: (v: number) => `${v}%` },
-    { title: '折后金额', dataIndex: 'finalAmount', width: 95, align: 'right', render: (v: number) => `¥${v.toFixed(2)}` },
+    {
+      title: '折后金额', dataIndex: 'finalAmount', width: 95, align: 'right',
+      render: (v: number, r: ReportOrderRow) => (
+        <span style={{ color: r.isReturn ? '#cf1322' : undefined }}>¥{v.toFixed(2)}</span>
+      ),
+    },
     { title: '成本价', dataIndex: 'costPrice', width: 85, align: 'right', render: (v: number | null) => v != null ? `¥${v.toFixed(2)}` : '—' },
     {
       title: '利润', dataIndex: 'profit', width: 90, align: 'right',
@@ -123,7 +136,10 @@ export default function SalesReportDetail({
     {
       title: '', width: 60, align: 'center',
       render: (_: unknown, r: ReportOrderRow) => (
-        <Button size="small" type="link" icon={<EyeOutlined />} onClick={() => onOpenDrawer(r.orderId)}>查看</Button>
+        <Button size="small" type="link" icon={<EyeOutlined />}
+          onClick={() => r.isReturn ? navigate(`/sales/returns/${r.orderId}`) : onOpenDrawer(r.orderId)}>
+          查看
+        </Button>
       ),
     },
   ]

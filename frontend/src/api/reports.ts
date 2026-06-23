@@ -93,6 +93,7 @@ export interface ReportOrderRow {
   costPrice?: number | null
   profit?: number
   notes?: string | null
+  isReturn?: boolean
 }
 
 export const getSalesGroup = async (params: {
