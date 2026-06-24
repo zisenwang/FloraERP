@@ -164,8 +164,8 @@ export default function SalesReportSummary({
     { title: l2Label, dataIndex: 'name', width: 200 },
     { title: '订单数', dataIndex: 'orderCount', width: 80, align: 'center' },
     { title: '数量', dataIndex: 'totalQty', width: 80, align: 'center' },
-    { title: '件数', dataIndex: 'totalPieces', width: 75, align: 'center', render: v => v || '—' },
     { title: '金额', dataIndex: 'totalAmount', width: 110, align: 'right', render: (v: number) => `¥${v.toFixed(2)}` },
+    { title: '件数', dataIndex: 'totalPieces', width: 75, align: 'center', render: v => v || '—' },
     {
       title: '毛利', dataIndex: 'totalProfit', width: 110, align: 'right',
       render: (v: number) => (
@@ -192,8 +192,8 @@ export default function SalesReportSummary({
     { title: l1Label, dataIndex: 'name', width: 220 },
     { title: '订单数', dataIndex: 'orderCount', width: 80, align: 'center' },
     { title: '数量', dataIndex: 'totalQty', width: 80, align: 'center' },
-    { title: '件数', dataIndex: 'totalPieces', width: 75, align: 'center', render: v => v || '—' },
     { title: '金额', dataIndex: 'totalAmount', width: 120, align: 'right', render: (v: number) => `¥${v.toFixed(2)}` },
+    { title: '件数', dataIndex: 'totalPieces', width: 75, align: 'center', render: v => v || '—' },
     {
       title: '毛利', dataIndex: 'totalProfit', width: 120, align: 'right',
       render: (v: number) => (
