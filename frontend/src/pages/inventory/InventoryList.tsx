@@ -3,6 +3,7 @@ import { Table, Input, Select, Tag, App, Button, Space } from 'antd'
 import { SearchOutlined, SortAscendingOutlined, SortDescendingOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { getInventory, type InventoryRow } from '@/api/inventory'
+import { getProductCategories } from '@/api/products'
 import { getErrorMessage } from '@/utils/error'
 import { PAGE_SIZE } from '@/constants/pagination'
 import styles from './Inventory.module.css'
@@ -18,12 +19,14 @@ export default function InventoryList() {
   const [items, setItems] = useState<InventoryRow[]>([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
-  const [supplierFilter, setSupplierFilter] = useState<string | undefined>()
+  const [categoryFilter, setCategoryFilter] = useState<string | undefined>()
+  const [categories, setCategories] = useState<string[]>([])
   const [sortField, setSortField] = useState<SortField>('stock')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
+    getProductCategories().then(setCategories).catch(() => {})
     setLoading(true)
     getInventory()
       .then(data => setItems(data))
@@ -31,22 +34,14 @@ export default function InventoryList() {
       .finally(() => setLoading(false))
   }, [])
 
-  const supplierOptions = useMemo(() => {
-    const seen = new Map<string, string>()
-    items.forEach(r => { if (r.supplierCode) seen.set(r.supplierCode, r.supplierName) })
-    return Array.from(seen.entries())
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([code, name]) => ({ label: `${code} ${name}`, value: code }))
-  }, [items])
-
   const sortedItems = useMemo(() => {
     const filtered = items.filter(r => {
       const kw = search.toLowerCase()
       const matchSearch = !kw ||
         r.productName.toLowerCase().includes(kw) ||
         r.productCode.toLowerCase().includes(kw)
-      const matchSupplier = !supplierFilter || r.supplierCode === supplierFilter
-      return matchSearch && matchSupplier
+      const matchCategory = !categoryFilter || r.category === categoryFilter
+      return matchSearch && matchCategory
     })
     filtered.sort((a, b) => {
       let va: number | string
@@ -63,7 +58,7 @@ export default function InventoryList() {
       return 0
     })
     return filtered
-  }, [items, search, supplierFilter, sortField, sortDir])
+  }, [items, search, categoryFilter, sortField, sortDir])
 
   const pageItems = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE
@@ -140,10 +135,10 @@ export default function InventoryList() {
           showSearch={{ filterOption: (input, opt) =>
             (opt?.label as string ?? '').toLowerCase().includes(input.toLowerCase())
           }}
-          placeholder="按供应商筛选"
-          style={{ width: 180 }}
-          options={supplierOptions}
-          onChange={val => { setSupplierFilter(val); setCurrentPage(1) }}
+          placeholder="按分类筛选"
+          style={{ width: 140 }}
+          options={categories.map(c => ({ value: c, label: c }))}
+          onChange={val => { setCategoryFilter(val); setCurrentPage(1) }}
         />
         <Space size={4}>
           <span style={{ fontSize: 12, color: '#888' }}>排序：</span>

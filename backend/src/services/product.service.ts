@@ -63,3 +63,7 @@ export async function deleteProduct(id: number): Promise<void> {
 export async function getNextProductCode(supplierId: number): Promise<string> {
   return repo.getNextCode(supplierId)
 }
+
+export async function getProductCategories(): Promise<string[]> {
+  return repo.findCategories()
+}

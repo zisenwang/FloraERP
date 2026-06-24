@@ -69,6 +69,11 @@ export async function remove(req: AuthRequest, res: Response): Promise<void> {
   res.json({ data: { message: '删除成功' } })
 }
 
+export async function categories(_req: AuthRequest, res: Response): Promise<void> {
+  const data = await service.getProductCategories()
+  res.json({ data })
+}
+
 export async function nextCode(req: AuthRequest, res: Response): Promise<void> {
   const supplierId = Number(req.query.supplierId)
   if (!supplierId) { res.status(400).json({ message: '缺少 supplierId' }); return }

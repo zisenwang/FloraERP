@@ -3,6 +3,7 @@ import { Table, InputNumber, Button, Tag, App, Popconfirm, Input, Select, Space 
 import { CheckOutlined, SearchOutlined, SortAscendingOutlined, SortDescendingOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { getInventory, createAdjustment, type InventoryRow } from '@/api/inventory'
+import { getProductCategories } from '@/api/products'
 import { getErrorMessage } from '@/utils/error'
 import { PAGE_SIZE } from '@/constants/pagination'
 import styles from './Inventory.module.css'
@@ -23,21 +24,14 @@ export default function InventoryCheck() {
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [search, setSearch] = useState('')
-  const [supplierFilter, setSupplierFilter] = useState<string | undefined>(undefined)
+  const [categoryFilter, setCategoryFilter] = useState<string | undefined>()
+  const [categories, setCategories] = useState<string[]>([])
   const [sortField, setSortField] = useState<SortField>('stock')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [currentPage, setCurrentPage] = useState(1)
 
-  const supplierOptions = useMemo(() => {
-    const seen = new Map<string, string>()
-    rows.forEach(r => { if (r.supplierCode) seen.set(r.supplierCode, r.supplierName) })
-    return Array.from(seen.entries()).map(([code, name]) => ({
-      label: `${code} ${name}`,
-      value: code,
-    }))
-  }, [rows])
-
   useEffect(() => {
+    getProductCategories().then(setCategories).catch(() => {})
     setLoading(true)
     getInventory()
       .then(items => setRows(items.map(i => ({ ...i, actual: null }))))
@@ -79,8 +73,8 @@ export default function InventoryCheck() {
       const matchSearch = !kw ||
         r.productName.toLowerCase().includes(kw) ||
         r.productCode.toLowerCase().includes(kw)
-      const matchSupplier = !supplierFilter || r.supplierCode === supplierFilter
-      return matchSearch && matchSupplier
+      const matchCategory = !categoryFilter || r.category === categoryFilter
+      return matchSearch && matchCategory
     })
     filtered.sort((a, b) => {
       let va: number | string
@@ -97,7 +91,7 @@ export default function InventoryCheck() {
       return 0
     })
     return filtered
-  }, [rows, search, supplierFilter, sortField, sortDir])
+  }, [rows, search, categoryFilter, sortField, sortDir])
 
   function toggleSort(field: SortField) {
     if (sortField === field) {
@@ -185,14 +179,14 @@ export default function InventoryCheck() {
           style={{ width: 200 }}
         />
         <Select
-          placeholder="按供应商筛选"
+          placeholder="按分类筛选"
           allowClear
           showSearch={{ filterOption: (input, opt) =>
             (opt?.label as string ?? '').toLowerCase().includes(input.toLowerCase())
           }}
-          style={{ width: 180 }}
-          options={supplierOptions}
-          onChange={val => setSupplierFilter(val)}
+          style={{ width: 140 }}
+          options={categories.map(c => ({ value: c, label: c }))}
+          onChange={val => { setCategoryFilter(val); setCurrentPage(1) }}
         />
         <Space size={4}>
           <span style={{ fontSize: 12, color: '#888' }}>排序：</span>

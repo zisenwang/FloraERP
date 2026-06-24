@@ -123,3 +123,11 @@ export async function remove(id: number): Promise<boolean> {
   const [result] = await pool.query<ResultSetHeader>('DELETE FROM products WHERE id = ?', [id])
   return result.affectedRows > 0
 }
+
+
+export async function findCategories(): Promise<string[]> {
+  const [rows] = await pool.query<RowDataPacket[]>(
+    "SELECT DISTINCT category FROM products WHERE status = 1 AND category IS NOT NULL AND category != '' ORDER BY category",
+  )
+  return (rows as RowDataPacket[]).map(r => r.category as string)
+}

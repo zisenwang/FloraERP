@@ -55,3 +55,8 @@ export const getNextProductCode = async (supplierId: number): Promise<string> =>
   const res = await client.get<{ data: string }>('/products/next-code', { params: { supplierId } })
   return res.data.data
 }
+
+export const getProductCategories = async (): Promise<string[]> => {
+  const res = await client.get<{ data: string[] }>('/products/categories')
+  return res.data.data
+}
