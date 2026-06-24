@@ -1,13 +1,20 @@
 import { useEffect, useState, useMemo } from 'react'
-import { Table, InputNumber, Button, Tag, App, Popconfirm, Input, Select } from 'antd'
-import { CheckOutlined, SearchOutlined } from '@ant-design/icons'
+import { Table, InputNumber, Button, Tag, App, Popconfirm, Input, Select, Space } from 'antd'
+import { CheckOutlined, SearchOutlined, SortAscendingOutlined, SortDescendingOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { getInventory, createAdjustment, type InventoryRow } from '@/api/inventory'
 import { getErrorMessage } from '@/utils/error'
+import { PAGE_SIZE } from '@/constants/pagination'
 import styles from './Inventory.module.css'
 
 interface CheckRow extends InventoryRow {
   actual: number | null  // null = not counted yet
+}
+
+type SortField = 'stock' | 'pieces' | 'productCode'
+
+function getPieces(r: InventoryRow) {
+  return r.unitsPerPiece ? Math.ceil(r.stock / r.unitsPerPiece) : null
 }
 
 export default function InventoryCheck() {
@@ -17,6 +24,9 @@ export default function InventoryCheck() {
   const [submitting, setSubmitting] = useState(false)
   const [search, setSearch] = useState('')
   const [supplierFilter, setSupplierFilter] = useState<string | undefined>(undefined)
+  const [sortField, setSortField] = useState<SortField>('stock')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [currentPage, setCurrentPage] = useState(1)
 
   const supplierOptions = useMemo(() => {
     const seen = new Map<string, string>()
@@ -26,15 +36,6 @@ export default function InventoryCheck() {
       value: code,
     }))
   }, [rows])
-
-  const filteredRows = useMemo(() => rows.filter(r => {
-    const kw = search.toLowerCase()
-    const matchSearch = !kw ||
-      r.productName.toLowerCase().includes(kw) ||
-      r.productCode.toLowerCase().includes(kw)
-    const matchSupplier = !supplierFilter || r.supplierCode === supplierFilter
-    return matchSearch && matchSupplier
-  }), [rows, search, supplierFilter])
 
   useEffect(() => {
     setLoading(true)
@@ -64,7 +65,6 @@ export default function InventoryCheck() {
         })
       }
       message.success(`盘点完成，已调整 ${diffs.length} 个品种`)
-      // Reset actual counts
       setRows(prev => prev.map(r => ({ ...r, actual: null })))
     } catch (err) {
       message.error(getErrorMessage(err))
@@ -73,9 +73,62 @@ export default function InventoryCheck() {
     }
   }
 
+  const sortedRows = useMemo(() => {
+    const filtered = rows.filter(r => {
+      const kw = search.toLowerCase()
+      const matchSearch = !kw ||
+        r.productName.toLowerCase().includes(kw) ||
+        r.productCode.toLowerCase().includes(kw)
+      const matchSupplier = !supplierFilter || r.supplierCode === supplierFilter
+      return matchSearch && matchSupplier
+    })
+    filtered.sort((a, b) => {
+      let va: number | string
+      let vb: number | string
+      if (sortField === 'stock') {
+        va = a.stock; vb = b.stock
+      } else if (sortField === 'pieces') {
+        va = getPieces(a) ?? 0; vb = getPieces(b) ?? 0
+      } else {
+        va = a.productCode; vb = b.productCode
+      }
+      if (va < vb) return sortDir === 'asc' ? -1 : 1
+      if (va > vb) return sortDir === 'asc' ? 1 : -1
+      return 0
+    })
+    return filtered
+  }, [rows, search, supplierFilter, sortField, sortDir])
+
+  function toggleSort(field: SortField) {
+    if (sortField === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDir(field === 'productCode' ? 'asc' : 'desc')
+    }
+    setCurrentPage(1)
+  }
+
+  function SortBtn({ field, label }: { field: SortField; label: string }) {
+    const active = sortField === field
+    const icon = active
+      ? (sortDir === 'asc' ? <SortAscendingOutlined /> : <SortDescendingOutlined />)
+      : null
+    return (
+      <Button
+        size="small"
+        type={active ? 'primary' : 'default'}
+        icon={icon}
+        onClick={() => toggleSort(field)}
+      >
+        {label}
+      </Button>
+    )
+  }
+
   const countedRows = rows.filter(r => r.actual !== null)
   const diffRows = rows.filter(r => r.actual !== null && r.actual !== r.stock)
-  const countedInView = filteredRows.filter(r => r.actual !== null).length
+  const countedInView = sortedRows.filter(r => r.actual !== null).length
 
   const columns: ColumnsType<CheckRow> = [
     { title: '编码', dataIndex: 'productCode', width: 100 },
@@ -85,6 +138,11 @@ export default function InventoryCheck() {
     {
       title: '系统库存', dataIndex: 'stock', width: 100, align: 'center',
       render: (v: number) => <strong>{v}</strong>,
+    },
+    {
+      title: '件数', width: 80, align: 'center',
+      render: (_: unknown, r: CheckRow) =>
+        r.unitsPerPiece ? Math.ceil(r.stock / r.unitsPerPiece) : '—',
     },
     {
       title: '实盘数量', width: 110, align: 'center',
@@ -129,12 +187,21 @@ export default function InventoryCheck() {
         <Select
           placeholder="按供应商筛选"
           allowClear
-          style={{ width: 160 }}
+          showSearch={{ filterOption: (input, opt) =>
+            (opt?.label as string ?? '').toLowerCase().includes(input.toLowerCase())
+          }}
+          style={{ width: 180 }}
           options={supplierOptions}
           onChange={val => setSupplierFilter(val)}
         />
+        <Space size={4}>
+          <span style={{ fontSize: 12, color: '#888' }}>排序：</span>
+          <SortBtn field="stock" label="数量" />
+          <SortBtn field="pieces" label="件数" />
+          <SortBtn field="productCode" label="编码" />
+        </Space>
         <span style={{ fontSize: 13, color: '#555' }}>
-          已盘点：<strong>{countedRows.length}</strong> / {rows.length}（当前视图 {countedInView}/{filteredRows.length}）&emsp;
+          已盘点：<strong>{countedRows.length}</strong> / {rows.length}（当前视图 {countedInView}/{sortedRows.length}）&emsp;
           有差异：<strong style={{ color: diffRows.length > 0 ? '#cf1322' : '#389e0d' }}>{diffRows.length}</strong>
         </span>
         <Popconfirm
@@ -158,9 +225,14 @@ export default function InventoryCheck() {
       <Table
         rowKey="productId"
         columns={columns}
-        dataSource={filteredRows}
+        dataSource={sortedRows}
         loading={loading}
-        pagination={{ pageSize: 20, showTotal: total => `共 ${total} 条` }}
+        pagination={{
+          pageSize: PAGE_SIZE,
+          current: currentPage,
+          onChange: (p) => setCurrentPage(p),
+          showTotal: total => `共 ${total} 条`,
+        }}
         size="small"
       />
     </>

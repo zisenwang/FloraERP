@@ -58,13 +58,13 @@ export default function InventoryAdjust() {
   const historyColumns: ColumnsType<InventoryAdjustment> = [
     { title: '时间', dataIndex: 'createdAt', width: 110 },
     { title: '编码', dataIndex: 'productCode', width: 100 },
-    { title: '货品名称', dataIndex: 'productName' },
+    { title: '货品名称', dataIndex: 'productName', width: 150 },
     {
-      title: '类型', dataIndex: 'type', width: 80, align: 'center',
+      title: '类型', dataIndex: 'type', width: 100, align: 'center',
       render: (v: string) => <Tag color={TYPE_COLOR[v] ?? 'default'}>{TYPE_LABEL[v] ?? v}</Tag>,
     },
     {
-      title: '变动数量', dataIndex: 'qtyChange', width: 90, align: 'center',
+      title: '变动数量', dataIndex: 'qtyChange', width: 100, align: 'center',
       render: (v: number) => (
         <span style={{ color: v > 0 ? '#389e0d' : '#cf1322', fontWeight: 600 }}>
           {v > 0 ? `+${v}` : v}
@@ -72,7 +72,7 @@ export default function InventoryAdjust() {
       ),
     },
     { title: '调后数量', dataIndex: 'qtyAfter', width: 90, align: 'center' },
-    { title: '原因', dataIndex: 'reason' },
+    { title: '原因', dataIndex: 'reason', width: 150 },
     { title: '操作人', dataIndex: 'operator', width: 90 },
   ]
 

@@ -6,6 +6,7 @@ export interface InventoryRow {
   supplierCode: string
   category: string | null
   unit: string
+  unitsPerPiece: number | null
   stock: number
   lastUpdated: string
 }

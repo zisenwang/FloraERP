@@ -9,7 +9,7 @@ export async function findAll(
   let sql = `
     SELECT i.product_id, CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
            s.name AS supplier_name, s.code AS supplier_code,
-           p.category, p.unit, i.quantity AS stock,
+           p.category, p.unit, p.units_per_piece, i.quantity AS stock,
            DATE_FORMAT(i.updated_at, '%Y-%m-%d') AS last_updated
     FROM inventory i
     JOIN products p ON p.id = i.product_id

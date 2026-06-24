@@ -8,6 +8,7 @@ export interface InventoryRow {
   supplierCode: string;
   category: string;
   unit: string;
+  unitsPerPiece: number | null;
   stock: number;
   lastUpdated: string;
 }
