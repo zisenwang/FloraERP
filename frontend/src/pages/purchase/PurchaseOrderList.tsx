@@ -12,6 +12,7 @@ import {
   type PurchaseReturn, type PurchaseReturnItem,
 } from '@/api/purchase'
 import { getErrorMessage } from '@/utils/error'
+import { PAGE_SIZE } from '@/constants/pagination'
 import styles from './Purchase.module.css'
 
 const { RangePicker } = DatePicker
@@ -290,23 +291,33 @@ export default function PurchaseOrderList() {
         loading={loading}
         size="middle"
         scroll={{ x: 750 }}
-        pagination={{ pageSize: 20, showTotal: total => `共 ${total} 条` }}
+        pagination={{ pageSize: PAGE_SIZE, showTotal: total => `共 ${total} 条` }}
         summary={pageData => {
-          const orderRows = pageData.filter(r => r.rowType === 'order')
-          const returnRows = pageData.filter(r => r.rowType === 'return')
-          const qty    = orderRows.reduce((s, r) => s + (r.qty    ?? 0), 0) - returnRows.reduce((s, r) => s + (r.qty ?? 0), 0)
-          const pieces = orderRows.reduce((s, r) => s + (r.pieces ?? 0), 0) - returnRows.reduce((s, r) => s + (r.pieces ?? 0), 0)
-          const amount = orderRows.reduce((s, r) => s + (r.amount ?? 0), 0) - returnRows.reduce((s, r) => s + (r.amount ?? 0), 0)
+          const calc = (rows: UnifiedRow[]) => {
+            const orders  = rows.filter(r => r.rowType === 'order')
+            const returns = rows.filter(r => r.rowType === 'return')
+            return {
+              qty:    orders.reduce((s, r) => s + (r.qty    ?? 0), 0) - returns.reduce((s, r) => s + (r.qty    ?? 0), 0),
+              pieces: orders.reduce((s, r) => s + (r.pieces ?? 0), 0) - returns.reduce((s, r) => s + (r.pieces ?? 0), 0),
+              amount: orders.reduce((s, r) => s + (r.amount ?? 0), 0) - returns.reduce((s, r) => s + (r.amount ?? 0), 0),
+            }
+          }
+          const page  = calc(pageData as UnifiedRow[])
+          const total = calc(combined)
+          const SummaryRow = ({ label, d, bg }: { label: string; d: typeof page; bg: string }) => (
+            <Table.Summary.Row style={{ background: bg, fontWeight: 600 }}>
+              <Table.Summary.Cell index={0} colSpan={4} align="right">{label}</Table.Summary.Cell>
+              <Table.Summary.Cell index={3} align="center">{d.qty}</Table.Summary.Cell>
+              <Table.Summary.Cell index={4} align="center">¥{d.amount.toFixed(2)}</Table.Summary.Cell>
+              <Table.Summary.Cell index={5} align="center">{d.pieces}</Table.Summary.Cell>
+              <Table.Summary.Cell index={6} />
+              <Table.Summary.Cell index={7} />
+            </Table.Summary.Row>
+          )
           return (
             <Table.Summary fixed>
-              <Table.Summary.Row style={{ background: '#fafafa', fontWeight: 600 }}>
-                <Table.Summary.Cell index={0} colSpan={4} align="right">本页合计</Table.Summary.Cell>
-                <Table.Summary.Cell index={3} align="center">{qty}</Table.Summary.Cell>
-                <Table.Summary.Cell index={4} align="center">¥{amount.toFixed(2)}</Table.Summary.Cell>
-                <Table.Summary.Cell index={5} align="center">{pieces}</Table.Summary.Cell>
-                <Table.Summary.Cell index={6} />
-                <Table.Summary.Cell index={7} />
-              </Table.Summary.Row>
+              <SummaryRow label="本页合计" d={page}  bg="#fafafa" />
+              <SummaryRow label="全部合计" d={total} bg="#f0f5ff" />
             </Table.Summary>
           )
         }}
