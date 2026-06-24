@@ -139,6 +139,10 @@ export default function InventoryCheck() {
         r.unitsPerPiece ? Math.ceil(r.stock / r.unitsPerPiece) : '—',
     },
     {
+      title: '每件数量', dataIndex: 'unitsPerPiece', width: 70, align: 'center',
+      render: (v: number | null) => v ?? '—',
+    },
+    {
       title: '实盘数量', width: 110, align: 'center',
       render: (_: unknown, record: CheckRow) => (
         <InputNumber

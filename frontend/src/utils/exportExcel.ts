@@ -119,6 +119,7 @@ export function exportInventoryExcel(rows: InventoryReportItem[]) {
     '单位': r.unit,
     '当前库存': r.stock,
     '件数': r.unitsPerPiece ? getPieces(r) : '',
+    '每件数量': r.unitsPerPiece ?? '',
     '成本价': r.costPrice != null ? r.costPrice : '',
     '售价': r.price != null ? r.price : '',
   }))
@@ -129,6 +130,7 @@ export function exportInventoryExcel(rows: InventoryReportItem[]) {
     '编码': '', '货品名称': '合计', '供应商': '', '分类': '', '单位': '',
     '当前库存': totalQty,
     '件数': totalPieces,
+    '每件数量': '',
     '成本价': '',
     '售价': '',
   })

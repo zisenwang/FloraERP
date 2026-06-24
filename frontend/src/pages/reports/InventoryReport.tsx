@@ -112,6 +112,10 @@ export default function InventoryReport() {
         r.unitsPerPiece ? Math.ceil(r.stock / r.unitsPerPiece) : '—',
     },
     {
+      title: '每件数量', dataIndex: 'unitsPerPiece', width: 70, align: 'center',
+      render: (v: number | null) => v ?? '—',
+    },
+    {
       title: '成本价', dataIndex: 'costPrice', width: 90, align: 'right',
       render: (v: number) => v != null ? `¥${v.toFixed(2)}` : '—',
     },
@@ -173,22 +177,21 @@ export default function InventoryReport() {
         }}
         size="small"
         summary={() => (
-          <Table.Summary fixed="bottom">
-            <Table.Summary.Row style={{ background: '#fafafa', fontWeight: 500 }}>
-              <Table.Summary.Cell index={0} colSpan={5}>本页小计</Table.Summary.Cell>
-              <Table.Summary.Cell index={1} align="center">{pageQty}</Table.Summary.Cell>
-              <Table.Summary.Cell index={2} align="center">{pagePieces}</Table.Summary.Cell>
-              <Table.Summary.Cell index={3} />
-              <Table.Summary.Cell index={4} />
-            </Table.Summary.Row>
-            <Table.Summary.Row style={{ background: '#f0f5ff', fontWeight: 600 }}>
-              <Table.Summary.Cell index={0} colSpan={5}>全部合计（{sortedItems.length} 种）</Table.Summary.Cell>
-              <Table.Summary.Cell index={1} align="center">{totalQty}</Table.Summary.Cell>
-              <Table.Summary.Cell index={2} align="center">{totalPieces}</Table.Summary.Cell>
-              <Table.Summary.Cell index={3} />
-              <Table.Summary.Cell index={4} />
-            </Table.Summary.Row>
-          </Table.Summary>
+            <Table.Summary fixed="bottom">
+              <Table.Summary.Row style={{ background: '#fafafa', fontWeight: 500 }}>
+                <Table.Summary.Cell index={1} colSpan={4}/>
+                <Table.Summary.Cell index={2} >本页小计</Table.Summary.Cell>
+                <Table.Summary.Cell index={3} align="center">{pageQty}</Table.Summary.Cell>
+                <Table.Summary.Cell index={5} align="center">{pagePieces}</Table.Summary.Cell>
+                <Table.Summary.Cell index={6} colSpan={3}/>
+              </Table.Summary.Row>
+              <Table.Summary.Row style={{ background: '#f0f5ff', fontWeight: 600 }}>
+                <Table.Summary.Cell index={0} colSpan={5} align={"right"}>全部合计（{sortedItems.length} 种）</Table.Summary.Cell>
+                <Table.Summary.Cell index={1} align="center">{totalQty}</Table.Summary.Cell>
+                <Table.Summary.Cell index={3} align="center">{totalPieces}</Table.Summary.Cell>
+                <Table.Summary.Cell index={4} colSpan={3}/>
+              </Table.Summary.Row>
+            </Table.Summary>
         )}
       />
     </>
