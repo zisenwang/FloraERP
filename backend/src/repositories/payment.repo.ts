@@ -5,7 +5,7 @@ import type { RowDataPacket, ResultSetHeader, PoolConnection } from 'mysql2/prom
 
 const SELECT = `
   SELECT p.id, p.sales_order_id, so.order_no, p.customer_id,
-         c.name AS customer_name, p.amount, p.method,
+         c.name AS customer_name, c.code AS customer_code, p.amount, p.method,
          DATE_FORMAT(p.payment_date, '%Y-%m-%d') AS payment_date,
          p.notes, COALESCE(u.name, p.operator) AS operator
   FROM payments p

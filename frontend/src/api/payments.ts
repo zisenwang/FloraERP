@@ -6,6 +6,7 @@ export interface Payment {
   orderNo: string
   customerId: number
   customerName: string
+  customerCode: string
   amount: number
   method: string
   paymentDate: string

@@ -126,7 +126,10 @@ export default function SalesReportSummary({
       render: (v: string, r: ReportOrderRow) => (
         <span>
           {r.isReturn ? <Tag color="orange" style={{ marginRight: 4 }}>退</Tag> : null}
-          {v}
+          <Button type="link" size="small" style={{ padding: 0 }}
+            onClick={() => r.isReturn ? navigate(`/sales/returns/${r.orderId}`) : onOpenDrawer(r.orderId)}>
+            {v}
+          </Button>
         </span>
       ),
     },
@@ -147,15 +150,6 @@ export default function SalesReportSummary({
         <span style={{ color: v >= 0 ? '#389e0d' : '#cf1322', fontWeight: 500 }}>
           {v >= 0 ? '+' : ''}¥{v.toFixed(2)}
         </span>
-      ),
-    },
-    {
-      title: '', width: 60, align: 'center',
-      render: (_: unknown, r: ReportOrderRow) => (
-        <Button size="small" type="link" icon={<EyeOutlined />}
-          onClick={() => r.isReturn ? navigate(`/sales/returns/${r.orderId}`) : onOpenDrawer(r.orderId)}>
-          查看
-        </Button>
       ),
     },
   ]
