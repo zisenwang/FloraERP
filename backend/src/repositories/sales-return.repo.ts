@@ -81,10 +81,11 @@ export async function setReturnNo(id: number, returnNo: string, conn: PoolConnec
 
 export async function countByDate(date: string, id: number, conn: PoolConnection): Promise<number> {
   const [rows] = await conn.query<RowDataPacket[]>(
-    'SELECT COUNT(*) AS cnt FROM sales_returns WHERE date = ? AND id <= ?',
+    `SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(return_no, '_D', -1) AS UNSIGNED)), 0) + 1 AS next_seq
+     FROM sales_returns WHERE date = ? AND id != ? AND return_no != 'PENDING'`,
     [date, id],
   )
-  return Number((rows as RowDataPacket[])[0].cnt)
+  return Number((rows as RowDataPacket[])[0].next_seq)
 }
 
 export async function updateReturnTotals(id: number, data: {
