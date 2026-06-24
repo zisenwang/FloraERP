@@ -7,9 +7,12 @@ export interface InventoryReportItem {
   productCode: string
   productName: string
   supplierName: string
+  supplierCode: string
   category: string
   unit: string
+  unitsPerPiece: number | null
   stock: number
+  costPrice: number | null
   price: number
 }
 

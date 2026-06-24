@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx'
-import type { ReportOrderRow } from '@/api/reports'
+import type { ReportOrderRow, InventoryReportItem } from '@/api/reports'
 
 function autoWidth(ws: XLSX.WorkSheet) {
   const data = XLSX.utils.sheet_to_json<string[]>(ws, { header: 1 })
@@ -105,4 +105,37 @@ export function exportPurchaseExcel(
   XLSX.utils.book_append_sheet(wb, ws, '进货明细')
   const name = label ? `采购报表_${label}_${startDate}_${endDate}` : `采购报表_${startDate}_${endDate}`
   XLSX.writeFile(wb, `${name}.xlsx`)
+}
+
+export function exportInventoryExcel(rows: InventoryReportItem[]) {
+  const getPieces = (r: InventoryReportItem) =>
+    r.unitsPerPiece ? Math.ceil(r.stock / r.unitsPerPiece) : 0
+
+  const sheetData: Record<string, string | number>[] = rows.map(r => ({
+    '编码': r.productCode,
+    '货品名称': r.productName,
+    '供应商': r.supplierName,
+    '分类': r.category ?? '',
+    '单位': r.unit,
+    '当前库存': r.stock,
+    '件数': r.unitsPerPiece ? getPieces(r) : '',
+    '成本价': r.costPrice != null ? r.costPrice : '',
+    '售价': r.price != null ? r.price : '',
+  }))
+
+  const totalQty    = rows.reduce((s, r) => s + r.stock, 0)
+  const totalPieces = rows.reduce((s, r) => s + getPieces(r), 0)
+  sheetData.push({
+    '编码': '', '货品名称': '合计', '供应商': '', '分类': '', '单位': '',
+    '当前库存': totalQty,
+    '件数': totalPieces,
+    '成本价': '',
+    '售价': '',
+  })
+
+  const ws = XLSX.utils.json_to_sheet(sheetData)
+  autoWidth(ws)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, '库存报表')
+  XLSX.writeFile(wb, `库存报表_${new Date().toISOString().slice(0, 10)}.xlsx`)
 }

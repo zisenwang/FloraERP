@@ -1,45 +1,102 @@
 import { useEffect, useState, useMemo } from 'react'
-import { Table, Select, Tag, App, Input } from 'antd'
+import { Table, Select, Tag, App, Input, Button, Space } from 'antd'
+import { SearchOutlined, DownloadOutlined, SortAscendingOutlined, SortDescendingOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { getInventoryReport, type InventoryReportItem } from '@/api/reports'
-import { getSuppliers, type Supplier } from '@/api/suppliers'
 import { getErrorMessage } from '@/utils/error'
+import { exportInventoryExcel } from '@/utils/exportExcel'
+import { PAGE_SIZE } from '@/constants/pagination'
 import styles from './Reports.module.css'
 
-const CATEGORIES = ['观叶植物', '兰花', '观花植物', '多肉植物', '绿植']
+type SortField = 'stock' | 'pieces' | 'productCode'
+
+function getPieces(r: InventoryReportItem) {
+  return r.unitsPerPiece ? Math.ceil(r.stock / r.unitsPerPiece) : null
+}
 
 export default function InventoryReport() {
   const { message } = App.useApp()
   const [inventory, setInventory] = useState<InventoryReportItem[]>([])
   const [loading, setLoading] = useState(false)
-  const [category, setCategory] = useState<string | undefined>()
-  const [supplierId, setSupplierId] = useState<number | undefined>()
   const [itemSearch, setItemSearch] = useState('')
-  const [suppliers, setSuppliers] = useState<Supplier[]>([])
-
-  useEffect(() => {
-    getSuppliers().then(setSuppliers).catch(() => {})
-  }, [])
+  const [supplierFilter, setSupplierFilter] = useState<string | undefined>()
+  const [sortField, setSortField] = useState<SortField>('stock')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
     setLoading(true)
-    getInventoryReport({ category, supplierId })
-      .then(d => setInventory(d.inventory))
+    getInventoryReport()
+      .then(d => { setInventory(d.inventory); setCurrentPage(1) })
       .catch(err => message.error(getErrorMessage(err)))
       .finally(() => setLoading(false))
-  }, [category, supplierId])
+  }, [])
 
-  const filteredItems = useMemo(() =>
-    itemSearch
-      ? inventory.filter(r =>
-          r.productCode.toLowerCase().includes(itemSearch.toLowerCase()) ||
-          r.productName.toLowerCase().includes(itemSearch.toLowerCase())
-        )
-      : inventory,
-    [inventory, itemSearch]
-  )
+  const supplierOptions = useMemo(() => {
+    const seen = new Map<string, string>()
+    inventory.forEach(r => { if (r.supplierCode) seen.set(r.supplierCode, r.supplierName) })
+    return Array.from(seen.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([code, name]) => ({ label: `${code} ${name}`, value: code }))
+  }, [inventory])
 
-  const totalStock = filteredItems.reduce((s, r) => s + Number(r.stock), 0)
+  const sortedItems = useMemo(() => {
+    const filtered = inventory.filter(r => {
+      const kw = itemSearch.toLowerCase()
+      const matchSearch = !kw ||
+        r.productCode.toLowerCase().includes(kw) ||
+        r.productName.toLowerCase().includes(kw)
+      const matchSupplier = !supplierFilter || r.supplierCode === supplierFilter
+      return matchSearch && matchSupplier
+    })
+    filtered.sort((a, b) => {
+      let va: number | string
+      let vb: number | string
+      if (sortField === 'stock') {
+        va = a.stock; vb = b.stock
+      } else if (sortField === 'pieces') {
+        va = getPieces(a) ?? 0; vb = getPieces(b) ?? 0
+      } else {
+        va = a.productCode; vb = b.productCode
+      }
+      if (va < vb) return sortDir === 'asc' ? -1 : 1
+      if (va > vb) return sortDir === 'asc' ? 1 : -1
+      return 0
+    })
+    return filtered
+  }, [inventory, itemSearch, supplierFilter, sortField, sortDir])
+
+  const pageItems = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE
+    return sortedItems.slice(start, start + PAGE_SIZE)
+  }, [sortedItems, currentPage])
+
+  const totalQty    = sortedItems.reduce((s, r) => s + Number(r.stock), 0)
+  const totalPieces = sortedItems.reduce((s, r) => s + (getPieces(r) ?? 0), 0)
+  const pageQty     = pageItems.reduce((s, r) => s + Number(r.stock), 0)
+  const pagePieces  = pageItems.reduce((s, r) => s + (getPieces(r) ?? 0), 0)
+
+  function toggleSort(field: SortField) {
+    if (sortField === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDir(field === 'productCode' ? 'asc' : 'desc')
+    }
+    setCurrentPage(1)
+  }
+
+  function SortBtn({ field, label }: { field: SortField; label: string }) {
+    const active = sortField === field
+    const icon = active
+      ? (sortDir === 'asc' ? <SortAscendingOutlined /> : <SortDescendingOutlined />)
+      : null
+    return (
+      <Button size="small" type={active ? 'primary' : 'default'} icon={icon} onClick={() => toggleSort(field)}>
+        {label}
+      </Button>
+    )
+  }
 
   const columns: ColumnsType<InventoryReportItem> = [
     { title: '编码', dataIndex: 'productCode', width: 100 },
@@ -55,15 +112,19 @@ export default function InventoryReport() {
       render: (v: number) => <span style={{ fontWeight: v === 0 ? undefined : 500 }}>{v}</span>,
     },
     {
-      title: '单价', dataIndex: 'price', width: 90, align: 'right',
+      title: '件数', width: 80, align: 'center',
+      render: (_: unknown, r: InventoryReportItem) =>
+        r.unitsPerPiece ? Math.ceil(r.stock / r.unitsPerPiece) : '—',
+    },
+    {
+      title: '成本价', dataIndex: 'costPrice', width: 90, align: 'right',
+      render: (v: number) => v != null ? `¥${v.toFixed(2)}` : '—',
+    },
+    {
+      title: '售价', dataIndex: 'price', width: 90, align: 'right',
       render: (v: number) => v != null ? `¥${v.toFixed(2)}` : '—',
     },
   ]
-
-  const supplierOptions = suppliers.map(s => ({
-    value: s.id,
-    label: `${s.code} ${s.name}`,
-  }))
 
   return (
     <>
@@ -72,47 +133,68 @@ export default function InventoryReport() {
       <div className={styles.toolbar}>
         <Input
           placeholder="搜索货品名称/编码"
+          prefix={<SearchOutlined />}
           allowClear
           style={{ width: 220 }}
           value={itemSearch}
-          onChange={e => setItemSearch(e.target.value)}
+          onChange={e => { setItemSearch(e.target.value); setCurrentPage(1) }}
         />
         <Select
           allowClear
           showSearch={{ filterOption: (input, opt) =>
             (opt?.label as string ?? '').toLowerCase().includes(input.toLowerCase())
           }}
-          placeholder="所有供应商"
+          placeholder="按供应商筛选"
           style={{ width: 200 }}
           options={supplierOptions}
-          onChange={val => setSupplierId(val ?? undefined)}
+          onChange={val => { setSupplierFilter(val); setCurrentPage(1) }}
         />
-        <Select
-          allowClear placeholder="所有分类"
-          style={{ width: 140 }}
-          options={CATEGORIES.map(c => ({ value: c, label: c }))}
-          onChange={v => setCategory(v)}
-        />
-      </div>
-
-      <div className={styles.statsRow}>
-        <div className={styles.statCard} style={{ flex: 'none', minWidth: 300 }}>
-          <div className={styles.statLabel}>品种数</div>
-          <div className={styles.statValue}>{filteredItems.length}</div>
-        </div>
-        <div className={styles.statCard} style={{ flex: 'none', minWidth: 300 }}>
-          <div className={styles.statLabel}>库存总量</div>
-          <div className={styles.statValue}>{totalStock}</div>
-        </div>
+        <Space size={4}>
+          <span style={{ fontSize: 12, color: '#888' }}>排序：</span>
+          <SortBtn field="stock" label="数量" />
+          <SortBtn field="pieces" label="件数" />
+          <SortBtn field="productCode" label="编码" />
+        </Space>
+        <Button
+          icon={<DownloadOutlined />}
+          onClick={() => exportInventoryExcel(sortedItems)}
+          disabled={sortedItems.length === 0}
+          style={{ marginLeft: 'auto' }}
+        >
+          导出 Excel
+        </Button>
       </div>
 
       <Table
         rowKey="productId"
         columns={columns}
-        dataSource={filteredItems}
+        dataSource={sortedItems}
         loading={loading}
-        pagination={{ pageSize: 20, showTotal: total => `共 ${total} 条` }}
+        pagination={{
+          pageSize: PAGE_SIZE,
+          current: currentPage,
+          onChange: (p) => setCurrentPage(p),
+          showTotal: total => `共 ${total} 条`,
+        }}
         size="small"
+        summary={() => (
+          <Table.Summary fixed="bottom">
+            <Table.Summary.Row style={{ background: '#fafafa', fontWeight: 500 }}>
+              <Table.Summary.Cell index={0} colSpan={5}>本页小计</Table.Summary.Cell>
+              <Table.Summary.Cell index={1} align="center">{pageQty}</Table.Summary.Cell>
+              <Table.Summary.Cell index={2} align="center">{pagePieces}</Table.Summary.Cell>
+              <Table.Summary.Cell index={3} />
+              <Table.Summary.Cell index={4} />
+            </Table.Summary.Row>
+            <Table.Summary.Row style={{ background: '#f0f5ff', fontWeight: 600 }}>
+              <Table.Summary.Cell index={0} colSpan={5}>全部合计（{sortedItems.length} 种）</Table.Summary.Cell>
+              <Table.Summary.Cell index={1} align="center">{totalQty}</Table.Summary.Cell>
+              <Table.Summary.Cell index={2} align="center">{totalPieces}</Table.Summary.Cell>
+              <Table.Summary.Cell index={3} />
+              <Table.Summary.Cell index={4} />
+            </Table.Summary.Row>
+          </Table.Summary>
+        )}
       />
     </>
   )

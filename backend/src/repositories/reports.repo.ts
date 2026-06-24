@@ -153,8 +153,8 @@ export async function getPurchaseStats(
 export async function getInventoryRows(f: InventoryFilters): Promise<InventoryReportRow[]> {
   let sql = `
     SELECT p.id AS product_id, CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
-           s.name AS supplier_name, p.category, p.unit,
-           COALESCE(i.quantity, 0) AS stock, p.price
+           s.name AS supplier_name, s.code AS supplier_code, p.category, p.unit,
+           p.units_per_piece, COALESCE(i.quantity, 0) AS stock, p.price, p.cost_price
     FROM products p
     JOIN suppliers s ON s.id = p.supplier_id
     LEFT JOIN inventory i ON i.product_id = p.id
