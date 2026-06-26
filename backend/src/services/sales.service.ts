@@ -129,6 +129,10 @@ export async function deleteOrder(id: number): Promise<void> {
 export async function updateOrder(id: number, dto: UpdateSalesOrderDto): Promise<SalesOrder> {
   const { lines, totalQty, totalAmount, totalPieces } = computeLineTotals(dto.items)
 
+  const existing = await salesRepo.findById(id)
+  if (!existing) throw new AppError(404, '销售订单不存在')
+  const dateChanged = existing.orderDate !== dto.orderDate
+
   const conn = await pool.getConnection()
   try {
     await conn.beginTransaction()
@@ -151,6 +155,11 @@ export async function updateOrder(id: number, dto: UpdateSalesOrderDto): Promise
       },
       conn,
     )
+
+    if (dateChanged) {
+      const seq = await salesRepo.countByDate(dto.orderDate, id, conn)
+      await salesRepo.setOrderNo(id, genSalesNo(seq, new Date(dto.orderDate)), conn)
+    }
 
     for (const line of lines) {
       await salesRepo.insertItem(

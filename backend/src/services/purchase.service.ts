@@ -137,6 +137,10 @@ export async function updateOrder(id: number, dto: UpdatePurchaseOrderDto): Prom
   const orderDiscount = dto.discount ?? 100
   const { lines, totalQty, totalPieces, totalAmount, finalAmount } = computeLineTotals(dto.items, orderDiscount)
 
+  const existing = await purchaseRepo.findById(id)
+  if (!existing) throw new AppError(404, '采购订单不存在')
+  const dateChanged = existing.orderDate !== dto.orderDate
+
   const conn = await pool.getConnection()
   try {
     await conn.beginTransaction()
@@ -160,6 +164,11 @@ export async function updateOrder(id: number, dto: UpdatePurchaseOrderDto): Prom
       },
       conn,
     )
+
+    if (dateChanged) {
+      const seq = await purchaseRepo.countByDate(dto.orderDate, id, conn)
+      await purchaseRepo.setOrderNo(id, genPurchaseNo(seq, new Date(dto.orderDate)), conn)
+    }
 
     for (const line of lines) {
       await purchaseRepo.insertItem(
