@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Form, Select, DatePicker, Input, Button, Table, InputNumber, App, Spin } from 'antd'
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
+import { Form, Select, DatePicker, Input, Button, Table, InputNumber, App, Spin, Popconfirm } from 'antd'
+import { PlusOutlined, DeleteOutlined, StopOutlined } from '@ant-design/icons'
 import { useNavigate, useParams } from 'react-router-dom'
 import dayjs from 'dayjs'
 import {
-  createPurchaseReturn, getPurchaseReturn, updatePurchaseReturn,
+  createPurchaseReturn, getPurchaseReturn, updatePurchaseReturn, voidPurchaseReturn,
 } from '@/api/purchase'
 import { getSuppliers, type Supplier } from '@/api/suppliers'
 import { getProducts, type Product } from '@/api/products'
@@ -56,6 +56,8 @@ export default function PurchaseReturnNew() {
   const [lines, setLines] = useState<LineItem[]>([newLine()])
   const [loading, setLoading] = useState(isEdit)
   const [saving, setSaving] = useState(false)
+  const [voiding, setVoiding] = useState(false)
+  const [retNotes, setRetNotes] = useState<string | null>(null)
 
   useEffect(() => {
     getSuppliers().then(setSuppliers).catch(() => {})
@@ -68,6 +70,7 @@ export default function PurchaseReturnNew() {
     Promise.all([getProducts(), getPurchaseReturn(Number(id))])
       .then(([prods, ret]) => {
         setAllProducts(prods)
+        setRetNotes(ret.notes ?? null)
         form.setFieldsValue({
           supplierId: ret.supplierId,
           returnDate: dayjs(ret.returnDate),
@@ -131,6 +134,19 @@ export default function PurchaseReturnNew() {
       }
       return updated
     }))
+  }
+
+  const handleVoid = async () => {
+    setVoiding(true)
+    try {
+      await voidPurchaseReturn(Number(id))
+      message.success('已作废')
+      navigate('/purchase/orders')
+    } catch (err) {
+      message.error(getErrorMessage(err))
+    } finally {
+      setVoiding(false)
+    }
   }
 
   // Reset lines when supplier changes
@@ -240,10 +256,10 @@ export default function PurchaseReturnNew() {
     },
   ]
 
-  if (loading) return <Spin size="large" style={{ display: 'block', margin: '80px auto' }} />
-
   return (
     <>
+      {loading && <Spin size="large" style={{ display: 'block', margin: '80px auto' }} />}
+      <div style={{ display: loading ? 'none' : undefined }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
         <span className={styles.pageTitle} style={{ margin: 0 }}>{isEdit ? '编辑退货单' : '采购退货'}</span>
       </div>
@@ -297,9 +313,22 @@ export default function PurchaseReturnNew() {
 
       <div className={styles.actions}>
         <Button onClick={() => navigate('/purchase/orders')}>取消</Button>
+        {isEdit && !retNotes?.startsWith('作废_') && (
+          <Popconfirm
+            title="作废此单据？"
+            description="作废后数量归零，单据保留，此操作不可撤销"
+            okText="确认作废"
+            cancelText="取消"
+            okButtonProps={{ danger: true }}
+            onConfirm={handleVoid}
+          >
+            <Button danger icon={<StopOutlined />} loading={voiding}>作废此单</Button>
+          </Popconfirm>
+        )}
         <Button type="primary" loading={saving} onClick={handleSubmit}>
           {isEdit ? '保存修改' : '保存退货单'}
         </Button>
+      </div>
       </div>
     </>
   )

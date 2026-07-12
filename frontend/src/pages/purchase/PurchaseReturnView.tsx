@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button, Spin, App } from 'antd'
-import { ArrowLeftOutlined, PrinterOutlined } from '@ant-design/icons'
+import { Button, Spin, App, Popconfirm } from 'antd'
+import { ArrowLeftOutlined, PrinterOutlined, StopOutlined } from '@ant-design/icons'
 import { useReactToPrint } from 'react-to-print'
-import { getPurchaseReturn, type PurchaseReturn } from '@/api/purchase'
+import { getPurchaseReturn, voidPurchaseReturn, type PurchaseReturn } from '@/api/purchase'
 import { getErrorMessage } from '@/utils/error'
 import { useSettings } from '@/store/SettingsContext'
 import { toChineseAmount } from '@/utils/chineseAmount'
@@ -17,6 +17,7 @@ export default function PurchaseReturnView() {
   const { settings } = useSettings()
   const [ret, setRet] = useState<PurchaseReturn | null>(null)
   const [loading, setLoading] = useState(true)
+  const [voiding, setVoiding] = useState(false)
 
   useEffect(() => {
     getPurchaseReturn(Number(id))
@@ -24,6 +25,19 @@ export default function PurchaseReturnView() {
       .catch(err => message.error(getErrorMessage(err)))
       .finally(() => setLoading(false))
   }, [id])
+
+  const handleVoid = async () => {
+    setVoiding(true)
+    try {
+      await voidPurchaseReturn(Number(id))
+      message.success('已作废')
+      navigate('/purchase/orders')
+    } catch (err) {
+      message.error(getErrorMessage(err))
+    } finally {
+      setVoiding(false)
+    }
+  }
 
   const handlePrint = useReactToPrint({ contentRef: printRef })
 
@@ -39,6 +53,18 @@ export default function PurchaseReturnView() {
       <div className={styles.actions}>
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/purchase/orders')}>返回</Button>
         <Button type="primary" icon={<PrinterOutlined />} onClick={() => handlePrint()}>打印退货单</Button>
+        {!ret.notes?.startsWith('作废_') && (
+          <Popconfirm
+            title="作废此单据？"
+            description="作废后数量归零，单据保留，此操作不可撤销"
+            okText="确认作废"
+            cancelText="取消"
+            okButtonProps={{ danger: true }}
+            onConfirm={handleVoid}
+          >
+            <Button danger icon={<StopOutlined />} loading={voiding}>作废此单</Button>
+          </Popconfirm>
+        )}
       </div>
 
       <div ref={printRef} className={styles.printArea}>
