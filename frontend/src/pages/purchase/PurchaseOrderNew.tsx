@@ -251,10 +251,10 @@ export default function PurchaseOrderNew() {
     },
   ]
 
-  if (loading) return <Spin size="large" style={{ display: 'block', margin: '80px auto' }} />
-
   return (
     <>
+      {loading && <Spin size="large" style={{ display: 'block', margin: '80px auto' }} />}
+      <div style={{ display: loading ? 'none' : undefined }}>
       <div className={styles.pageTitle}>{isEdit ? '编辑采购单' : '采购入库'}</div>
 
       <Form form={form} layout="inline" className={styles.headerForm}>
@@ -315,6 +315,7 @@ export default function PurchaseOrderNew() {
         <Button type="primary" loading={saving} onClick={handleSubmit}>
           {isEdit ? '保存修改' : '保存入库'}
         </Button>
+      </div>
       </div>
     </>
   )

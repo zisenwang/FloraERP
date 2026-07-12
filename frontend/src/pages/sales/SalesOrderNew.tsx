@@ -324,10 +324,10 @@ export default function SalesOrderNew() {
     },
   ]
 
-  if (loading) return <Spin size="large" style={{ display: 'block', margin: '80px auto' }} />
-
   return (
     <>
+      {loading && <Spin size="large" style={{ display: 'block', margin: '80px auto' }} />}
+      <div style={{ display: loading ? 'none' : undefined }}>
       <div className={styles.pageTitle}>{isEdit ? '编辑销售单' : '销售开单'}</div>
 
       <Form form={form} layout="inline" className={styles.headerForm}>
@@ -411,6 +411,7 @@ export default function SalesOrderNew() {
         <Button type="primary" loading={saving} onClick={handleSubmit}>
           {isEdit ? '保存修改' : '保存开单'}
         </Button>
+      </div>
       </div>
     </>
   )
