@@ -105,19 +105,33 @@ export async function createOrder(
   }
 }
 
-export async function deleteOrder(id: number): Promise<void> {
+export async function voidOrder(id: number): Promise<SalesOrder> {
   const conn = await pool.getConnection()
   try {
     await conn.beginTransaction()
     const order = await salesRepo.findById(id)
     if (!order) throw new AppError(404, '销售订单不存在')
-    const oldItems = await salesRepo.deleteItems(id, conn)
-    for (const old of oldItems) {
-      await invRepo.incrementQuantity(old.productId, old.qty, conn)
+
+    // Get current items to reverse inventory
+    const [itemRows] = await conn.query<import('mysql2/promise').RowDataPacket[]>(
+      'SELECT product_id, qty FROM sales_order_items WHERE order_id = ?', [id],
+    )
+    // Reverse: sales took items out, void adds them back
+    for (const row of itemRows as { product_id: number; qty: number }[]) {
+      if (row.qty > 0) await invRepo.incrementQuantity(row.product_id, row.qty, conn)
     }
-    await conn.query('DELETE FROM payments WHERE sales_order_id = ?', [id])
-    await conn.query('DELETE FROM sales_orders WHERE id = ?', [id])
+    // Zero out all item quantities and amounts
+    await conn.query(
+      'UPDATE sales_order_items SET qty=0, amount=0, final_amount=0, pieces=0 WHERE order_id=?', [id],
+    )
+    // Zero out order totals, set status=作废, prepend note
+    const newNotes = order.notes ? `作废_${order.notes}` : '作废'
+    await conn.query(
+      `UPDATE sales_orders SET total_qty=0, total_amount=0, total_pieces=0, status='作废', notes=? WHERE id=?`,
+      [newNotes, id],
+    )
     await conn.commit()
+    return getOrder(id)
   } catch (e) {
     try { await conn.rollback() } catch { conn.destroy() }
     throw e

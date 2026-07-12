@@ -40,9 +40,9 @@ export async function updateOrder(req: AuthRequest, res: Response): Promise<void
   res.json({ data })
 }
 
-export async function deleteOrder(req: AuthRequest, res: Response): Promise<void> {
-  await service.deleteOrder(Number(req.params.id))
-  res.json({ message: '删除成功' })
+export async function voidOrder(req: AuthRequest, res: Response): Promise<void> {
+  const data = await service.voidOrder(Number(req.params.id))
+  res.json({ data })
 }
 
 export async function listReturns(req: AuthRequest, res: Response): Promise<void> {
@@ -82,7 +82,7 @@ export async function updateReturn(req: AuthRequest, res: Response): Promise<voi
   res.json({ data })
 }
 
-export async function deleteReturn(req: AuthRequest, res: Response): Promise<void> {
-  await returnService.deleteReturn(Number(req.params.id))
-  res.json({ message: '删除成功' })
+export async function voidReturn(req: AuthRequest, res: Response): Promise<void> {
+  const data = await returnService.voidReturn(Number(req.params.id))
+  res.json({ data })
 }

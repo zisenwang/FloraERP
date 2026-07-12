@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Form, Select, DatePicker, Input, Button, Table, InputNumber, App, Spin } from 'antd'
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
+import { Form, Select, DatePicker, Input, Button, Table, InputNumber, App, Spin, Popconfirm } from 'antd'
+import { PlusOutlined, DeleteOutlined, StopOutlined } from '@ant-design/icons'
 import { useNavigate, useParams } from 'react-router-dom'
 import dayjs from 'dayjs'
-import { createSalesOrder, getSalesOrder, updateSalesOrder } from '@/api/sales'
+import { createSalesOrder, getSalesOrder, updateSalesOrder, voidSalesOrder } from '@/api/sales'
 import { getCustomers, type Customer } from '@/api/customers'
 import { getSuppliers, type Supplier } from '@/api/suppliers'
 import { getProducts, type Product } from '@/api/products'
@@ -61,6 +61,8 @@ export default function SalesOrderNew() {
   const [expandedKeys, setExpandedKeys] = useState<number[]>([])
   const [loading, setLoading] = useState(isEdit)
   const [saving, setSaving] = useState(false)
+  const [voiding, setVoiding] = useState(false)
+  const [orderStatus, setOrderStatus] = useState<string | null>(null)
 
   useEffect(() => {
     getCustomers().then(setCustomers).catch(() => {})
@@ -74,6 +76,7 @@ export default function SalesOrderNew() {
     Promise.all([getProducts(), getSalesOrder(Number(id))])
       .then(([allProducts, order]) => {
         setProducts(allProducts)
+        setOrderStatus(order.status)
         form.setFieldsValue({
           customerId: order.customerId,
           orderDate: dayjs(order.orderDate),
@@ -85,7 +88,7 @@ export default function SalesOrderNew() {
           productId: item.productId,
           productCode: item.productCode,
           productName: item.productName,
-          unitsPerPiece: null,
+          unitsPerPiece: allProducts.find(p => p.id === item.productId)?.unitsPerPiece ?? null,
           qty: item.qty,
           unitPrice: item.unitPrice,
           discount: item.discount,
@@ -170,6 +173,19 @@ export default function SalesOrderNew() {
     .filter(l => l.costPrice != null && l.qty > 0)
     .reduce((s, l) => s + (l.unitPrice * (l.discount / 100) - l.costPrice!) * l.qty, 0)
     .toFixed(2)
+
+  const handleVoid = async () => {
+    setVoiding(true)
+    try {
+      await voidSalesOrder(Number(id))
+      message.success('已作废')
+      navigate('/sales/orders')
+    } catch (err) {
+      message.error(getErrorMessage(err))
+    } finally {
+      setVoiding(false)
+    }
+  }
 
   const handleSubmit = () => {
     form.validateFields().then(values => {
@@ -380,6 +396,18 @@ export default function SalesOrderNew() {
 
       <div className={styles.actions}>
         <Button onClick={() => navigate('/sales/orders')}>取消</Button>
+        {isEdit && orderStatus !== '作废' && (
+          <Popconfirm
+            title="作废此单据？"
+            description="作废后数量归零，单据保留，此操作不可撤销"
+            okText="确认作废"
+            cancelText="取消"
+            okButtonProps={{ danger: true }}
+            onConfirm={handleVoid}
+          >
+            <Button danger icon={<StopOutlined />} loading={voiding}>作废此单</Button>
+          </Popconfirm>
+        )}
         <Button type="primary" loading={saving} onClick={handleSubmit}>
           {isEdit ? '保存修改' : '保存开单'}
         </Button>

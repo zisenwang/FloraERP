@@ -77,19 +77,33 @@ export async function createReturn(dto: CreatePurchaseReturnDto, operator: strin
   }
 }
 
-export async function deleteReturn(id: number): Promise<void> {
+export async function voidReturn(id: number): Promise<PurchaseReturn> {
   const conn = await pool.getConnection()
   try {
     await conn.beginTransaction()
     const ret = await repo.findById(id)
     if (!ret) throw new AppError(404, '采购退货单不存在')
-    const oldItems = await repo.deleteItems(id, conn)
-    // Reverse the return: add inventory back
-    for (const old of oldItems) {
-      await invRepo.incrementQuantity(old.productId, old.qty, conn)
+
+    // Get current items to reverse inventory
+    const [itemRows] = await conn.query<import('mysql2/promise').RowDataPacket[]>(
+      'SELECT product_id, qty FROM purchase_return_items WHERE return_id = ?', [id],
+    )
+    // Reverse: purchase return removed items from inventory, void adds them back
+    for (const row of itemRows as { product_id: number; qty: number }[]) {
+      if (row.qty > 0) await invRepo.incrementQuantity(row.product_id, row.qty, conn)
     }
-    await conn.query('DELETE FROM purchase_returns WHERE id = ?', [id])
+    // Zero out all item quantities and amounts
+    await conn.query(
+      'UPDATE purchase_return_items SET qty=0, amount=0, pieces=0 WHERE return_id=?', [id],
+    )
+    // Zero out return totals, prepend note
+    const newNotes = ret.notes ? `作废_${ret.notes}` : '作废'
+    await conn.query(
+      'UPDATE purchase_returns SET total_qty=0, total_amount=0, total_pieces=0, notes=? WHERE id=?',
+      [newNotes, id],
+    )
     await conn.commit()
+    return getReturn(id)
   } catch (e) {
     try { await conn.rollback() } catch { conn.destroy() }
     throw e

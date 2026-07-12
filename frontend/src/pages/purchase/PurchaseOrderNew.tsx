@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Form, Select, DatePicker, Input, Button, Table, InputNumber, App, Spin } from 'antd'
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
+import { Form, Select, DatePicker, Input, Button, Table, InputNumber, App, Spin, Popconfirm } from 'antd'
+import { PlusOutlined, DeleteOutlined, StopOutlined } from '@ant-design/icons'
 import { useNavigate, useParams } from 'react-router-dom'
 import dayjs from 'dayjs'
-import { createPurchaseOrder, getPurchaseOrder, updatePurchaseOrder } from '@/api/purchase'
+import { createPurchaseOrder, getPurchaseOrder, updatePurchaseOrder, voidPurchaseOrder } from '@/api/purchase'
 import { getSuppliers, type Supplier } from '@/api/suppliers'
 import { getProducts, type Product } from '@/api/products'
 import { getErrorMessage } from '@/utils/error'
@@ -49,25 +49,32 @@ export default function PurchaseOrderNew() {
   const [lines, setLines] = useState<LineItem[]>([newLine()])
   const [loading, setLoading] = useState(isEdit)
   const [saving, setSaving] = useState(false)
+  const [voiding, setVoiding] = useState(false)
+  const [orderStatus, setOrderStatus] = useState<string | null>(null)
 
   useEffect(() => {
-    getSuppliers().then(setSuppliers).catch(() => {})
+    if (!isEdit) {
+      getSuppliers().then(setSuppliers).catch(() => {})
+      return
+    }
 
-    if (!isEdit) return
-
-    getPurchaseOrder(Number(id))
-      .then(order => {
+    Promise.all([getPurchaseOrder(Number(id)), getSuppliers()])
+      .then(async ([order, supplierList]) => {
+        setSuppliers(supplierList)
+        setOrderStatus(order.status)
         form.setFieldsValue({
           supplierId: order.supplierId,
           orderDate: dayjs(order.orderDate),
           notes: order.notes,
         })
-        getProducts({ supplierId: order.supplierId }).then(setProducts).catch(() => {})
+        const prods = await getProducts({ supplierId: order.supplierId })
+        setProducts(prods)
         const loaded: LineItem[] = (order.items ?? []).map(item => ({
           key: keyCounter++,
           productId: item.productId,
           productCode: item.productCode,
           productName: item.productName,
+          unitsPerPiece: prods.find(p => p.id === item.productId)?.unitsPerPiece ?? undefined,
           qty: item.qty,
           pieces: item.pieces ?? 0,
           unitPrice: item.unitPrice,
@@ -122,6 +129,19 @@ export default function PurchaseOrderNew() {
   const totalQty = lines.reduce((s, l) => s + (l.qty || 0), 0)
   const totalPieces = lines.reduce((s, l) => s + (l.pieces || 0), 0)
   const totalAmount = lines.reduce((s, l) => s + (l.amount || 0), 0)
+
+  const handleVoid = async () => {
+    setVoiding(true)
+    try {
+      await voidPurchaseOrder(Number(id))
+      message.success('已作废')
+      navigate('/purchase/orders')
+    } catch (err) {
+      message.error(getErrorMessage(err))
+    } finally {
+      setVoiding(false)
+    }
+  }
 
   const handleSubmit = () => {
     form.validateFields().then(values => {
@@ -280,6 +300,18 @@ export default function PurchaseOrderNew() {
 
       <div className={styles.actions}>
         <Button onClick={() => navigate('/purchase/orders')}>取消</Button>
+        {isEdit && orderStatus !== '作废' && (
+          <Popconfirm
+            title="作废此单据？"
+            description="作废后数量归零，单据保留，此操作不可撤销"
+            okText="确认作废"
+            cancelText="取消"
+            okButtonProps={{ danger: true }}
+            onConfirm={handleVoid}
+          >
+            <Button danger icon={<StopOutlined />} loading={voiding}>作废此单</Button>
+          </Popconfirm>
+        )}
         <Button type="primary" loading={saving} onClick={handleSubmit}>
           {isEdit ? '保存修改' : '保存入库'}
         </Button>

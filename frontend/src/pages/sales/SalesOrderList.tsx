@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Table, Button, Select, DatePicker, Input, Tag, App, Spin } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons'
+import { Table, Button, Select, DatePicker, Input, Tag, App, Spin, Popconfirm } from 'antd'
+import { PlusOutlined, EditOutlined, StopOutlined, SearchOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
 import {
-  getSalesOrders, getSalesOrder, deleteSalesOrder,
-  getSalesReturns, getSalesReturn, deleteSalesReturn,
+  getSalesOrders, getSalesOrder, voidSalesOrder,
+  getSalesReturns, getSalesReturn, voidSalesReturn,
   type SalesOrder, type SalesOrderItem,
   type SalesReturn, type SalesReturnItem,
 } from '@/api/sales'
@@ -37,6 +37,7 @@ interface UnifiedRow {
   pieces: number
   profit: number
   paymentStatus?: string
+  status?: string
   time: string
 }
 
@@ -55,6 +56,7 @@ function toUnified(o: SalesOrder): UnifiedRow {
     pieces: o.totalPieces,
     profit: o.totalProfit,
     paymentStatus: o.paymentStatus,
+    status: o.status,
     time: o.createdAt,
   }
 }
@@ -97,7 +99,7 @@ export default function SalesOrderList() {
   const [orderItemsMap, setOrderItemsMap] = useState<Record<number, SalesOrderItem[]>>({})
   const [returnItemsMap, setReturnItemsMap] = useState<Record<number, SalesReturnItem[]>>({})
   const [expandLoading, setExpandLoading] = useState<Record<string, boolean>>({})
-  const [deleting, setDeleting] = useState<Record<string, boolean>>({})
+  const [voiding, setVoiding] = useState<Record<string, boolean>>({})
 
   const fetchAll = () => {
     setLoading(true)
@@ -136,23 +138,18 @@ export default function SalesOrderList() {
     }
   }
 
-  const handleDelete = (row: UnifiedRow) => {
-    const label = row.rowType === 'order' ? `销售单「${row.no}」` : `退货单「${row.no}」`
-    modal.confirm({
-      title: '确认删除',
-      content: `删除${label}？库存将同步回退，此操作不可撤销。`,
-      okText: '删除', okType: 'danger', cancelText: '取消',
-      onOk: () => {
-        setDeleting(prev => ({ ...prev, [row._key]: true }))
-        const req = row.rowType === 'order'
-          ? deleteSalesOrder(row.id)
-          : deleteSalesReturn(row.id)
-        return req
-          .then(() => { message.success('删除成功'); fetchAll() })
-          .catch(err => message.error(getErrorMessage(err)))
-          .finally(() => setDeleting(prev => ({ ...prev, [row._key]: false })))
-      },
-    })
+  const handleVoid = async (row: UnifiedRow) => {
+    setVoiding(prev => ({ ...prev, [row._key]: true }))
+    try {
+      if (row.rowType === 'order') await voidSalesOrder(row.id)
+      else await voidSalesReturn(row.id)
+      message.success('已作废')
+      fetchAll()
+    } catch (err) {
+      message.error(getErrorMessage(err))
+    } finally {
+      setVoiding(prev => ({ ...prev, [row._key]: false }))
+    }
   }
 
   const kw = customerSearch.trim().toLowerCase()
@@ -192,6 +189,7 @@ export default function SalesOrderList() {
       title: '收款状态', width: 100, align: 'center',
       render: (_, r) => {
         if (r.rowType === 'return') return <Tag color="default">退货</Tag>
+        if (r.status === '作废') return <Tag color="default">已作废</Tag>
         const s = PAY_STATUS_MAP[r.paymentStatus ?? ''] ?? { color: 'default' }
         const isUnpaid = r.paymentStatus === '未收款'
         return (
@@ -218,19 +216,30 @@ export default function SalesOrderList() {
     },
     {
       title: '操作', width: 140, fixed: 'right', align: 'center',
-      render: (_, row) => (
-        <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
-          <Button type="link" size="small"
-            onClick={() => navigate(row.rowType === 'order' ? `/sales/orders/${row.id}` : `/sales/returns/${row.id}`)}>
-            查看
-          </Button>
-          <Button type="link" size="small" icon={<EditOutlined />}
-            onClick={() => navigate(row.rowType === 'order' ? `/sales/orders/${row.id}/edit` : `/sales/returns/${row.id}/edit`)} />
-          <Button type="link" size="small" danger icon={<DeleteOutlined />}
-            loading={deleting[row._key]}
-            onClick={() => handleDelete(row)} />
-        </div>
-      ),
+      render: (_, row) => {
+        const isVoided = row.status === '作废'
+        return (
+          <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+            <Button type="link" size="small"
+              onClick={() => navigate(row.rowType === 'order' ? `/sales/orders/${row.id}` : `/sales/returns/${row.id}`)}>
+              查看
+            </Button>
+            <Button type="link" size="small" icon={<EditOutlined />}
+              onClick={() => navigate(row.rowType === 'order' ? `/sales/orders/${row.id}/edit` : `/sales/returns/${row.id}/edit`)} />
+            {!isVoided && (
+              <Popconfirm
+                title="作废此单"
+                description="作废后数量归零，单据保留，可重新编辑恢复。"
+                okText="确认作废" okType="danger" cancelText="取消"
+                onConfirm={() => handleVoid(row)}
+              >
+                <Button type="link" size="small" danger icon={<StopOutlined />}
+                  loading={voiding[row._key]} />
+              </Popconfirm>
+            )}
+          </div>
+        )
+      },
     },
   ]
 

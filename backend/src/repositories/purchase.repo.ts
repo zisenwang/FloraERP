@@ -129,7 +129,7 @@ export async function updateOrderTotals(
 ): Promise<void> {
   await conn.query(
     `UPDATE purchase_orders
-     SET supplier_id=?, date=?, total_qty=?, total_pieces=?, total_amount=?, discount=?, final_amount=?, notes=?
+     SET supplier_id=?, date=?, total_qty=?, total_pieces=?, total_amount=?, discount=?, final_amount=?, notes=?, status='已入库'
      WHERE id=?`,
     [
       data.supplierId,

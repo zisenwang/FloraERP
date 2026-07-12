@@ -146,7 +146,7 @@ export async function updateOrderTotals(
 ): Promise<void> {
   await conn.query(
     `UPDATE sales_orders
-     SET customer_id=?, date=?, total_qty=?, total_amount=?, total_pieces=?, notes=?
+     SET customer_id=?, date=?, total_qty=?, total_amount=?, total_pieces=?, notes=?, status='confirmed'
      WHERE id=?`,
     [data.customerId, data.date, data.totalQty, data.totalAmount, data.totalPieces, data.notes, id],
   )

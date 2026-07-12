@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Table, Button, DatePicker, Input, Tag, Select, App, Spin } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons'
+import { Table, Button, DatePicker, Input, Tag, Select, App, Spin, Popconfirm } from 'antd'
+import { PlusOutlined, EditOutlined, StopOutlined, SearchOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
 import {
-  getPurchaseOrders, getPurchaseOrder, deletePurchaseOrder,
-  getPurchaseReturns, getPurchaseReturn, deletePurchaseReturn,
+  getPurchaseOrders, getPurchaseOrder, voidPurchaseOrder,
+  getPurchaseReturns, getPurchaseReturn, voidPurchaseReturn,
   type PurchaseOrder, type PurchaseOrderItem,
   type PurchaseReturn, type PurchaseReturnItem,
 } from '@/api/purchase'
@@ -19,7 +19,7 @@ const { RangePicker } = DatePicker
 
 const STATUS_COLOR: Record<string, string> = {
   '已入库': 'green',
-  '草稿':   'orange',
+  '作废':   'default',
 }
 
 interface UnifiedRow {
@@ -36,6 +36,7 @@ interface UnifiedRow {
   amount: number
   pieces: number
   status?: string
+  voided?: boolean
 }
 
 function toUnified(o: PurchaseOrder): UnifiedRow {
@@ -53,6 +54,7 @@ function toUnified(o: PurchaseOrder): UnifiedRow {
     amount: o.totalAmount,
     pieces: o.totalPieces ?? 0,
     status: o.status,
+    voided: o.status === '作废',
   }
 }
 
@@ -90,7 +92,7 @@ export default function PurchaseOrderList() {
   const [orderItemsMap, setOrderItemsMap] = useState<Record<number, PurchaseOrderItem[]>>({})
   const [returnItemsMap, setReturnItemsMap] = useState<Record<number, PurchaseReturnItem[]>>({})
   const [expandLoading, setExpandLoading] = useState<Record<string, boolean>>({})
-  const [deleting, setDeleting] = useState<Record<string, boolean>>({})
+  const [voiding, setVoiding] = useState<Record<string, boolean>>({})
 
   const fetchAll = (range = dateRange, sf = statusFilter) => {
     setLoading(true)
@@ -129,24 +131,18 @@ export default function PurchaseOrderList() {
     }
   }
 
-  const handleDelete = (row: UnifiedRow) => {
-    const label = row.rowType === 'order' ? `采购单「${row.no}」` : `退货单「${row.no}」`
-    const detail = row.rowType === 'order' ? '库存将同步回退，此操作不可撤销。' : '库存将同步恢复，此操作不可撤销。'
-    modal.confirm({
-      title: '确认删除',
-      content: `删除${label}？${detail}`,
-      okText: '删除', okType: 'danger', cancelText: '取消',
-      onOk: () => {
-        setDeleting(prev => ({ ...prev, [row._key]: true }))
-        const req = row.rowType === 'order'
-          ? deletePurchaseOrder(row.id)
-          : deletePurchaseReturn(row.id)
-        return req
-          .then(() => { message.success('删除成功'); fetchAll() })
-          .catch(err => message.error(getErrorMessage(err)))
-          .finally(() => setDeleting(prev => ({ ...prev, [row._key]: false })))
-      },
-    })
+  const handleVoid = async (row: UnifiedRow) => {
+    setVoiding(prev => ({ ...prev, [row._key]: true }))
+    try {
+      if (row.rowType === 'order') await voidPurchaseOrder(row.id)
+      else await voidPurchaseReturn(row.id)
+      message.success('已作废')
+      fetchAll()
+    } catch (err) {
+      message.error(getErrorMessage(err))
+    } finally {
+      setVoiding(prev => ({ ...prev, [row._key]: false }))
+    }
   }
 
   const kw = supplierSearch.trim().toLowerCase()
@@ -188,6 +184,7 @@ export default function PurchaseOrderList() {
     {
       title: '状态', width: 90, align: 'center',
       render: (_, r) => {
+        if (r.voided) return <Tag color="default">已作废</Tag>
         if (r.rowType === 'return') return <Tag color="default">退货</Tag>
         return <Tag color={STATUS_COLOR[r.status ?? ''] ?? 'default'}>{r.status}</Tag>
       },
@@ -202,9 +199,19 @@ export default function PurchaseOrderList() {
           </Button>
           <Button type="link" size="small" icon={<EditOutlined />}
             onClick={() => navigate(row.rowType === 'order' ? `/purchase/orders/${row.id}/edit` : `/purchase/returns/${row.id}/edit`)} />
-          <Button type="link" size="small" danger icon={<DeleteOutlined />}
-            loading={deleting[row._key]}
-            onClick={() => handleDelete(row)} />
+          {!row.voided && (
+            <Popconfirm
+              title="作废此单据？"
+              description="作废后数量归零，单据保留，此操作不可撤销"
+              okText="确认作废"
+              cancelText="取消"
+              okButtonProps={{ danger: true }}
+              onConfirm={() => handleVoid(row)}
+            >
+              <Button type="link" size="small" danger icon={<StopOutlined />}
+                loading={voiding[row._key]} />
+            </Popconfirm>
+          )}
         </div>
       ),
     },

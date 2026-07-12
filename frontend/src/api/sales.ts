@@ -82,8 +82,9 @@ export const updateSalesOrder = async (id: number, payload: SalesOrderPayload): 
   return res.data.data
 }
 
-export const deleteSalesOrder = async (id: number): Promise<void> => {
-  await client.delete(`/sales/orders/${id}`)
+export const voidSalesOrder = async (id: number): Promise<SalesOrder> => {
+  const res = await client.patch<{ data: SalesOrder }>(`/sales/orders/${id}/void`)
+  return res.data.data
 }
 
 // ——— Sales Returns ———
@@ -160,6 +161,7 @@ export const updateSalesReturn = async (id: number, payload: SalesReturnPayload)
   return res.data.data
 }
 
-export const deleteSalesReturn = async (id: number): Promise<void> => {
-  await client.delete(`/sales/returns/${id}`)
+export const voidSalesReturn = async (id: number): Promise<SalesReturn> => {
+  const res = await client.patch<{ data: SalesReturn }>(`/sales/returns/${id}/void`)
+  return res.data.data
 }

@@ -31,7 +31,7 @@ export interface PurchaseOrder {
   finalAmount: number
   operator: string
   notes: string
-  status: '草稿' | '已入库'
+  status: '已入库' | '作废'
   createdAt: string
   items: PurchaseOrderItem[]
 }
@@ -75,8 +75,9 @@ export const updatePurchaseOrder = async (id: number, payload: PurchaseOrderPayl
   return res.data.data
 }
 
-export const deletePurchaseOrder = async (id: number): Promise<void> => {
-  await client.delete(`/purchase/orders/${id}`)
+export const voidPurchaseOrder = async (id: number): Promise<PurchaseOrder> => {
+  const res = await client.patch<{ data: PurchaseOrder }>(`/purchase/orders/${id}/void`)
+  return res.data.data
 }
 
 // ——— Purchase Returns ———
@@ -154,6 +155,7 @@ export const updatePurchaseReturn = async (id: number, payload: PurchaseReturnPa
   return res.data.data
 }
 
-export const deletePurchaseReturn = async (id: number): Promise<void> => {
-  await client.delete(`/purchase/returns/${id}`)
+export const voidPurchaseReturn = async (id: number): Promise<PurchaseReturn> => {
+  const res = await client.patch<{ data: PurchaseReturn }>(`/purchase/returns/${id}/void`)
+  return res.data.data
 }
