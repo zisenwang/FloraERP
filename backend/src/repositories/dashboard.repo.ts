@@ -1,7 +1,7 @@
 import pool from '@/db/pool'
 import { rowsToCamel } from '@/utils/camel'
 import type { RowDataPacket } from 'mysql2'
-import type { SalesRankRow, PurchaseSupplierRankRow, PurchaseProductRankRow, ProductProfitRankRow } from '@/dto/dashboard.dto'
+import type { SalesRankRow, PurchaseSupplierRankRow, PurchaseProductRankRow, DailySalesRow } from '@/dto/dashboard.dto'
 
 export async function getTodayStats(today: string): Promise<{
   todaySales: number
@@ -76,20 +76,60 @@ export async function getMonthlyPurchaseProductRank(monthStart: string): Promise
   return rowsToCamel<PurchaseProductRankRow>(rows as Record<string, unknown>[])
 }
 
-export async function getMonthlyProductProfitRank(monthStart: string): Promise<ProductProfitRankRow[]> {
-  const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
-            s.code AS supplier_code, s.name AS supplier_name,
-            SUM(soi.final_amount - COALESCE(soi.cost_price, 0) * soi.qty) AS total_profit,
-            SUM(soi.qty) AS total_qty
-     FROM sales_order_items soi
-     JOIN sales_orders so ON so.id = soi.order_id
-     JOIN products p ON p.id = soi.product_id
-     JOIN suppliers s ON s.id = p.supplier_id
-     WHERE so.date >= ?
-     GROUP BY soi.product_id, p.code, p.name, s.code, s.name
-     ORDER BY total_profit DESC LIMIT 10`,
-    [monthStart],
-  )
-  return rowsToCamel<ProductProfitRankRow>(rows as Record<string, unknown>[])
+export async function getMonthlySalesDaily(monthStart: string, monthEnd: string): Promise<DailySalesRow[]> {
+  const [[salesRows], [returnRows]] = await Promise.all([
+    pool.query<RowDataPacket[]>(
+      `SELECT DATE_FORMAT(so.date, '%Y-%m-%d') AS date,
+              SUM(so.total_qty) AS sales_qty,
+              SUM(so.total_amount) AS sales_amount,
+              SUM(so.total_pieces) AS pieces
+       FROM sales_orders so
+       WHERE so.date BETWEEN ? AND ?
+       GROUP BY so.date
+       ORDER BY so.date`,
+      [monthStart, monthEnd],
+    ),
+    pool.query<RowDataPacket[]>(
+      `SELECT DATE_FORMAT(sr.date, '%Y-%m-%d') AS date,
+              SUM(sr.total_qty) AS return_qty,
+              SUM(sr.total_amount) AS return_amount
+       FROM sales_returns sr
+       WHERE sr.date BETWEEN ? AND ?
+       GROUP BY sr.date
+       ORDER BY sr.date`,
+      [monthStart, monthEnd],
+    ),
+  ])
+
+  // Merge sales and return rows by date
+  const map = new Map<string, DailySalesRow>()
+  for (const r of salesRows as RowDataPacket[]) {
+    map.set(r.date as string, {
+      date: r.date as string,
+      salesQty: Number(r.sales_qty ?? 0),
+      salesAmount: Number(r.sales_amount ?? 0),
+      pieces: Number(r.pieces ?? 0),
+      returnQty: 0,
+      returnAmount: 0,
+    })
+  }
+  for (const r of returnRows as RowDataPacket[]) {
+    const d = r.date as string
+    const existing = map.get(d)
+    if (existing) {
+      existing.returnQty = Number(r.return_qty ?? 0)
+      existing.returnAmount = Number(r.return_amount ?? 0)
+    } else {
+      map.set(d, {
+        date: d,
+        salesQty: 0,
+        salesAmount: 0,
+        pieces: 0,
+        returnQty: Number(r.return_qty ?? 0),
+        returnAmount: Number(r.return_amount ?? 0),
+      })
+    }
+  }
+
+  return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date))
 }

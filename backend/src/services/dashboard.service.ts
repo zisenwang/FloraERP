@@ -4,13 +4,14 @@ import type { DashboardSummary } from '@/dto/dashboard.dto'
 export async function getSummary(): Promise<DashboardSummary> {
   const today = new Date().toISOString().slice(0, 10)
   const monthStart = today.slice(0, 7) + '-01'
+  const monthEnd = today
 
-  const [stats, salesRank, purchaseSupplierRank, purchaseProductRank, productProfitRank] = await Promise.all([
+  const [stats, salesRank, purchaseSupplierRank, purchaseProductRank, salesDaily] = await Promise.all([
     repo.getTodayStats(today),
     repo.getMonthlySalesRank(monthStart),
     repo.getMonthlyPurchaseSupplierRank(monthStart),
     repo.getMonthlyPurchaseProductRank(monthStart),
-    repo.getMonthlyProductProfitRank(monthStart),
+    repo.getMonthlySalesDaily(monthStart, monthEnd),
   ])
 
   return {
@@ -18,6 +19,6 @@ export async function getSummary(): Promise<DashboardSummary> {
     monthlySalesRank: salesRank,
     monthlyPurchaseSupplierRank: purchaseSupplierRank,
     monthlyPurchaseProductRank: purchaseProductRank,
-    monthlyProductProfitRank: productProfitRank,
+    monthlySalesDaily: salesDaily,
   }
 }

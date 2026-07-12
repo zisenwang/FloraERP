@@ -13,6 +13,7 @@ import {
 } from '@/api/sales'
 import { getErrorMessage } from '@/utils/error'
 import { PAGE_SIZE } from '@/constants/pagination'
+import AddPaymentModal from '@/components/AddPaymentModal'
 import styles from './Sales.module.css'
 
 const PAY_STATUS_MAP: Record<string, { color: string }> = {
@@ -89,6 +90,8 @@ export default function SalesOrderList() {
     dayjs().endOf('month'),
   ])
   const [paymentStatus, setPaymentStatus] = useState<string | undefined>()
+
+  const [quickPayOrderId, setQuickPayOrderId] = useState<number | null>(null)
 
   // expand detail cache
   const [orderItemsMap, setOrderItemsMap] = useState<Record<number, SalesOrderItem[]>>({})
@@ -190,7 +193,16 @@ export default function SalesOrderList() {
       render: (_, r) => {
         if (r.rowType === 'return') return <Tag color="default">退货</Tag>
         const s = PAY_STATUS_MAP[r.paymentStatus ?? ''] ?? { color: 'default' }
-        return <Tag color={s.color}>{r.paymentStatus}</Tag>
+        const isUnpaid = r.paymentStatus === '未收款'
+        return (
+          <Tag
+            color={s.color}
+            style={isUnpaid ? { cursor: 'pointer' } : undefined}
+            onClick={isUnpaid ? () => setQuickPayOrderId(r.id) : undefined}
+          >
+            {r.paymentStatus}
+          </Tag>
+        )
       },
     },
     {
@@ -380,6 +392,13 @@ export default function SalesOrderList() {
             )
           },
         }}
+      />
+
+      <AddPaymentModal
+        open={quickPayOrderId !== null}
+        preselectedOrderId={quickPayOrderId}
+        onClose={() => setQuickPayOrderId(null)}
+        onSuccess={() => { setQuickPayOrderId(null); fetchAll() }}
       />
     </>
   )

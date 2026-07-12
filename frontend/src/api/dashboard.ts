@@ -1,5 +1,14 @@
 import client from "./client";
 
+export interface DailySalesRow {
+  date: string;
+  salesQty: number;
+  salesAmount: number;
+  pieces: number;
+  returnQty: number;
+  returnAmount: number;
+}
+
 export interface DashboardSummary {
   todaySales: number;
   todayIncome: number;
@@ -23,14 +32,7 @@ export interface DashboardSummary {
     supplierName: string;
     totalQty: number;
   }[];
-  monthlyProductProfitRank: {
-    productCode: string;
-    productName: string;
-    supplierCode: string;
-    supplierName: string;
-    totalProfit: number;
-    totalQty: number;
-  }[];
+  monthlySalesDaily: DailySalesRow[];
 }
 
 export const getDashboardSummary = async (): Promise<DashboardSummary> => {
