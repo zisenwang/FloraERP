@@ -35,6 +35,7 @@ import LossRecordNew from '@/pages/loss/LossRecordNew'
 import SalesReport from '@/pages/reports/sale/SalesReport'
 import PurchaseReport from '@/pages/reports/purchase/PurchaseReport'
 import InventoryReport from '@/pages/reports/InventoryReport'
+import RankingsReport from '@/pages/reports/RankingsReport'
 
 // 收支管理
 import PaymentList from '@/pages/payment/PaymentList'
@@ -112,6 +113,7 @@ const router = createBrowserRouter([
       { path: 'reports/sales', element: <SalesReport /> },
       { path: 'reports/purchase', element: <PurchaseReport /> },
       { path: 'reports/inventory', element: <InventoryReport /> },
+      { path: 'reports/rankings', element: <RankingsReport /> },
 
       // 收支管理
       { path: 'payment', element: <PaymentList /> },

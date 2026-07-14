@@ -75,3 +75,14 @@ export async function purchaseOrders(req: AuthRequest, res: Response): Promise<v
   })
   res.json({ data })
 }
+
+export async function rankings(req: AuthRequest, res: Response): Promise<void> {
+  const { type, by, startDate, endDate } = req.query as Record<string, string>
+  const data = await service.getRankings(
+    type as 'sales' | 'purchase',
+    by as 'customer' | 'product' | 'supplier' | 'daily' | 'monthly',
+    startDate,
+    endDate,
+  )
+  res.json({ data })
+}

@@ -79,6 +79,7 @@ const menuItems: MenuItem[] = [
       { key: '/reports/sales', label: '销售报表' },
       { key: '/reports/purchase', label: '采购报表' },
       { key: '/reports/inventory', label: '库存报表' },
+      { key: '/reports/rankings', label: '排行榜' },
     ],
   },
   {

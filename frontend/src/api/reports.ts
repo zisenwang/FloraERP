@@ -157,3 +157,16 @@ export const getPurchaseOrderRows = async (params: {
   const res = await client.get<{ data: ReportOrderRow[] }>('/reports/purchase/orders', { params })
   return res.data.data
 }
+
+export type SalesRankDim = 'customer' | 'product' | 'supplier' | 'daily' | 'monthly'
+export type PurchaseRankDim = 'product' | 'supplier'
+
+export const getRankings = async (params: {
+  type: 'sales' | 'purchase'
+  by: SalesRankDim | PurchaseRankDim
+  startDate: string
+  endDate: string
+}): Promise<ReportGroupRow[]> => {
+  const res = await client.get<{ data: ReportGroupRow[] }>('/reports/rankings', { params })
+  return res.data.data
+}

@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Table, Spin } from 'antd'
+import { useNavigate } from 'react-router-dom'
 import { getDashboardSummary, type DashboardSummary, type DailySalesRow } from '@/api/dashboard'
 import styles from './Dashboard.module.css'
 
 export default function Dashboard() {
+  const navigate = useNavigate()
   const [data, setData] = useState<DashboardSummary | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -96,23 +98,41 @@ export default function Dashboard() {
       {/* Rank Tables */}
       <div className={styles.rankRow}>
         <div className={styles.section}>
-          <div className={styles.sectionTitle}>本月销售排行（客户）</div>
+          <div className={styles.sectionTitle}>
+            本月销售排行（客户）
+            <span
+              className={styles.sectionTitleLink}
+              onClick={() => navigate('/reports/rankings?type=sales&by=customer')}
+            >
+              查看全部 →
+            </span>
+          </div>
           <Table
             columns={salesRankColumns}
             dataSource={data.monthlySalesRank}
             rowKey="customerName"
             pagination={false}
             size="small"
+            onRow={() => ({ style: { cursor: 'pointer' }, onClick: () => navigate('/reports/rankings?type=sales&by=customer') })}
           />
         </div>
         <div className={styles.section}>
-          <div className={styles.sectionTitle}>本月进货排行（货品）</div>
+          <div className={styles.sectionTitle}>
+            本月进货排行（货品）
+            <span
+              className={styles.sectionTitleLink}
+              onClick={() => navigate('/reports/rankings?type=purchase&by=product')}
+            >
+              查看全部 →
+            </span>
+          </div>
           <Table
             columns={purchaseProductRankColumns}
             dataSource={data.monthlyPurchaseProductRank}
             rowKey="productCode"
             pagination={false}
             size="small"
+            onRow={() => ({ style: { cursor: 'pointer' }, onClick: () => navigate('/reports/rankings?type=purchase&by=product') })}
           />
         </div>
       </div>
@@ -120,21 +140,38 @@ export default function Dashboard() {
 
       <div className={styles.rankRow}>
         <div className={styles.section}>
-          <div className={styles.sectionTitle}>本月进货排行（供应商）</div>
+          <div className={styles.sectionTitle}>
+            本月进货排行（供应商）
+            <span
+              className={styles.sectionTitleLink}
+              onClick={() => navigate('/reports/rankings?type=purchase&by=supplier')}
+            >
+              查看全部 →
+            </span>
+          </div>
           <Table
             columns={purchaseSupplierRankColumns}
             dataSource={data.monthlyPurchaseSupplierRank}
             rowKey="supplierName"
             pagination={false}
             size="small"
+            onRow={() => ({ style: { cursor: 'pointer' }, onClick: () => navigate('/reports/rankings?type=purchase&by=supplier') })}
           />
         </div>
         <div className={styles.section} style={{ flex: 2 }}>
           <div className={styles.sectionTitle}>
-            本月每日销售情况
-            <span style={{ fontSize: 12, fontWeight: 400, marginLeft: 12, color: '#888' }}>
-              合计：销售 {dailyTotals.salesQty} 盆 / ¥{dailyTotals.salesAmount.toLocaleString()} / {dailyTotals.pieces} 件
-              {dailyTotals.returnQty > 0 && `　退货 ${dailyTotals.returnQty} 盆 / ¥${dailyTotals.returnAmount.toLocaleString()}`}
+            <span>
+              本月每日销售情况
+              <span style={{ fontSize: 12, fontWeight: 400, marginLeft: 12, color: '#888' }}>
+                合计：销售 {dailyTotals.salesQty} 盆 / ¥{dailyTotals.salesAmount.toLocaleString()} / {dailyTotals.pieces} 件
+                {dailyTotals.returnQty > 0 && `　退货 ${dailyTotals.returnQty} 盆 / ¥${dailyTotals.returnAmount.toLocaleString()}`}
+              </span>
+            </span>
+            <span
+              className={styles.sectionTitleLink}
+              onClick={() => navigate('/reports/rankings?type=sales&by=daily')}
+            >
+              查看图表 →
             </span>
           </div>
           <Table
@@ -144,6 +181,7 @@ export default function Dashboard() {
             pagination={false}
             size="small"
             scroll={{ y: 320 }}
+            onRow={() => ({ style: { cursor: 'pointer' }, onClick: () => navigate('/reports/rankings?type=sales&by=daily') })}
           />
         </div>
       </div>

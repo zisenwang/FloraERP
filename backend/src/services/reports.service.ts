@@ -93,3 +93,20 @@ export async function getPurchaseOrderRows(
 ): Promise<ReportOrderRow[]> {
   return repo.getPurchaseL3(filters)
 }
+
+type SalesDim = 'customer' | 'product' | 'supplier' | 'daily' | 'monthly'
+type PurchaseDim = 'product' | 'supplier'
+
+export async function getRankings(
+  type: 'sales' | 'purchase',
+  by: SalesDim | PurchaseDim,
+  startDate: string,
+  endDate: string,
+): Promise<ReportGroupRow[]> {
+  if (type === 'sales') {
+    if (by === 'daily')   return repo.getSalesRankByDay({ startDate, endDate })
+    if (by === 'monthly') return repo.getSalesRankByMonth({ startDate, endDate })
+    return repo.getSalesL1(by as 'customer' | 'product' | 'supplier', { startDate, endDate })
+  }
+  return repo.getPurchaseL1(by as 'supplier' | 'product', { startDate, endDate })
+}

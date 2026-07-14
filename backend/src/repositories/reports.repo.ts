@@ -575,6 +575,38 @@ export async function getPurchaseL2(
   return rowsToCamel<ReportGroupRow>(rows as Record<string, unknown>[])
 }
 
+// ── Rankings ──────────────────────────────────────────────────────────────────
+
+export async function getSalesRankByDay(f: DateFilter): Promise<ReportGroupRow[]> {
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT DATE_FORMAT(so.date, '%Y-%m-%d') AS name,
+            SUM(so.total_qty) AS total_qty, SUM(so.total_pieces) AS total_pieces,
+            SUM(so.total_amount) AS total_amount,
+            COUNT(DISTINCT so.id) AS order_count
+     FROM sales_orders so
+     WHERE so.date BETWEEN ? AND ?
+     GROUP BY so.date
+     ORDER BY total_amount DESC`,
+    [f.startDate, f.endDate],
+  )
+  return rowsToCamel<ReportGroupRow>(rows as Record<string, unknown>[])
+}
+
+export async function getSalesRankByMonth(f: DateFilter): Promise<ReportGroupRow[]> {
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT DATE_FORMAT(so.date, '%Y-%m') AS name,
+            SUM(so.total_qty) AS total_qty, SUM(so.total_pieces) AS total_pieces,
+            SUM(so.total_amount) AS total_amount,
+            COUNT(DISTINCT so.id) AS order_count
+     FROM sales_orders so
+     WHERE so.date BETWEEN ? AND ?
+     GROUP BY DATE_FORMAT(so.date, '%Y-%m')
+     ORDER BY total_amount DESC`,
+    [f.startDate, f.endDate],
+  )
+  return rowsToCamel<ReportGroupRow>(rows as Record<string, unknown>[])
+}
+
 export async function getPurchaseL3(
   f: DateFilter & { supplierId?: number; productId?: number },
 ): Promise<ReportOrderRow[]> {
