@@ -165,3 +165,35 @@ export const voidSalesReturn = async (id: number): Promise<SalesReturn> => {
   const res = await client.patch<{ data: SalesReturn }>(`/sales/returns/${id}/void`)
   return res.data.data
 }
+
+// ——— Sales Detail (flat rows) ———
+
+export interface SalesDetailRow {
+  rowType: 'order' | 'return'
+  no: string
+  date: string
+  customerCode: string
+  customerName: string
+  productCode: string
+  productName: string
+  supplierCode: string
+  unit: string
+  qty: number
+  unitPrice: number
+  amount: number
+  pieces: number
+  profit: number | null
+  operator: string | null
+  notes: string | null
+  status: string | null
+}
+
+export const getSalesOrdersDetail = async (params?: {
+  startDate?: string
+  endDate?: string
+  search?: string
+  searchField?: string
+}): Promise<SalesDetailRow[]> => {
+  const res = await client.get<{ data: SalesDetailRow[] }>('/sales/orders/detail', { params })
+  return res.data.data
+}

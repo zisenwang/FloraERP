@@ -54,3 +54,21 @@ export interface CreatePurchaseOrderDto {
 }
 
 export interface UpdatePurchaseOrderDto extends CreatePurchaseOrderDto {}
+
+export interface PurchaseDetailRow {
+  rowType: 'order' | 'return'
+  no: string
+  date: string
+  supplierCode: string
+  supplierName: string
+  productCode: string
+  productName: string
+  unit: string
+  qty: number
+  unitPrice: number
+  amount: number
+  pieces: number
+  operator: string | null
+  notes: string | null
+  status: string | null
+}

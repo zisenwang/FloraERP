@@ -57,3 +57,23 @@ export interface CreateSalesOrderDto {
 }
 
 export interface UpdateSalesOrderDto extends CreateSalesOrderDto {}
+
+export interface SalesDetailRow {
+  rowType: 'order' | 'return'
+  no: string
+  date: string
+  customerCode: string
+  customerName: string
+  productCode: string
+  productName: string
+  supplierCode: string
+  unit: string
+  qty: number
+  unitPrice: number
+  amount: number
+  pieces: number
+  profit: number | null
+  operator: string | null
+  notes: string | null
+  status: string | null
+}

@@ -8,6 +8,7 @@ import type {
   PurchaseOrder,
   CreatePurchaseOrderDto,
   UpdatePurchaseOrderDto,
+  PurchaseDetailRow,
 } from '@/dto/purchase.dto'
 
 function computeLineTotals(items: CreatePurchaseOrderDto['items'], orderDiscount: number) {
@@ -33,6 +34,12 @@ export async function listOrders(
   filters: Parameters<typeof purchaseRepo.findAll>[0],
 ): Promise<PurchaseOrder[]> {
   return purchaseRepo.findAll(filters)
+}
+
+export async function listDetail(
+  filters: Parameters<typeof purchaseRepo.findDetail>[0],
+): Promise<PurchaseDetailRow[]> {
+  return purchaseRepo.findDetail(filters)
 }
 
 export async function getOrder(id: number): Promise<PurchaseOrder> {

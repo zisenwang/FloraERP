@@ -3,6 +3,12 @@ import type { AuthRequest } from '@/middleware/auth'
 import * as service from '@/services/sales.service'
 import * as returnService from '@/services/sales-return.service'
 
+export async function listOrdersDetail(req: AuthRequest, res: Response): Promise<void> {
+  const { startDate, endDate, search, searchField } = req.query as Record<string, string | undefined>
+  const data = await service.listDetail({ startDate, endDate, search, searchField })
+  res.json({ data })
+}
+
 export async function listOrders(req: AuthRequest, res: Response): Promise<void> {
   const { customerId, paymentStatus, startDate, endDate, search } = req.query as Record<string, string | undefined>
   const data = await service.listOrders({

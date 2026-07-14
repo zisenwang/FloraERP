@@ -1,6 +1,6 @@
 import pool from '@/db/pool'
 import { rowToCamel, rowsToCamel } from '@/utils/camel'
-import type { SalesOrder, SalesOrderItem } from '@/dto/sales.dto'
+import type { SalesOrder, SalesOrderItem, SalesDetailRow } from '@/dto/sales.dto'
 import type { RowDataPacket, ResultSetHeader, PoolConnection } from 'mysql2/promise'
 
 const ORDER_SELECT = `
@@ -230,4 +230,113 @@ export async function updatePaymentStatus(
   conn: PoolConnection,
 ): Promise<void> {
   await conn.query('UPDATE sales_orders SET payment_status = ? WHERE id = ?', [status, orderId])
+}
+
+export async function findDetail(
+  filters: {
+    startDate?: string
+    endDate?: string
+    search?: string
+    searchField?: string
+  } = {},
+): Promise<SalesDetailRow[]> {
+  const params: unknown[] = []
+  const returnParams: unknown[] = []
+
+  // Build WHERE clauses for orders side
+  let orderWhere = 'WHERE 1=1'
+  if (filters.startDate) {
+    orderWhere += ' AND so.date >= ?'
+    params.push(filters.startDate)
+  }
+  if (filters.endDate) {
+    orderWhere += ' AND so.date <= ?'
+    params.push(filters.endDate)
+  }
+  if (filters.search) {
+    const like = `%${filters.search}%`
+    const sf = filters.searchField
+    if (!sf || sf === 'all') {
+      orderWhere += ' AND (c.name LIKE ? OR c.code LIKE ? OR so.order_no LIKE ?)'
+      params.push(like, like, like)
+    } else if (sf === 'customerName') { orderWhere += ' AND c.name LIKE ?'; params.push(like) }
+    else if (sf === 'customerCode')   { orderWhere += ' AND c.code LIKE ?'; params.push(like) }
+    else if (sf === 'orderNo')        { orderWhere += ' AND so.order_no LIKE ?'; params.push(like) }
+    else if (sf === 'productCode')    { orderWhere += ' AND CONCAT(sup.code, \'.\', p.code) LIKE ?'; params.push(like) }
+    else if (sf === 'productName')    { orderWhere += ' AND p.name LIKE ?'; params.push(like) }
+    else if (sf === 'operator')       { orderWhere += ' AND so.operator LIKE ?'; params.push(like) }
+    else if (sf === 'notes')          { orderWhere += ' AND soi.notes LIKE ?'; params.push(like) }
+  }
+
+  // Build WHERE clauses for returns side
+  let returnWhere = 'WHERE 1=1'
+  if (filters.startDate) {
+    returnWhere += ' AND sr.date >= ?'
+    returnParams.push(filters.startDate)
+  }
+  if (filters.endDate) {
+    returnWhere += ' AND sr.date <= ?'
+    returnParams.push(filters.endDate)
+  }
+  if (filters.search) {
+    const like = `%${filters.search}%`
+    const sf = filters.searchField
+    if (!sf || sf === 'all') {
+      returnWhere += ' AND (c.name LIKE ? OR c.code LIKE ? OR sr.return_no LIKE ?)'
+      returnParams.push(like, like, like)
+    } else if (sf === 'customerName') { returnWhere += ' AND c.name LIKE ?'; returnParams.push(like) }
+    else if (sf === 'customerCode')   { returnWhere += ' AND c.code LIKE ?'; returnParams.push(like) }
+    else if (sf === 'orderNo')        { returnWhere += ' AND sr.return_no LIKE ?'; returnParams.push(like) }
+    else if (sf === 'productCode')    { returnWhere += ' AND CONCAT(sup.code, \'.\', p.code) LIKE ?'; returnParams.push(like) }
+    else if (sf === 'productName')    { returnWhere += ' AND p.name LIKE ?'; returnParams.push(like) }
+    else if (sf === 'operator')       { returnWhere += ' AND sr.operator LIKE ?'; returnParams.push(like) }
+    else if (sf === 'notes')          { returnWhere += ' AND sri.notes LIKE ?'; returnParams.push(like) }
+  }
+
+  const sql = `
+    SELECT
+      'order' AS row_type,
+      so.order_no AS no,
+      DATE_FORMAT(so.date, '%Y-%m-%d') AS date,
+      c.code AS customer_code, c.name AS customer_name,
+      CONCAT(sup.code, '.', p.code) AS product_code, p.name AS product_name,
+      sup.code AS supplier_code,
+      p.unit AS unit,
+      soi.qty, soi.unit_price, soi.final_amount AS amount, soi.pieces,
+      (soi.final_amount - COALESCE(soi.cost_price, 0) * soi.qty) AS profit,
+      so.operator, soi.notes, so.status,
+      so.date AS _sort_date, so.id AS _sort_id
+    FROM sales_orders so
+    JOIN sales_order_items soi ON soi.order_id = so.id
+    JOIN products p ON p.id = soi.product_id
+    JOIN suppliers sup ON sup.id = soi.supplier_id
+    JOIN customers c ON c.id = so.customer_id
+    ${orderWhere}
+
+    UNION ALL
+
+    SELECT
+      'return' AS row_type,
+      sr.return_no AS no,
+      DATE_FORMAT(sr.date, '%Y-%m-%d') AS date,
+      c.code AS customer_code, c.name AS customer_name,
+      CONCAT(sup.code, '.', p.code) AS product_code, p.name AS product_name,
+      sup.code AS supplier_code,
+      p.unit AS unit,
+      sri.qty, sri.unit_price, sri.amount AS amount, sri.pieces,
+      NULL AS profit,
+      sr.operator, sri.notes, NULL AS status,
+      sr.date AS _sort_date, sr.id AS _sort_id
+    FROM sales_returns sr
+    JOIN sales_return_items sri ON sri.return_id = sr.id
+    JOIN products p ON p.id = sri.product_id
+    JOIN suppliers sup ON sup.id = p.supplier_id
+    JOIN customers c ON c.id = sr.customer_id
+    ${returnWhere}
+
+    ORDER BY _sort_date DESC, _sort_id DESC
+  `
+
+  const [rows] = await pool.query<RowDataPacket[]>(sql, [...params, ...returnParams])
+  return rowsToCamel<SalesDetailRow>(rows as Record<string, unknown>[])
 }

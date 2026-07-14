@@ -4,7 +4,7 @@ import * as invRepo from '@/repositories/inventory.repo'
 import * as productRepo from '@/repositories/product.repo'
 import { genSalesNo } from '@/utils/orderNo'
 import { AppError } from '@/services/supplier.service'
-import type { SalesOrder, CreateSalesOrderDto, UpdateSalesOrderDto } from '@/dto/sales.dto'
+import type { SalesOrder, CreateSalesOrderDto, UpdateSalesOrderDto, SalesDetailRow } from '@/dto/sales.dto'
 
 function computeLineTotals(items: CreateSalesOrderDto['items']) {
   let totalQty = 0,
@@ -26,6 +26,12 @@ export async function listOrders(
   filters: Parameters<typeof salesRepo.findAll>[0],
 ): Promise<SalesOrder[]> {
   return salesRepo.findAll(filters)
+}
+
+export async function listDetail(
+  filters: Parameters<typeof salesRepo.findDetail>[0],
+): Promise<SalesDetailRow[]> {
+  return salesRepo.findDetail(filters)
 }
 
 export async function getOrder(id: number): Promise<SalesOrder> {

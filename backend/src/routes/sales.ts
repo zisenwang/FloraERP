@@ -5,6 +5,7 @@ import * as ctrl from '@/controllers/sales.controller'
 const router = Router()
 router.use(authMiddleware)
 router.get('/orders', ctrl.listOrders)
+router.get('/orders/detail', ctrl.listOrdersDetail)
 router.get('/orders/:id', ctrl.getOrder)
 router.post('/orders', ctrl.createOrder)
 router.put('/orders/:id', ctrl.updateOrder)

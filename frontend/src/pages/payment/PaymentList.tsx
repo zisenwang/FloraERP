@@ -1,8 +1,5 @@
 import { useEffect, useState } from 'react'
-import {
-  Table, DatePicker, Input, Button, App,
-  Tag,
-} from 'antd'
+import { Table, DatePicker, Input, Button, App} from 'antd'
 import { PlusOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
@@ -14,14 +11,6 @@ import { PAGE_SIZE } from '@/constants/pagination'
 import SalesOrderModal from '@/components/SalesOrderModal'
 import AddPaymentModal from '@/components/AddPaymentModal'
 import styles from './Payment.module.css'
-
-// 部分收款 is shown as 已付款 on frontend
-function payStatusLabel(s: string) {
-  return s === '部分收款' ? '已付款' : s
-}
-const PAY_STATUS_COLOR: Record<string, string> = {
-  '未收款': 'red', '部分收款': 'green', '已收款': 'green',
-}
 
 // ─── Payment List Page ────────────────────────────────────────────────────────
 

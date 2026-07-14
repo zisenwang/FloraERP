@@ -159,3 +159,33 @@ export const voidPurchaseReturn = async (id: number): Promise<PurchaseReturn> =>
   const res = await client.patch<{ data: PurchaseReturn }>(`/purchase/returns/${id}/void`)
   return res.data.data
 }
+
+// ——— Purchase Detail (flat rows) ———
+
+export interface PurchaseDetailRow {
+  rowType: 'order' | 'return'
+  no: string
+  date: string
+  supplierCode: string
+  supplierName: string
+  productCode: string
+  productName: string
+  unit: string
+  qty: number
+  unitPrice: number
+  amount: number
+  pieces: number
+  operator: string | null
+  notes: string | null
+  status: string | null
+}
+
+export const getPurchaseOrdersDetail = async (params?: {
+  startDate?: string
+  endDate?: string
+  search?: string
+  searchField?: string
+}): Promise<PurchaseDetailRow[]> => {
+  const res = await client.get<{ data: PurchaseDetailRow[] }>('/purchase/orders/detail', { params })
+  return res.data.data
+}

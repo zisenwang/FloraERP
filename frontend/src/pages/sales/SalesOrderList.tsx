@@ -1,15 +1,17 @@
-import { useEffect, useState } from 'react'
-import { Table, Button, Select, DatePicker, Input, Tag, App, Spin, Popconfirm } from 'antd'
+import { useEffect, useState, useCallback } from 'react'
+import { Table, Button, Select, DatePicker, Input, Tag, App, Popconfirm, Segmented } from 'antd'
 import { PlusOutlined, EditOutlined, StopOutlined, SearchOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
 import {
-  getSalesOrders, getSalesOrder, voidSalesOrder,
-  getSalesReturns, getSalesReturn, voidSalesReturn,
-  type SalesOrder, type SalesOrderItem,
-  type SalesReturn, type SalesReturnItem,
+  getSalesOrders, voidSalesOrder,
+  getSalesReturns, voidSalesReturn,
+  getSalesOrdersDetail,
+  type SalesOrder,
+  type SalesReturn,
+  type SalesDetailRow,
 } from '@/api/sales'
 import { getErrorMessage } from '@/utils/error'
 import { PAGE_SIZE } from '@/constants/pagination'
@@ -79,14 +81,31 @@ function toUnifiedReturn(r: SalesReturn): UnifiedRow {
   }
 }
 
+const SEARCH_FIELD_OPTIONS = [
+  { value: 'all',          label: '全部' },
+  { value: 'customerName', label: '客户名称' },
+  { value: 'customerCode', label: '客户编码' },
+  { value: 'orderNo',      label: '单号' },
+  { value: 'productCode',  label: '产品编码' },
+  { value: 'productName',  label: '产品名称' },
+  { value: 'operator',     label: '经办人' },
+  { value: 'notes',        label: '备注' },
+]
+
 export default function SalesOrderList() {
   const navigate = useNavigate()
-  const { message, modal } = App.useApp()
+  const { message } = App.useApp()
+
+  const [mode, setMode] = useState<'summary' | 'detail'>('summary')
 
   const [orders, setOrders] = useState<SalesOrder[]>([])
   const [returns, setReturns] = useState<SalesReturn[]>([])
   const [loading, setLoading] = useState(false)
-  const [customerSearch, setCustomerSearch] = useState('')
+
+  // Search state
+  const [searchField, setSearchField] = useState<string>('all')
+  const [searchKeyword, setSearchKeyword] = useState('')
+
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
     dayjs().subtract(1, 'month').startOf('month'),
     dayjs().endOf('month'),
@@ -95,48 +114,51 @@ export default function SalesOrderList() {
 
   const [quickPayOrderId, setQuickPayOrderId] = useState<number | null>(null)
 
-  // expand detail cache
-  const [orderItemsMap, setOrderItemsMap] = useState<Record<number, SalesOrderItem[]>>({})
-  const [returnItemsMap, setReturnItemsMap] = useState<Record<number, SalesReturnItem[]>>({})
-  const [expandLoading, setExpandLoading] = useState<Record<string, boolean>>({})
   const [voiding, setVoiding] = useState<Record<string, boolean>>({})
 
-  const fetchAll = () => {
+  // Detail mode
+  const [detailRows, setDetailRows] = useState<SalesDetailRow[]>([])
+  const [detailLoading, setDetailLoading] = useState(false)
+
+  const fetchAll = useCallback(() => {
     setLoading(true)
     const startDate = dateRange[0].format('YYYY-MM-DD')
     const endDate   = dateRange[1].format('YYYY-MM-DD')
+    // In summary mode the search is server-side only for customerName/customerCode/orderNo fields via existing API (no searchField support there)
+    // We pass search keyword to the existing orders API (which already supports search on those fields)
+    const search = searchKeyword.trim() || undefined
     const fetchOrders = paymentStatus !== '退货'
-      ? getSalesOrders({ startDate, endDate, paymentStatus })
+      ? getSalesOrders({ startDate, endDate, paymentStatus, search })
       : Promise.resolve([] as SalesOrder[])
     const fetchReturns = !paymentStatus || paymentStatus === '退货'
-      ? getSalesReturns({ startDate, endDate })
+      ? getSalesReturns({ startDate, endDate, search })
       : Promise.resolve([] as SalesReturn[])
     Promise.all([fetchOrders, fetchReturns])
       .then(([o, r]) => { setOrders(o); setReturns(r) })
       .catch(err => message.error(getErrorMessage(err)))
       .finally(() => setLoading(false))
-  }
+  }, [dateRange, paymentStatus, searchKeyword])
 
-  useEffect(() => { fetchAll() }, [dateRange, paymentStatus])
+  const fetchDetail = useCallback(() => {
+    setDetailLoading(true)
+    const startDate = dateRange[0].format('YYYY-MM-DD')
+    const endDate   = dateRange[1].format('YYYY-MM-DD')
+    const search = searchKeyword.trim() || undefined
+    getSalesOrdersDetail({
+      startDate,
+      endDate,
+      search,
+      searchField: search ? searchField : undefined,
+    })
+      .then(rows => setDetailRows(rows))
+      .catch(err => message.error(getErrorMessage(err)))
+      .finally(() => setDetailLoading(false))
+  }, [dateRange, searchKeyword, searchField])
 
-  const handleExpand = (expanded: boolean, row: UnifiedRow) => {
-    if (!expanded) return
-    if (row.rowType === 'order') {
-      if (orderItemsMap[row.id] !== undefined) return
-      setExpandLoading(prev => ({ ...prev, [row._key]: true }))
-      getSalesOrder(row.id)
-        .then(o => setOrderItemsMap(prev => ({ ...prev, [row.id]: o.items ?? [] })))
-        .catch(() => setOrderItemsMap(prev => ({ ...prev, [row.id]: [] })))
-        .finally(() => setExpandLoading(prev => ({ ...prev, [row._key]: false })))
-    } else {
-      if (returnItemsMap[row.id] !== undefined) return
-      setExpandLoading(prev => ({ ...prev, [row._key]: true }))
-      getSalesReturn(row.id)
-        .then(r => setReturnItemsMap(prev => ({ ...prev, [row.id]: r.items ?? [] })))
-        .catch(() => setReturnItemsMap(prev => ({ ...prev, [row.id]: [] })))
-        .finally(() => setExpandLoading(prev => ({ ...prev, [row._key]: false })))
-    }
-  }
+  useEffect(() => {
+    if (mode === 'summary') fetchAll()
+    else fetchDetail()
+  }, [mode, dateRange, paymentStatus, searchKeyword, searchField])
 
   const handleVoid = async (row: UnifiedRow) => {
     setVoiding(prev => ({ ...prev, [row._key]: true }))
@@ -152,22 +174,19 @@ export default function SalesOrderList() {
     }
   }
 
-  const kw = customerSearch.trim().toLowerCase()
-  const combined: UnifiedRow[] =[
+  const combined: UnifiedRow[] = [
     ...orders.map(toUnified),
     ...returns.map(toUnifiedReturn),
-  ]
-    .filter(r => !kw || r.customerName?.toLowerCase().includes(kw) || r.customerCode?.toLowerCase().includes(kw))
-    .sort((a, b) => b.time.localeCompare(a.time))
+  ].sort((a, b) => b.time.localeCompare(a.time))
 
   const columns: ColumnsType<UnifiedRow> = [
-    { title: '日期', dataIndex: 'date', width: 110, align: 'center' },
+    { title: '日期', dataIndex: 'date', align: 'center' },
     {
-      title: '客户', width: 150, align: 'center',
+      title: '客户', align: 'center',
       render: (_, r) => `${r.customerCode} ${r.customerName}`,
     },
     {
-      title: '单号', width: 175, align: 'center',
+      title: '单号', align: 'center',
       render: (_, r) => (
         <span>
           {r.rowType === 'return' && <Tag color="orange" style={{ marginRight: 4 }}>退</Tag>}
@@ -175,18 +194,18 @@ export default function SalesOrderList() {
         </span>
       ),
     },
-    { title: '数量', dataIndex: 'qty', width: 80, align: 'center' },
+    { title: '数量', dataIndex: 'qty', align: 'center' },
     {
-      title: '合计金额', dataIndex: 'amount', width: 110, align: 'center',
+      title: '合计金额', dataIndex: 'amount', align: 'center',
       render: (v: number, r) => (
         <span style={{ color: r.rowType === 'return' ? '#cf1322' : undefined }}>
           {r.rowType === 'return' ? '-' : ''}¥{v.toFixed(2)}
         </span>
       ),
     },
-    { title: '件数', dataIndex: 'pieces', width: 80, align: 'center' },
+    { title: '件数', dataIndex: 'pieces', align: 'center' },
     {
-      title: '收款状态', width: 100, align: 'center',
+      title: '收款状态', align: 'center',
       render: (_, r) => {
         if (r.rowType === 'return') return <Tag color="default">退货</Tag>
         if (r.status === '作废') return <Tag color="default">已作废</Tag>
@@ -204,7 +223,7 @@ export default function SalesOrderList() {
       },
     },
     {
-      title: '总毛利', dataIndex: 'profit', width: 110, align: 'center',
+      title: '总毛利', dataIndex: 'profit', align: 'center',
       render: (v: number, r) => {
         if (r.rowType === 'return') return <span style={{ color: '#aaa' }}>—</span>
         return (
@@ -215,7 +234,7 @@ export default function SalesOrderList() {
       },
     },
     {
-      title: '操作', width: 140, fixed: 'right', align: 'center',
+      title: '操作', align: 'center',
       render: (_, row) => {
         const isVoided = row.status === '作废'
         return (
@@ -243,54 +262,82 @@ export default function SalesOrderList() {
     },
   ]
 
-  const orderItemColumns: ColumnsType<SalesOrderItem> = [
-    { title: '编码',     dataIndex: 'productCode',  width: 100, align: 'center' },
-    { title: '货品名称', dataIndex: 'productName',  width: 160, align: 'center' },
-    { title: '供应商',   dataIndex: 'supplierName', width: 120, align: 'center' },
+  // ——— Detail mode columns ———
+  const detailColumns: ColumnsType<SalesDetailRow> = [
+    { title: '日期',     dataIndex: 'date',         width: 110, align: 'center' },
+    {
+      title: '客户', width: 150, align: 'center',
+      render: (_, r) => `${r.customerCode} ${r.customerName}`,
+    },
+    { title: '单号',     dataIndex: 'no',           width: 175, align: 'center' },
+    { title: '产品编码', dataIndex: 'productCode',  width: 120, align: 'center' },
+    { title: '产品名称', dataIndex: 'productName',  width: 160, align: 'center' },
+    { title: '供应商',   dataIndex: 'supplierCode', width: 90,  align: 'center' },
     { title: '单位',     dataIndex: 'unit',         width: 60,  align: 'center' },
     { title: '数量',     dataIndex: 'qty',          width: 70,  align: 'center' },
-    { title: '件数',     dataIndex: 'pieces',       width: 70,  align: 'center' },
-    { title: '进价',     dataIndex: 'costPrice',    width: 90,  align: 'center', render: (v: number | null) => v != null ? `¥${v.toFixed(2)}` : '—' },
     { title: '单价',     dataIndex: 'unitPrice',    width: 90,  align: 'center', render: (v: number) => `¥${v}` },
-    { title: '折扣',     dataIndex: 'discount',     width: 65,  align: 'center', render: (v: number) => `${v ?? 100}%` },
-    { title: '折后金额', dataIndex: 'finalAmount',  width: 110, align: 'center', render: (v: number) => `¥${v.toFixed(2)}` },
     {
-      title: '毛利', width: 110, align: 'center',
-      render: (_: unknown, r: SalesOrderItem) => {
-        r.costPrice ??= 0
-        const profit = +(r.finalAmount - r.costPrice * r.qty).toFixed(2)
+      title: '金额', dataIndex: 'amount', width: 110, align: 'center',
+      render: (v: number, r) => (
+        <span style={{ color: r.rowType === 'return' ? '#cf1322' : undefined }}>
+          {r.rowType === 'return' ? '-' : ''}¥{v.toFixed(2)}
+        </span>
+      ),
+    },
+    { title: '件数', dataIndex: 'pieces', width: 70, align: 'center' },
+    {
+      title: '毛利', dataIndex: 'profit', width: 110, align: 'center',
+      render: (v: number | null) => {
+        if (v == null) return <span style={{ color: '#aaa' }}>—</span>
         return (
-          <span style={{ color: profit >= 0 ? '#389e0d' : '#cf1322', fontWeight: 600 }}>
-            {profit >= 0 ? '+' : ''}¥{profit.toFixed(2)}
+          <span style={{ color: v >= 0 ? '#389e0d' : '#cf1322', fontWeight: 600 }}>
+            {v >= 0 ? '+' : ''}¥{v.toFixed(2)}
           </span>
         )
       },
     },
+    { title: '经办人', dataIndex: 'operator', width: 90,  align: 'center', render: (v: string | null) => v ?? '—' },
+    { title: '备注',   dataIndex: 'notes',    width: 120, align: 'center', render: (v: string | null) => v ?? '—' },
   ]
 
-  const returnItemColumns: ColumnsType<SalesReturnItem> = [
-    { title: '编码',     dataIndex: 'productCode', width: 100, align: 'center' },
-    { title: '货品名称', dataIndex: 'productName', width: 160, align: 'center' },
-    { title: '单位',     dataIndex: 'unit',        width: 60,  align: 'center' },
-    { title: '数量',     dataIndex: 'qty',         width: 70,  align: 'center' },
-    { title: '件数',     dataIndex: 'pieces',      width: 70,  align: 'center', render: (v: number) => v || '—' },
-    { title: '单价',     dataIndex: 'unitPrice',   width: 90,  align: 'center', render: (v: number) => `¥${v}` },
-    { title: '金额',     dataIndex: 'amount',      width: 100, align: 'center', render: (v: number) => `¥${v.toFixed(2)}` },
-  ]
+  const calcDetailSummary = (rows: SalesDetailRow[]) => {
+    const orderRows  = rows.filter(r => r.rowType === 'order')
+    const returnRows = rows.filter(r => r.rowType === 'return')
+    return {
+      qty:    orderRows.reduce((s, r) => s + (r.qty    ?? 0), 0) - returnRows.reduce((s, r) => s + (r.qty    ?? 0), 0),
+      pieces: orderRows.reduce((s, r) => s + (r.pieces ?? 0), 0) - returnRows.reduce((s, r) => s + (r.pieces ?? 0), 0),
+      amount: orderRows.reduce((s, r) => s + (r.amount ?? 0), 0) - returnRows.reduce((s, r) => s + (r.amount ?? 0), 0),
+      profit: orderRows.reduce((s, r) => s + (r.profit ?? 0), 0),
+    }
+  }
 
   return (
     <>
       <div className={styles.pageTitle}>销售单据</div>
 
+      <div style={{ marginBottom: 12 }}>
+        <Segmented
+          options={[{ label: '汇总', value: 'summary' }, { label: '明细', value: 'detail' }]}
+          value={mode}
+          onChange={v => setMode(v as 'summary' | 'detail')}
+        />
+      </div>
+
       <div className={styles.toolbar}>
         <div className={styles.toolbarLeft}>
+          <Select
+            value={searchField}
+            onChange={v => setSearchField(v)}
+            options={SEARCH_FIELD_OPTIONS}
+            style={{ width: 110 }}
+          />
           <Input
-            placeholder="搜索客户名称或编码"
+            placeholder="搜索关键词"
             prefix={<SearchOutlined />}
             allowClear
-            style={{ width: 200 }}
-            value={customerSearch}
-            onChange={e => setCustomerSearch(e.target.value)}
+            style={{ width: 180 }}
+            value={searchKeyword}
+            onChange={e => setSearchKeyword(e.target.value)}
           />
           <DatePicker.RangePicker
             value={dateRange}
@@ -305,17 +352,19 @@ export default function SalesOrderList() {
               { label: '上月', value: [dayjs().subtract(1, 'month').startOf('month'), dayjs().subtract(1, 'month').endOf('month')] },
             ]}
           />
-          <Select
-            allowClear placeholder="收款状态"
-            style={{ width: 120 }}
-            options={[
-              { value: '未收款',  label: '未收款' },
-              { value: '部分收款', label: '部分收款' },
-              { value: '已收款',  label: '已收款' },
-              { value: '退货',    label: '退货' },
-            ]}
-            onChange={v => setPaymentStatus(v)}
-          />
+          {mode === 'summary' && (
+            <Select
+              allowClear placeholder="收款状态"
+              style={{ width: 120 }}
+              options={[
+                { value: '未收款',  label: '未收款' },
+                { value: '部分收款', label: '部分收款' },
+                { value: '已收款',  label: '已收款' },
+                { value: '退货',    label: '退货' },
+              ]}
+              onChange={v => setPaymentStatus(v)}
+            />
+          )}
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/sales/orders/new')}>
@@ -327,81 +376,88 @@ export default function SalesOrderList() {
         </div>
       </div>
 
-      <Table
-        rowKey="_key"
-        columns={columns}
-        dataSource={combined}
-        loading={loading}
-        size="middle"
-        scroll={{ x: 1050 }}
-        pagination={{ pageSize: PAGE_SIZE, showTotal: total => `共 ${total} 条` }}
-        rowClassName={(r) => r.rowType === 'return' ? 'return-row' : ''}
-        summary={pageData => {
-          const calc = (rows: UnifiedRow[]) => {
-            const orders  = rows.filter(r => r.rowType === 'order')
-            const returns = rows.filter(r => r.rowType === 'return')
-            return {
-              qty:    orders.reduce((s, r) => s + (r.qty    ?? 0), 0) - returns.reduce((s, r) => s + (r.qty    ?? 0), 0),
-              pieces: orders.reduce((s, r) => s + (r.pieces ?? 0), 0) - returns.reduce((s, r) => s + (r.pieces ?? 0), 0),
-              amount: orders.reduce((s, r) => s + (r.amount ?? 0), 0) - returns.reduce((s, r) => s + (r.amount ?? 0), 0),
-              profit: orders.reduce((s, r) => s + (r.profit ?? 0), 0),
+      {mode === 'summary' ? (
+        <Table
+          rowKey="_key"
+          columns={columns}
+          dataSource={combined}
+          loading={loading}
+          size="middle"
+          pagination={{ pageSize: PAGE_SIZE, showTotal: total => `共 ${total} 条` }}
+          rowClassName={(r) => r.rowType === 'return' ? 'return-row' : ''}
+          summary={pageData => {
+            const calc = (rows: UnifiedRow[]) => {
+              const orderRows  = rows.filter(r => r.rowType === 'order')
+              const returnRows = rows.filter(r => r.rowType === 'return')
+              return {
+                qty:    orderRows.reduce((s, r) => s + (r.qty    ?? 0), 0) - returnRows.reduce((s, r) => s + (r.qty    ?? 0), 0),
+                pieces: orderRows.reduce((s, r) => s + (r.pieces ?? 0), 0) - returnRows.reduce((s, r) => s + (r.pieces ?? 0), 0),
+                amount: orderRows.reduce((s, r) => s + (r.amount ?? 0), 0) - returnRows.reduce((s, r) => s + (r.amount ?? 0), 0),
+                profit: orderRows.reduce((s, r) => s + (r.profit ?? 0), 0),
+              }
             }
-          }
-          const page  = calc(pageData as UnifiedRow[])
-          const total = calc(combined)
-          const SummaryRow = ({ label, d, bg }: { label: string; d: typeof page; bg: string }) => (
-            <Table.Summary.Row style={{ background: bg, fontWeight: 600 }}>
-              <Table.Summary.Cell index={0} colSpan={4} align="right">{label}</Table.Summary.Cell>
-              <Table.Summary.Cell index={3} align="center">{d.qty}</Table.Summary.Cell>
-              <Table.Summary.Cell index={4} align="center">¥{d.amount.toFixed(2)}</Table.Summary.Cell>
-              <Table.Summary.Cell index={5} align="center">{d.pieces}</Table.Summary.Cell>
-              <Table.Summary.Cell index={6} />
-              <Table.Summary.Cell index={7} align="center">
-                <span style={{ color: d.profit >= 0 ? '#389e0d' : '#cf1322' }}>
-                  {d.profit >= 0 ? '+' : ''}¥{d.profit.toFixed(2)}
-                </span>
-              </Table.Summary.Cell>
-              <Table.Summary.Cell index={8} />
-            </Table.Summary.Row>
-          )
-          return (
-            <Table.Summary fixed>
-              <SummaryRow label="本页合计" d={page}  bg="#fafafa" />
-              <SummaryRow label="全部合计" d={total} bg="#f0f5ff" />
-            </Table.Summary>
-          )
-        }}
-        expandable={{
-          onExpand: handleExpand,
-          expandedRowRender: row => {
-            if (expandLoading[row._key]) {
-              return <Spin size="small" style={{ padding: '8px 16px', display: 'block' }} />
-            }
-            if (row.rowType === 'order') {
-              return (
-                <Table
-                  rowKey="id"
-                  size="small"
-                  pagination={false}
-                  dataSource={orderItemsMap[row.id] ?? []}
-                  columns={orderItemColumns}
-                  scroll={{ x: 860 }}
-                />
-              )
-            }
-            return (
-              <Table
-                rowKey="id"
-                size="small"
-                pagination={false}
-                dataSource={returnItemsMap[row.id] ?? []}
-                columns={returnItemColumns}
-                scroll={{ x: 650 }}
-              />
+            const page  = calc(pageData as UnifiedRow[])
+            const total = calc(combined)
+            const SummaryRow = ({ label, d, bg }: { label: string; d: typeof page; bg: string }) => (
+              <Table.Summary.Row style={{ background: bg, fontWeight: 600 }}>
+                <Table.Summary.Cell index={0} colSpan={3} align="right">{label}</Table.Summary.Cell>
+                <Table.Summary.Cell index={3} align="center">{d.qty}</Table.Summary.Cell>
+                <Table.Summary.Cell index={4} align="center">¥{d.amount.toFixed(2)}</Table.Summary.Cell>
+                <Table.Summary.Cell index={5} align="center">{d.pieces}</Table.Summary.Cell>
+                <Table.Summary.Cell index={6} />
+                <Table.Summary.Cell index={7} align="center">
+                  <span style={{ color: d.profit >= 0 ? '#389e0d' : '#cf1322' }}>
+                    {d.profit >= 0 ? '+' : ''}¥{d.profit.toFixed(2)}
+                  </span>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={8} />
+              </Table.Summary.Row>
             )
-          },
-        }}
-      />
+            return (
+              <Table.Summary fixed>
+                <SummaryRow label="本页合计" d={page}  bg="#fafafa" />
+                <SummaryRow label="全部合计" d={total} bg="#f0f5ff" />
+              </Table.Summary>
+            )
+          }}
+        />
+      ) : (
+        <Table
+          rowKey={(r, i) => `${r.no}-${r.productCode}-${i}`}
+          columns={detailColumns}
+          dataSource={detailRows}
+          loading={detailLoading}
+          size="middle"
+          scroll={{ x: 1400 }}
+          pagination={{ pageSize: PAGE_SIZE, showTotal: total => `共 ${total} 条` }}
+          summary={pageData => {
+            const page  = calcDetailSummary(pageData as SalesDetailRow[])
+            const total = calcDetailSummary(detailRows)
+            const SummaryRow = ({ label, d, bg }: { label: string; d: typeof page; bg: string }) => (
+              <Table.Summary.Row style={{ background: bg, fontWeight: 600 }}>
+                <Table.Summary.Cell index={0} colSpan={7} align="right">{label}</Table.Summary.Cell>
+                <Table.Summary.Cell index={7} align="center">{d.qty}</Table.Summary.Cell>
+                <Table.Summary.Cell index={8} />
+                <Table.Summary.Cell index={9} align="center">¥{d.amount.toFixed(2)}</Table.Summary.Cell>
+                <Table.Summary.Cell index={10} align="center">{d.pieces}</Table.Summary.Cell>
+                <Table.Summary.Cell index={11} align="center">
+                  <span style={{ color: d.profit >= 0 ? '#389e0d' : '#cf1322' }}>
+                    {d.profit >= 0 ? '+' : ''}¥{d.profit.toFixed(2)}
+                  </span>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={12} />
+                <Table.Summary.Cell index={13} />
+              </Table.Summary.Row>
+            )
+            return (
+              <Table.Summary fixed>
+                <SummaryRow label="本页合计" d={page}  bg="#fafafa" />
+                <SummaryRow label="全部合计" d={total} bg="#f0f5ff" />
+              </Table.Summary>
+            )
+          }}
+        />
+      )}
 
       <AddPaymentModal
         open={quickPayOrderId !== null}
