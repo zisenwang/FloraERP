@@ -1,18 +1,19 @@
 import { useEffect, useState } from 'react'
-import { Table, Button, DatePicker, Input, App, Spin } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons'
+import { Table, Button, DatePicker, Input, App, Spin, Popconfirm } from 'antd'
+import { PlusOutlined, EditOutlined, StopOutlined, SearchOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import type { ColumnsType } from 'antd/es/table'
 import {
-  getSalesReturns, getSalesReturn, deleteSalesReturn,
+  getSalesReturns, getSalesReturn, voidSalesReturn,
   type SalesReturn, type SalesReturnItem,
 } from '@/api/sales'
 import { getErrorMessage } from '@/utils/error'
+import { PAGE_SIZE } from '@/constants/pagination'
 
 const { RangePicker } = DatePicker
 
 export default function SalesReturnList() {
-  const { message, modal } = App.useApp()
+  const { message } = App.useApp()
   const navigate = useNavigate()
 
   const [returns, setReturns] = useState<SalesReturn[]>([])
@@ -21,7 +22,7 @@ export default function SalesReturnList() {
   const [dateRange, setDateRange] = useState<[string, string] | undefined>()
   const [itemsMap, setItemsMap] = useState<Record<number, SalesReturnItem[]>>({})
   const [expandLoading, setExpandLoading] = useState<Record<number, boolean>>({})
-  const [deleting, setDeleting] = useState<Record<number, boolean>>({})
+  const [voiding, setVoiding] = useState<Record<number, boolean>>({})
 
   const fetchReturns = (range?: [string, string], kw?: string) => {
     setLoading(true)
@@ -33,19 +34,17 @@ export default function SalesReturnList() {
 
   useEffect(() => { fetchReturns() }, [])
 
-  const handleDelete = (record: SalesReturn) => {
-    modal.confirm({
-      title: '确认删除',
-      content: `删除退货单「${record.returnNo}」？库存将同步扣减，此操作不可撤销。`,
-      okText: '删除', okType: 'danger', cancelText: '取消',
-      onOk: () => {
-        setDeleting(prev => ({ ...prev, [record.id]: true }))
-        return deleteSalesReturn(record.id)
-          .then(() => { message.success('删除成功'); fetchReturns(dateRange) })
-          .catch(err => message.error(getErrorMessage(err)))
-          .finally(() => setDeleting(prev => ({ ...prev, [record.id]: false })))
-      },
-    })
+  const handleVoid = async (record: SalesReturn) => {
+    setVoiding(prev => ({ ...prev, [record.id]: true }))
+    try {
+      await voidSalesReturn(record.id)
+      message.success('已作废')
+      fetchReturns(dateRange, search)
+    } catch (err) {
+      message.error(getErrorMessage(err))
+    } finally {
+      setVoiding(prev => ({ ...prev, [record.id]: false }))
+    }
   }
 
   const handleExpand = (expanded: boolean, record: SalesReturn) => {
@@ -57,6 +56,8 @@ export default function SalesReturnList() {
       .finally(() => setExpandLoading(prev => ({ ...prev, [record.id]: false })))
   }
 
+  const isVoided = (r: SalesReturn) => r.notes?.startsWith('作废_') ?? false
+
   const columns: ColumnsType<SalesReturn> = [
     { title: '单号', dataIndex: 'returnNo', width: 180, align: 'center' },
     { title: '客户', width: 160, align: 'center', render: (_, r) => `${r.customerCode} ${r.customerName}` },
@@ -65,12 +66,21 @@ export default function SalesReturnList() {
     { title: '件数', dataIndex: 'totalPieces', width: 75, align: 'center', render: (v: number) => v || '—' },
     { title: '金额', dataIndex: 'totalAmount', width: 110, align: 'center', render: (v: number) => `¥${v.toLocaleString()}` },
     {
-      title: '操作', width: 130, fixed: 'right', align: 'center',
+      title: '操作', width: 110, fixed: 'right', align: 'center',
       render: (_, record) => (
         <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
           <Button type="link" size="small" onClick={() => navigate(`/sales/returns/${record.id}`)}>查看</Button>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => navigate(`/sales/returns/${record.id}/edit`)} />
-          <Button type="link" size="small" danger icon={<DeleteOutlined />} loading={deleting[record.id]} onClick={() => handleDelete(record)} />
+          {!isVoided(record) && (
+            <Popconfirm
+              title="作废此退货单？"
+              description="作废后数量归零，单据保留，此操作不可撤销"
+              okText="确认作废" cancelText="取消" okButtonProps={{ danger: true }}
+              onConfirm={() => handleVoid(record)}
+            >
+              <Button type="link" size="small" danger icon={<StopOutlined />} loading={voiding[record.id]} />
+            </Popconfirm>
+          )}
         </div>
       ),
     },
@@ -121,7 +131,31 @@ export default function SalesReturnList() {
         loading={loading}
         size="middle"
         scroll={{ x: 700 }}
-        pagination={{ pageSize: 20, showTotal: total => `共 ${total} 条` }}
+        pagination={{ pageSize: PAGE_SIZE, showTotal: total => `共 ${total} 条` }}
+        summary={pageData => {
+          const calc = (rows: readonly SalesReturn[]) => ({
+            qty:    rows.reduce((s, r) => s + (r.totalQty    ?? 0), 0),
+            pieces: rows.reduce((s, r) => s + (r.totalPieces ?? 0), 0),
+            amount: rows.reduce((s, r) => s + (r.totalAmount ?? 0), 0),
+          })
+          const page  = calc(pageData)
+          const total = calc(returns)
+          const SummaryRow = ({ label, d, bg }: { label: string; d: ReturnType<typeof calc>; bg: string }) => (
+            <Table.Summary.Row style={{ background: bg, fontWeight: 600 }}>
+              <Table.Summary.Cell index={0} colSpan={3} align="right">{label}</Table.Summary.Cell>
+              <Table.Summary.Cell index={3} align="center">{d.qty}</Table.Summary.Cell>
+              <Table.Summary.Cell index={4} align="center">{d.pieces || '—'}</Table.Summary.Cell>
+              <Table.Summary.Cell index={5} align="center">¥{d.amount.toFixed(2)}</Table.Summary.Cell>
+              <Table.Summary.Cell index={6} />
+            </Table.Summary.Row>
+          )
+          return (
+            <Table.Summary fixed>
+              <SummaryRow label="本页合计" d={page}  bg="#fafafa" />
+              <SummaryRow label="全部合计" d={total} bg="#f0f5ff" />
+            </Table.Summary>
+          )
+        }}
         expandable={{
           onExpand: handleExpand,
           expandedRowRender: record => {
