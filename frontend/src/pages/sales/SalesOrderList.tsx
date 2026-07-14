@@ -107,7 +107,7 @@ export default function SalesOrderList() {
   const [searchKeyword, setSearchKeyword] = useState('')
 
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
-    dayjs().subtract(1, 'month').startOf('month'),
+    dayjs().startOf('month'),
     dayjs().endOf('month'),
   ])
   const [paymentStatus, setPaymentStatus] = useState<string | undefined>()
@@ -344,7 +344,7 @@ export default function SalesOrderList() {
             onChange={v => {
               const range: [Dayjs, Dayjs] = v && v[0] && v[1]
                 ? [v[0], v[1]]
-                : [dayjs().subtract(1, 'month').startOf('month'), dayjs().endOf('month')]
+                : [dayjs().startOf('month'), dayjs().endOf('month')]
               setDateRange(range)
             }}
             presets={[

@@ -103,7 +103,7 @@ export default function PurchaseOrderList() {
   const [searchKeyword, setSearchKeyword] = useState('')
 
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
-    dayjs().subtract(1, 'month').startOf('month'),
+    dayjs().startOf('month'),
     dayjs().endOf('month'),
   ])
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
@@ -308,7 +308,7 @@ export default function PurchaseOrderList() {
             onChange={v => {
               const range: [Dayjs, Dayjs] = v && v[0] && v[1]
                 ? [v[0], v[1]]
-                : [dayjs().subtract(1, 'month').startOf('month'), dayjs().endOf('month')]
+                : [dayjs().startOf('month'), dayjs().endOf('month')]
               setDateRange(range)
             }}
           />
