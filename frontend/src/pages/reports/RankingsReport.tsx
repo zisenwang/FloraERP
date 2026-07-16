@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Table, DatePicker, App, Tabs, Segmented, Spin } from 'antd'
-import { TrophyOutlined, TableOutlined, BarChartOutlined } from '@ant-design/icons'
+import { TableOutlined, BarChartOutlined } from '@ant-design/icons'
 import { useSearchParams } from 'react-router-dom'
 import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
@@ -244,7 +244,6 @@ export default function RankingsReport() {
   return (
     <>
       <div className={styles.pageTitle}>
-        <TrophyOutlined style={{ marginRight: 8 }} />
         排行榜
       </div>
 
