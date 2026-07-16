@@ -1,15 +1,13 @@
 import { useEffect, useState, useMemo } from 'react'
-import { Table, Select, Tag, App, Input, Button, Space } from 'antd'
-import { SearchOutlined, DownloadOutlined, SortAscendingOutlined, SortDescendingOutlined } from '@ant-design/icons'
-import type { ColumnsType } from 'antd/es/table'
+import { Table, Select, Tag, App, Input, Button } from 'antd'
+import { SearchOutlined, DownloadOutlined } from '@ant-design/icons'
+import type { ColumnsType, SorterResult } from 'antd/es/table/interface'
 import { getInventoryReport, type InventoryReportItem } from '@/api/reports'
 import { getProductCategories } from '@/api/products'
 import { getErrorMessage } from '@/utils/error'
 import { exportInventoryExcel } from '@/utils/exportExcel'
 import { PAGE_SIZE } from '@/constants/pagination'
 import styles from './Reports.module.css'
-
-type SortField = 'stock' | 'pieces' | 'productCode'
 
 function getPieces(r: InventoryReportItem) {
   return r.unitsPerPiece ? Math.ceil(r.stock / r.unitsPerPiece) : null
@@ -22,8 +20,8 @@ export default function InventoryReport() {
   const [itemSearch, setItemSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<string | undefined>()
   const [categories, setCategories] = useState<string[]>([])
-  const [sortField, setSortField] = useState<SortField>('stock')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [sortKey, setSortKey] = useState<string>('stock')
+  const [sortOrder, setSortOrder] = useState<'ascend' | 'descend'>('descend')
   const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
@@ -44,22 +42,25 @@ export default function InventoryReport() {
       const matchCategory = !categoryFilter || r.category === categoryFilter
       return matchSearch && matchCategory
     })
-    filtered.sort((a, b) => {
-      let va: number | string
-      let vb: number | string
-      if (sortField === 'stock') {
-        va = a.stock; vb = b.stock
-      } else if (sortField === 'pieces') {
-        va = getPieces(a) ?? 0; vb = getPieces(b) ?? 0
-      } else {
-        va = a.productCode; vb = b.productCode
+
+    const dir = sortOrder === 'descend' ? -1 : 1
+    return [...filtered].sort((a, b) => {
+      let cmp = 0
+      switch (sortKey) {
+        case 'productName':   cmp = a.productName.localeCompare(b.productName); break
+        case 'supplierName':  cmp = a.supplierName.localeCompare(b.supplierName); break
+        case 'category':      cmp = (a.category ?? '').localeCompare(b.category ?? ''); break
+        case 'unit':          cmp = a.unit.localeCompare(b.unit); break
+        case 'stock':         cmp = a.stock - b.stock; break
+        case 'pieces':        cmp = (getPieces(a) ?? 0) - (getPieces(b) ?? 0); break
+        case 'unitsPerPiece': cmp = (a.unitsPerPiece ?? 0) - (b.unitsPerPiece ?? 0); break
+        case 'costPrice':     cmp = (a.costPrice ?? 0) - (b.costPrice ?? 0); break
+        case 'price':         cmp = (a.price ?? 0) - (b.price ?? 0); break
+        default:              cmp = a.productCode.localeCompare(b.productCode)
       }
-      if (va < vb) return sortDir === 'asc' ? -1 : 1
-      if (va > vb) return sortDir === 'asc' ? 1 : -1
-      return 0
+      return dir * cmp
     })
-    return filtered
-  }, [inventory, itemSearch, categoryFilter, sortField, sortDir])
+  }, [inventory, itemSearch, categoryFilter, sortKey, sortOrder])
 
   const pageItems = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE
@@ -71,55 +72,46 @@ export default function InventoryReport() {
   const pageQty     = pageItems.reduce((s, r) => s + Number(r.stock), 0)
   const pagePieces  = pageItems.reduce((s, r) => s + (getPieces(r) ?? 0), 0)
 
-  function toggleSort(field: SortField) {
-    if (sortField === field) {
-      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortField(field)
-      setSortDir(field === 'productCode' ? 'asc' : 'desc')
-    }
-    setCurrentPage(1)
-  }
-
-  function SortBtn({ field, label }: { field: SortField; label: string }) {
-    const active = sortField === field
-    const icon = active
-      ? (sortDir === 'asc' ? <SortAscendingOutlined /> : <SortDescendingOutlined />)
-      : null
-    return (
-      <Button size="small" type={active ? 'primary' : 'default'} icon={icon} onClick={() => toggleSort(field)}>
-        {label}
-      </Button>
-    )
-  }
+  const col = (key: string) => ({
+    key,
+    sorter: () => 0 as number,
+    sortOrder: (sortKey === key ? sortOrder : undefined) as 'ascend' | 'descend' | undefined,
+    showSorterTooltip: false,
+  })
 
   const columns: ColumnsType<InventoryReportItem> = [
-    { title: '编码', dataIndex: 'productCode', width: 100 },
-    { title: '货品名称', dataIndex: 'productName', width: 160 },
-    { title: '供应商', dataIndex: 'supplierName', width: 120 },
+    { ...col('productCode'),  title: '编码',     dataIndex: 'productCode',  width: 100 },
+    { ...col('productName'),  title: '货品名称',  dataIndex: 'productName',  width: 160 },
+    { ...col('supplierName'), title: '供应商',    dataIndex: 'supplierName', width: 120 },
     {
+      ...col('category'),
       title: '分类', dataIndex: 'category', width: 100,
       render: (v: string) => <Tag>{v}</Tag>,
     },
-    { title: '单位', dataIndex: 'unit', width: 70, align: 'center' },
+    { ...col('unit'), title: '单位', dataIndex: 'unit', width: 70, align: 'center' },
     {
+      ...col('stock'),
       title: '当前库存', dataIndex: 'stock', width: 100, align: 'center',
       render: (v: number) => <span style={{ fontWeight: v === 0 ? undefined : 500 }}>{v}</span>,
     },
     {
+      ...col('pieces'),
       title: '件数', width: 80, align: 'center',
       render: (_: unknown, r: InventoryReportItem) =>
         r.unitsPerPiece ? Math.ceil(r.stock / r.unitsPerPiece) : '—',
     },
     {
+      ...col('unitsPerPiece'),
       title: '每件数量', dataIndex: 'unitsPerPiece', width: 70, align: 'center',
       render: (v: number | null) => v ?? '—',
     },
     {
+      ...col('costPrice'),
       title: '成本价', dataIndex: 'costPrice', width: 90, align: 'right',
       render: (v: number) => v != null ? `¥${v.toFixed(2)}` : '—',
     },
     {
+      ...col('price'),
       title: '售价', dataIndex: 'price', width: 90, align: 'right',
       render: (v: number) => v != null ? `¥${v.toFixed(2)}` : '—',
     },
@@ -148,12 +140,6 @@ export default function InventoryReport() {
           options={categories.map(c => ({ value: c, label: c }))}
           onChange={val => { setCategoryFilter(val); setCurrentPage(1) }}
         />
-        <Space size={4}>
-          <span style={{ fontSize: 12, color: '#888' }}>排序：</span>
-          <SortBtn field="stock" label="数量" />
-          <SortBtn field="pieces" label="件数" />
-          <SortBtn field="productCode" label="编码" />
-        </Space>
         <Button
           icon={<DownloadOutlined />}
           onClick={() => exportInventoryExcel(sortedItems)}
@@ -176,22 +162,33 @@ export default function InventoryReport() {
           showTotal: total => `共 ${total} 条`,
         }}
         size="small"
+        onChange={(_pagination, _filters, sorter) => {
+          const s = Array.isArray(sorter) ? sorter[0] : sorter as SorterResult<InventoryReportItem>
+          if (s.columnKey && s.order) {
+            setSortKey(s.columnKey as string)
+            setSortOrder(s.order)
+          } else {
+            setSortKey('stock')
+            setSortOrder('descend')
+          }
+          setCurrentPage(1)
+        }}
         summary={() => (
-            <Table.Summary fixed="bottom">
-              <Table.Summary.Row style={{ background: '#fafafa', fontWeight: 500 }}>
-                <Table.Summary.Cell index={1} colSpan={4}/>
-                <Table.Summary.Cell index={2} >本页小计</Table.Summary.Cell>
-                <Table.Summary.Cell index={3} align="center">{pageQty}</Table.Summary.Cell>
-                <Table.Summary.Cell index={5} align="center">{pagePieces}</Table.Summary.Cell>
-                <Table.Summary.Cell index={6} colSpan={3}/>
-              </Table.Summary.Row>
-              <Table.Summary.Row style={{ background: '#f0f5ff', fontWeight: 600 }}>
-                <Table.Summary.Cell index={0} colSpan={5} align={"right"}>全部合计（{sortedItems.length} 种）</Table.Summary.Cell>
-                <Table.Summary.Cell index={1} align="center">{totalQty}</Table.Summary.Cell>
-                <Table.Summary.Cell index={3} align="center">{totalPieces}</Table.Summary.Cell>
-                <Table.Summary.Cell index={4} colSpan={3}/>
-              </Table.Summary.Row>
-            </Table.Summary>
+          <Table.Summary fixed="bottom">
+            <Table.Summary.Row style={{ background: '#fafafa', fontWeight: 500 }}>
+              <Table.Summary.Cell index={1} colSpan={4} />
+              <Table.Summary.Cell index={2}>本页小计</Table.Summary.Cell>
+              <Table.Summary.Cell index={3} align="center">{pageQty}</Table.Summary.Cell>
+              <Table.Summary.Cell index={5} align="center">{pagePieces}</Table.Summary.Cell>
+              <Table.Summary.Cell index={6} colSpan={3} />
+            </Table.Summary.Row>
+            <Table.Summary.Row style={{ background: '#f0f5ff', fontWeight: 600 }}>
+              <Table.Summary.Cell index={0} colSpan={5} align="right">全部合计（{sortedItems.length} 种）</Table.Summary.Cell>
+              <Table.Summary.Cell index={1} align="center">{totalQty}</Table.Summary.Cell>
+              <Table.Summary.Cell index={3} align="center">{totalPieces}</Table.Summary.Cell>
+              <Table.Summary.Cell index={4} colSpan={3} />
+            </Table.Summary.Row>
+          </Table.Summary>
         )}
       />
     </>

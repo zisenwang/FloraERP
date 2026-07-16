@@ -106,30 +106,24 @@ export default function PurchaseOrderList() {
     dayjs().startOf('month'),
     dayjs().endOf('month'),
   ])
-  const [statusFilter, setStatusFilter] = useState<string | undefined>()
-
   const [voiding, setVoiding] = useState<Record<string, boolean>>({})
 
   // Detail mode
   const [detailRows, setDetailRows] = useState<PurchaseDetailRow[]>([])
   const [detailLoading, setDetailLoading] = useState(false)
 
-  const fetchAll = useCallback((range = dateRange, sf = statusFilter) => {
+  const fetchAll = useCallback((range = dateRange) => {
     setLoading(true)
     const startDate = range[0].format('YYYY-MM-DD')
     const endDate   = range[1].format('YYYY-MM-DD')
     const search = searchKeyword.trim() || undefined
-    const fetchOrders = sf !== '退货'
-      ? getPurchaseOrders({ startDate, endDate, search })
-      : Promise.resolve([] as PurchaseOrder[])
-    const fetchReturns = sf !== '已入库'
-      ? getPurchaseReturns({ startDate, endDate, search })
-      : Promise.resolve([] as PurchaseReturn[])
+    const fetchOrders = getPurchaseOrders({ startDate, endDate, search })
+    const fetchReturns = getPurchaseReturns({ startDate, endDate, search })
     Promise.all([fetchOrders, fetchReturns])
       .then(([o, r]) => { setOrders(o); setReturns(r) })
       .catch(err => message.error(getErrorMessage(err)))
       .finally(() => setLoading(false))
-  }, [dateRange, statusFilter, searchKeyword])
+  }, [dateRange, searchKeyword])
 
   const fetchDetail = useCallback(() => {
     setDetailLoading(true)
@@ -148,9 +142,9 @@ export default function PurchaseOrderList() {
   }, [dateRange, searchKeyword, searchField])
 
   useEffect(() => {
-    if (mode === 'summary') fetchAll(dateRange, statusFilter)
+    if (mode === 'summary') fetchAll(dateRange)
     else fetchDetail()
-  }, [mode, dateRange, statusFilter, searchKeyword, searchField])
+  }, [mode, dateRange, searchKeyword, searchField])
 
   const handleVoid = async (row: UnifiedRow) => {
     setVoiding(prev => ({ ...prev, [row._key]: true }))
@@ -312,17 +306,6 @@ export default function PurchaseOrderList() {
               setDateRange(range)
             }}
           />
-          {mode === 'summary' && (
-            <Select
-              allowClear placeholder="状态"
-              style={{ width: 110 }}
-              options={[
-                { value: '已入库', label: '已入库' },
-                { value: '退货',   label: '退货' },
-              ]}
-              onChange={v => setStatusFilter(v)}
-            />
-          )}
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/purchase/orders/new')}>

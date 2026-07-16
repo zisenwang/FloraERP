@@ -2,22 +2,39 @@ import { useEffect, useState } from 'react'
 import { Table, Spin } from 'antd'
 import { useNavigate } from 'react-router-dom'
 import { getDashboardSummary, type DashboardSummary, type DailySalesRow } from '@/api/dashboard'
+import { getInventory, type InventoryRow } from '@/api/inventory'
 import styles from './Dashboard.module.css'
 
 export default function Dashboard() {
   const navigate = useNavigate()
   const [data, setData] = useState<DashboardSummary | null>(null)
+  const [inventory, setInventory] = useState<InventoryRow[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getDashboardSummary()
-      .then(setData)
+    Promise.all([getDashboardSummary(), getInventory()])
+      .then(([summary, inv]) => {
+        setData(summary)
+        setInventory(inv)
+      })
       .finally(() => setLoading(false))
   }, [])
 
   if (loading) return <Spin size="large" style={{ display: 'block', margin: '80px auto' }} />
 
   if (!data) return null
+
+  // Inventory totals (client-side)
+  const totalStock = inventory.reduce((s, r) => s + (r.stock || 0), 0)
+  const totalPieces = inventory.reduce((s, r) =>
+    r.unitsPerPiece ? s + Math.floor((r.stock || 0) / r.unitsPerPiece) : s, 0)
+  const productTypes = inventory.filter(r => r.stock > 0).length
+
+  // Today's qty + pieces from daily breakdown
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const todayRow = data.monthlySalesDaily.find(r => r.date === todayStr)
+  const todayQty = todayRow?.salesQty ?? 0
+  const todayPieces = todayRow?.pieces ?? 0
 
   const salesRankColumns = [
     { title: '排名', key: 'rank', render: (_: unknown, __: unknown, i: number) => i + 1, width: 55 },
@@ -69,29 +86,45 @@ export default function Dashboard() {
 
   return (
     <div className={styles.page}>
-      {/* KPI Cards */}
-      <div className={styles.kpiRow}>
-        <div className={styles.kpiCard}>
-          <div className={styles.kpiLabel}>今日销售额</div>
-          <div className={`${styles.kpiValue} ${styles.kpiValueGreen}`}>
-            ¥{data.todaySales.toLocaleString()}
-          </div>
+      {/* Compact overview card */}
+      <div className={styles.overviewCard}>
+        <div className={styles.overviewRow}>
+          <span className={styles.dotOrange} />
+          <span className={styles.overviewText}>
+            今日销售：<strong>{todayQty.toLocaleString()}</strong> 盆，共 <strong>{data.todaySales.toLocaleString()}</strong> 元
+            （{todayPieces} 件）
+          </span>
+          <span className={styles.overviewAction} onClick={() => navigate('/sales/new')}>销售开单 →</span>
         </div>
-        <div className={styles.kpiCard}>
-          <div className={styles.kpiLabel}>今日收款</div>
-          <div className={`${styles.kpiValue} ${styles.kpiValueBlue}`}>
-            ¥{data.todayIncome.toLocaleString()}
-          </div>
+        <div className={styles.overviewRow}>
+          <span className={styles.dotGreen} />
+          <span className={styles.overviewText}>
+            本月销售：<strong>{dailyTotals.salesQty.toLocaleString()}</strong> 盆，共 <strong>{dailyTotals.salesAmount.toLocaleString()}</strong> 元
+            （{dailyTotals.pieces} 件）
+            {dailyTotals.returnQty > 0 && (
+              <span className={styles.overviewReturn}>
+                　退货 {dailyTotals.returnQty} 盆 / ¥{dailyTotals.returnAmount.toLocaleString()}
+              </span>
+            )}
+          </span>
         </div>
-        <div className={styles.kpiCard}>
-          <div className={styles.kpiLabel}>今日采购额</div>
-          <div className={`${styles.kpiValue} ${styles.kpiValueOrange}`}>
-            ¥{data.todayPurchase.toLocaleString()}
-          </div>
+        <div className={styles.overviewRow}>
+          <span className={styles.dotBlue} />
+          <span className={styles.overviewText}>
+            今日收款：<strong>{data.todayIncome.toLocaleString()}</strong> 元
+            <span className={styles.overviewSep} />
+            今日采购：<strong>{data.todayPurchase.toLocaleString()}</strong> 元
+            <span className={styles.overviewSep} />
+            今日开单：<strong>{data.todayOrderCount}</strong> 单
+          </span>
         </div>
-        <div className={styles.kpiCard}>
-          <div className={styles.kpiLabel}>今日开单数</div>
-          <div className={styles.kpiValue}>{data.todayOrderCount} 单</div>
+        <div className={styles.overviewRow} onClick={() => navigate('/inventory')} style={{ cursor: 'pointer' }}>
+          <span className={styles.dotPurple} />
+          <span className={styles.overviewText}>
+            当前库存：<strong>{totalStock.toLocaleString()}</strong> 盆，共 <strong className={styles.green}>{totalPieces.toLocaleString()}</strong> 件
+            （{productTypes} 种有货）
+          </span>
+          <span className={styles.overviewLink}>查看库存 →</span>
         </div>
       </div>
 

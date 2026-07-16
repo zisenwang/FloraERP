@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Table, Button, Input, Modal, Form, App, Tag, Select, InputNumber, Space } from 'antd'
 import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
-import type { ColumnsType } from 'antd/es/table'
+import type { ColumnsType, SorterResult } from 'antd/es/table/interface'
 import {
   getProducts, createProduct, updateProduct, deleteProduct, getNextProductCode,
   type Product, type ProductPayload,
@@ -10,12 +10,11 @@ import { getSuppliers, type Supplier } from '@/api/suppliers'
 import { getErrorMessage } from '@/utils/error'
 import styles from './SupplierList.module.css'
 
-
 export default function ProductList() {
   const { message, modal } = App.useApp()
   const [form] = Form.useForm<ProductPayload>()
 
-  const [products, setProducts] = useState<Product[]>([])
+  const [allProducts, setAllProducts] = useState<Product[]>([])
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
@@ -24,15 +23,16 @@ export default function ProductList() {
   const [editing, setEditing] = useState<Product | null>(null)
   const [saving, setSaving] = useState(false)
   const [codeLoading, setCodeLoading] = useState(false)
+  const [sortKey, setSortKey] = useState<string>('stock')
+  const [sortOrder, setSortOrder] = useState<'ascend' | 'descend'>('descend')
 
-  // Split code state: prefix is the supplier code (read-only), seq is the editable part
   const [supplierCodePrefix, setSupplierCodePrefix] = useState('')
   const [codeSeq, setCodeSeq] = useState('')
 
-  const fetchProducts = (kw?: string, supplierId?: number) => {
+  const fetchProducts = () => {
     setLoading(true)
-    getProducts({ search: kw, supplierId })
-      .then(setProducts)
+    getProducts()
+      .then(setAllProducts)
       .catch(err => message.error(getErrorMessage(err)))
       .finally(() => setLoading(false))
   }
@@ -41,6 +41,44 @@ export default function ProductList() {
     fetchProducts()
     getSuppliers().then(setSuppliers).catch(() => {})
   }, [])
+
+  const displayRows = useMemo<Product[]>(() => {
+    let filtered = allProducts
+
+    if (filterSupplierId) {
+      filtered = filtered.filter(p => p.supplierId === filterSupplierId)
+    }
+    if (search.trim()) {
+      const kw = search.trim().toLowerCase()
+      filtered = filtered.filter(p =>
+        p.name.toLowerCase().includes(kw) || p.code.toLowerCase().includes(kw),
+      )
+    }
+
+    const getPieces = (p: Product) =>
+      p.unitsPerPiece ? Math.floor((p.stock || 0) / p.unitsPerPiece) : 0
+
+    const dir = sortOrder === 'descend' ? -1 : 1
+
+    return [...filtered].sort((a, b) => {
+      let cmp = 0
+      switch (sortKey) {
+        case 'name':          cmp = a.name.localeCompare(b.name); break
+        case 'supplierName':  cmp = a.supplierName.localeCompare(b.supplierName); break
+        case 'category':      cmp = (a.category ?? '').localeCompare(b.category ?? ''); break
+        case 'grade':         cmp = (a.grade ?? '').localeCompare(b.grade ?? ''); break
+        case 'unit':          cmp = a.unit.localeCompare(b.unit); break
+        case 'unitsPerPiece': cmp = (a.unitsPerPiece ?? 0) - (b.unitsPerPiece ?? 0); break
+        case 'costPrice':     cmp = (a.costPrice ?? 0) - (b.costPrice ?? 0); break
+        case 'price':         cmp = (a.price ?? 0) - (b.price ?? 0); break
+        case 'stock':         cmp = (a.stock || 0) - (b.stock || 0); break
+        case 'pieces':        cmp = getPieces(a) - getPieces(b); break
+        case 'status':        cmp = a.status - b.status; break
+        default:              cmp = a.code.localeCompare(b.code)
+      }
+      return dir * cmp
+    })
+  }, [allProducts, filterSupplierId, search, sortKey, sortOrder])
 
   const applyNextCode = (supplierId: number) => {
     setCodeLoading(true)
@@ -67,7 +105,6 @@ export default function ProductList() {
   const openEdit = (record: Product) => {
     setEditing(record)
     setSupplierCodePrefix(record.supplierCode ?? '')
-    // record.code from API is already full 'XXX.yy'; extract the seq part for the editable field
     const seq = record.code.split('.').slice(1).join('.')
     setCodeSeq(seq)
     form.setFieldsValue({ ...record, code: seq })
@@ -76,12 +113,10 @@ export default function ProductList() {
 
   const handleSupplierChange = (supplierId: number) => {
     const supplier = suppliers.find(s => s.id === supplierId)
-    const prefix = supplier?.code ?? ''
-    setSupplierCodePrefix(prefix)
+    setSupplierCodePrefix(supplier?.code ?? '')
     if (!editing) {
       applyNextCode(supplierId)
     } else {
-      // When editing and supplier changes, keep seq as-is (code field holds seq only)
       form.setFieldValue('code', codeSeq)
     }
   }
@@ -95,15 +130,12 @@ export default function ProductList() {
   const handleSave = () => {
     form.validateFields().then(values => {
       setSaving(true)
-      const req = editing
-        ? updateProduct(editing.id, values)
-        : createProduct(values)
-
+      const req = editing ? updateProduct(editing.id, values) : createProduct(values)
       req
         .then(() => {
           message.success(editing ? '更新成功' : '添加成功')
           setModalOpen(false)
-          fetchProducts(search, filterSupplierId)
+          fetchProducts()
         })
         .catch(err => message.error(getErrorMessage(err)))
         .finally(() => setSaving(false))
@@ -121,32 +153,44 @@ export default function ProductList() {
         deleteProduct(record.id)
           .then(() => {
             message.success('删除成功')
-            fetchProducts(search, filterSupplierId)
+            fetchProducts()
           })
           .catch(err => message.error(getErrorMessage(err))),
     })
   }
 
+  const col = (key: string) => ({
+    key,
+    sorter: () => 0 as number,
+    sortOrder: (sortKey === key ? sortOrder : undefined) as 'ascend' | 'descend' | undefined,
+    showSorterTooltip: false,
+  })
+
   const columns: ColumnsType<Product> = [
-    { title: '编码', dataIndex: 'code', width: 100 },
-    { title: '货品名称', dataIndex: 'name', width: 140 },
-    { title: '供应商', dataIndex: 'supplierName', width: 100 },
-    { title: '品类', dataIndex: 'category', width: 100 },
-    { title: '等级', dataIndex: 'grade', width: 80, render: (v: string) => v ?? '—' },
-    { title: '单位', dataIndex: 'unit', width: 60 },
-    { title: '每件数量', dataIndex: 'unitsPerPiece', width: 70, render: (v: number) => v ?? '—' },
-    { title: '最新进价', dataIndex: 'costPrice', width: 90, render: (v: number) => v ? `¥${v}` : '—' },
-    { title: '单价', dataIndex: 'price', width: 80, render: (v: number) => v != null ? `¥${v}` : '—' },
-    { title: '库存', dataIndex: 'stock', width: 80 },
+    { ...col('code'),         title: '编码',     dataIndex: 'code',         width: 110 },
+    { ...col('name'),         title: '货品名称',  dataIndex: 'name',         width: 150 },
+    { ...col('supplierName'), title: '供应商',    dataIndex: 'supplierName', width: 100 },
+    { ...col('category'),     title: '品类',     dataIndex: 'category',     width: 100, render: (v: string) => v ?? '—' },
+    { ...col('grade'),        title: '等级',     dataIndex: 'grade',        width: 80,  render: (v: string) => v ?? '—' },
+    { ...col('unit'),         title: '单位',     dataIndex: 'unit',         width: 60  },
+    { ...col('unitsPerPiece'),title: '每件数量',  dataIndex: 'unitsPerPiece',width: 75,  render: (v: number) => v ?? '—' },
+    { ...col('costPrice'),    title: '最新进价',  dataIndex: 'costPrice',    width: 90,  render: (v: number) => v ? `¥${v}` : '—' },
+    { ...col('price'),        title: '单价',     dataIndex: 'price',        width: 80,  render: (v: number) => v != null ? `¥${v}` : '—' },
+    { ...col('stock'),        title: '库存',     dataIndex: 'stock',        width: 70  },
     {
+      ...col('pieces'),
+      title: '件数', width: 65,
+      render: (_: unknown, record: Product) =>
+        record.unitsPerPiece ? Math.floor((record.stock || 0) / record.unitsPerPiece) : '—',
+    },
+    {
+      ...col('status'),
       title: '状态', dataIndex: 'status', width: 80,
-      render: (v: number) => v === 1
-        ? <Tag color="green">启用</Tag>
-        : <Tag color="default">停用</Tag>,
+      render: (v: number) => v === 1 ? <Tag color="green">启用</Tag> : <Tag color="default">停用</Tag>,
     },
     {
       title: '操作', width: 100, fixed: 'right',
-      render: (_, record) => (
+      render: (_: unknown, record: Product) => (
         <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)} />
           <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)} />
@@ -166,21 +210,16 @@ export default function ProductList() {
             prefix={<SearchOutlined />}
             value={search}
             onChange={e => setSearch(e.target.value)}
-            onPressEnter={() => fetchProducts(search, filterSupplierId)}
             allowClear
-            style={{ width: 200 }}
+            style={{ width: 180 }}
           />
           <Select
             placeholder="按供应商筛选"
             allowClear
             style={{ width: 160 }}
             options={suppliers.map(s => ({ value: s.id, label: `${s.code} ${s.name}` }))}
-            onChange={val => {
-              setFilterSupplierId(val)
-              fetchProducts(search, val)
-            }}
+            onChange={val => setFilterSupplierId(val)}
           />
-          <Button icon={<SearchOutlined />} onClick={() => fetchProducts(search, filterSupplierId)}>搜索</Button>
         </div>
         <Button type="primary" icon={<PlusOutlined />} onClick={openAdd}>新增货品</Button>
       </div>
@@ -188,11 +227,21 @@ export default function ProductList() {
       <Table
         rowKey="id"
         columns={columns}
-        dataSource={products}
+        dataSource={displayRows}
         loading={loading}
         size="middle"
-        scroll={{ x: 900 }}
-        pagination={{ pageSize: 20, showTotal: total => `共 ${total} 条` }}
+        scroll={{ x: 1050 }}
+        pagination={{ pageSize: 50, showTotal: total => `共 ${total} 条` }}
+        onChange={(_pagination, _filters, sorter) => {
+          const s = Array.isArray(sorter) ? sorter[0] : sorter as SorterResult<Product>
+          if (s.columnKey && s.order) {
+            setSortKey(s.columnKey as string)
+            setSortOrder(s.order)
+          } else {
+            setSortKey('stock')
+            setSortOrder('ascend')
+          }
+        }}
       />
 
       <Modal
@@ -217,11 +266,9 @@ export default function ProductList() {
             />
           </Form.Item>
 
-          {/* Hidden field holds the full combined code for form validation */}
           <Form.Item name="code" hidden rules={[{ required: true, message: '请输入货品编码' }]}>
             <Input />
           </Form.Item>
-          {/* Visual split input */}
           <Form.Item label="货品编码" required>
             <Space.Compact style={{ width: '100%' }}>
               <Input

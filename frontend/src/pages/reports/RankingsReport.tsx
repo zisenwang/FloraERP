@@ -18,8 +18,6 @@ import {
 import { getErrorMessage } from '@/utils/error'
 import styles from './Reports.module.css'
 
-const MEDAL = ['🥇', '🥈', '🥉']
-
 const SALES_TABS: { key: SalesRankDim; label: string }[] = [
   { key: 'customer', label: '客户排行' },
   { key: 'product',  label: '货品排行' },
@@ -35,6 +33,78 @@ const PURCHASE_TABS: { key: PurchaseRankDim; label: string }[] = [
 
 const FMT = (v: number) =>
   `¥${v.toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+
+// ── Monthly table helpers ────────────────────────────────────────────────────
+
+type MonthlyRow = ReportGroupRow & {
+  _isSubtotal?: boolean
+  _year: string
+  _month: string
+  _rowSpan: number
+}
+
+function buildMonthlyTable(rows: ReportGroupRow[]): MonthlyRow[] {
+  const sorted = [...rows].sort((a, b) => a.name.localeCompare(b.name))
+
+  const byYear = new Map<string, ReportGroupRow[]>()
+  for (const r of sorted) {
+    const year = r.name.slice(0, 4)
+    if (!byYear.has(year)) byYear.set(year, [])
+    byYear.get(year)!.push(r)
+  }
+
+  const result: MonthlyRow[] = []
+  for (const [year, yearRows] of byYear) {
+    const span = yearRows.length + 1 // months + subtotal row
+    yearRows.forEach((r, idx) => {
+      result.push({
+        ...r,
+        _year: year,
+        _month: r.name.slice(5, 7),
+        _rowSpan: idx === 0 ? span : 0,
+      })
+    })
+    // Subtotal row
+    result.push({
+      name: `${year}-subtotal`,
+      orderCount:   yearRows.reduce((s, r) => s + (r.orderCount  ?? 0), 0),
+      totalQty:     yearRows.reduce((s, r) => s + r.totalQty,           0),
+      totalPieces:  yearRows.reduce((s, r) => s + (r.totalPieces ?? 0), 0),
+      totalAmount:  yearRows.reduce((s, r) => s + r.totalAmount,         0),
+      totalProfit:  yearRows.reduce((s, r) => s + (r.totalProfit ?? 0), 0),
+      _isSubtotal: true,
+      _year: year,
+      _month: '小计',
+      _rowSpan: 0,
+    })
+  }
+  return result
+}
+
+// ── Custom XAxis tick for monthly chart (shows year below month when it changes) ──
+
+function MonthTick({ x, y, payload, chartData }: {
+  x: number; y: number
+  payload: { value: string }
+  chartData: ReportGroupRow[]
+}) {
+  const name  = payload.value        // "2026-01"
+  const month = name.slice(5, 7)
+  const year  = name.slice(0, 4)
+  const idx   = chartData.findIndex(d => d.name === name)
+  const showYear = idx === 0 || chartData[idx - 1]?.name.slice(0, 4) !== year
+
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text x={0} y={0} dy={14} textAnchor="middle" fill="#555" fontSize={12}>{month}</text>
+      {showYear && (
+        <text x={0} y={0} dy={28} textAnchor="middle" fill="#aaa" fontSize={11}>{year}</text>
+      )}
+    </g>
+  )
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 
 export default function RankingsReport() {
   const { message } = App.useApp()
@@ -59,10 +129,7 @@ export default function RankingsReport() {
     const startDate = dateRange[0].format('YYYY-MM-DD')
     const endDate   = dateRange[1].format('YYYY-MM-DD')
     getRankings({ type: orderType, by: by as SalesRankDim, startDate, endDate })
-      .then(data => {
-        // For time dims keep chronological order in chart; table can be re-sorted
-        setRows(data)
-      })
+      .then(setRows)
       .catch(err => message.error(getErrorMessage(err)))
       .finally(() => setLoading(false))
   }, [orderType, by, dateRange])
@@ -77,24 +144,74 @@ export default function RankingsReport() {
   const handleByChange = (key: string) => {
     setBy(key)
     setViewMode('table')
+    if (key === 'monthly') {
+      setDateRange([dayjs().startOf('year'), dayjs().endOf('year')])
+    } else if (by === 'monthly') {
+      setDateRange([dayjs().startOf('month'), dayjs().endOf('month')])
+    }
   }
 
-  const isSales   = orderType === 'sales'
-  const isTimeDim = by === 'daily' || by === 'monthly'
-  const nameLabel = by === 'daily' ? '日期' : by === 'monthly' ? '月份' : '名称'
+  const isSales    = orderType === 'sales'
+  const isTimeDim  = by === 'daily' || by === 'monthly'
+  const isMonthly  = by === 'monthly'
+  const nameLabel  = by === 'daily' ? '日期' : by === 'monthly' ? '月份' : '名称'
 
-  const columns: ColumnsType<ReportGroupRow> = [
+  // Chart data sorted chronologically for time dims
+  const chartData = isTimeDim
+    ? [...rows].sort((a, b) => a.name.localeCompare(b.name))
+    : rows
+
+  const totalAmount = rows.reduce((s, r) => s + r.totalAmount, 0)
+  const totalQty    = rows.reduce((s, r) => s + r.totalQty, 0)
+
+  // ── Columns ────────────────────────────────────────────────────────────────
+
+  // Monthly columns — year rowSpan + month + data cols + yearly subtotal styling
+  const monthlyColumns: ColumnsType<MonthlyRow> = [
     {
-      title: '排名', key: 'rank', align: 'center',
-      render: (_: unknown, __: unknown, i: number) => (
-        <span style={{ fontWeight: 600 }}>
-          {i < 3 ? MEDAL[i] : `#${i + 1}`}
-        </span>
-      ),
+      title: '年份', width: 70,
+      onCell: (r) => ({ rowSpan: r._rowSpan }),
+      render: (_: unknown, r: MonthlyRow) => <strong>{r._year}</strong>,
     },
     {
-      title: nameLabel,
-      dataIndex: 'name',
+      title: '月份', width: 65,
+      render: (_: unknown, r: MonthlyRow) =>
+        r._isSubtotal
+          ? <strong style={{ color: '#555' }}>小计</strong>
+          : r._month,
+    },
+    {
+      title: '订单数', dataIndex: 'orderCount', align: 'center', width: 80,
+      render: (v: number, r: MonthlyRow) =>
+        r._isSubtotal ? <strong>{v || 0}</strong> : (v || '—'),
+    },
+    {
+      title: isSales ? '销售数量' : '进货数量', dataIndex: 'totalQty', align: 'center', width: 90,
+      render: (v: number, r: MonthlyRow) =>
+        r._isSubtotal ? <strong>{v}</strong> : v,
+    },
+    {
+      title: '件数', dataIndex: 'totalPieces', align: 'center', width: 70,
+      render: (v: number, r: MonthlyRow) =>
+        r._isSubtotal ? <strong>{v || 0}</strong> : (v || '—'),
+    },
+    {
+      title: isSales ? '销售金额' : '进货金额', dataIndex: 'totalAmount', align: 'right', width: 120,
+      render: (v: number, r: MonthlyRow) =>
+        r._isSubtotal
+          ? <strong>¥{v.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</strong>
+          : <span>¥{v.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</span>,
+    },
+  ]
+
+  // Standard columns (non-monthly)
+  const standardColumns: ColumnsType<ReportGroupRow> = [
+    {
+      title: '排名', key: 'rank', align: 'center', width: 60,
+      render: (_: unknown, __: unknown, i: number) => <span style={{ fontWeight: 600 }}>{`#${i + 1}`}</span>,
+    },
+    {
+      title: nameLabel, dataIndex: 'name',
       sorter: (a, b) => a.name.localeCompare(b.name),
       render: (v: string) => <span style={{ fontWeight: 500 }}>{v}</span>,
     },
@@ -104,8 +221,7 @@ export default function RankingsReport() {
       render: (v: number) => v || '—',
     },
     {
-      title: isSales ? '销售数量' : '进货数量',
-      dataIndex: 'totalQty', align: 'center',
+      title: isSales ? '销售数量' : '进货数量', dataIndex: 'totalQty', align: 'center',
       sorter: (a, b) => a.totalQty - b.totalQty,
     },
     {
@@ -114,54 +230,14 @@ export default function RankingsReport() {
       render: (v: number) => v || '—',
     },
     {
-      title: isSales ? '销售金额' : '进货金额',
-      dataIndex: 'totalAmount', align: 'right',
+      title: isSales ? '销售金额' : '进货金额', dataIndex: 'totalAmount', align: 'right',
       defaultSortOrder: 'descend',
       sorter: (a, b) => a.totalAmount - b.totalAmount,
       render: (v: number) => <strong>¥{v.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</strong>,
     },
-    ...(isSales && !isTimeDim ? [{
-      title: '毛利',
-      dataIndex: 'totalProfit',
-      align: 'right' as const,
-      sorter: (a: ReportGroupRow, b: ReportGroupRow) => (a.totalProfit ?? 0) - (b.totalProfit ?? 0),
-      render: (v: number | undefined) => {
-        if (v == null) return '—'
-        return (
-          <span style={{ color: v >= 0 ? '#389e0d' : '#cf1322', fontWeight: 500 }}>
-            {v >= 0 ? '+' : ''}¥{v.toFixed(2)}
-          </span>
-        )
-      },
-    }] : []),
-    ...(isSales && !isTimeDim ? [{
-      title: '毛利率',
-      key: 'margin',
-      align: 'right' as const,
-      sorter: (a: ReportGroupRow, b: ReportGroupRow) => {
-        const ra = a.totalAmount ? (a.totalProfit ?? 0) / a.totalAmount : 0
-        const rb = b.totalAmount ? (b.totalProfit ?? 0) / b.totalAmount : 0
-        return ra - rb
-      },
-      render: (_: unknown, r: ReportGroupRow) => {
-        if (!r.totalAmount || r.totalProfit == null) return '—'
-        const pct = (r.totalProfit / r.totalAmount * 100).toFixed(1)
-        return (
-          <span style={{ color: Number(pct) >= 0 ? '#389e0d' : '#cf1322' }}>
-            {pct}%
-          </span>
-        )
-      },
-    }] : []),
   ]
 
-  // Chart data sorted chronologically for time dims
-  const chartData = isTimeDim
-    ? [...rows].sort((a, b) => a.name.localeCompare(b.name))
-    : rows
-
-  const totalAmount = rows.reduce((s, r) => s + r.totalAmount, 0)
-  const totalQty    = rows.reduce((s, r) => s + r.totalQty, 0)
+  const monthlyDisplayRows = isMonthly ? buildMonthlyTable(rows) : []
 
   return (
     <>
@@ -199,15 +275,28 @@ export default function RankingsReport() {
               ]}
             />
           )}
-          <DatePicker.RangePicker
-            value={dateRange}
-            onChange={v => v && setDateRange(v as [Dayjs, Dayjs])}
-            presets={[
-              { label: '本月', value: [dayjs().startOf('month'), dayjs().endOf('month')] },
-              { label: '上月', value: [dayjs().subtract(1, 'month').startOf('month'), dayjs().subtract(1, 'month').endOf('month')] },
-              { label: '本年', value: [dayjs().startOf('year'), dayjs().endOf('year')] },
-            ]}
-          />
+          {isMonthly ? (
+            <DatePicker.RangePicker
+              picker="year"
+              value={dateRange}
+              onChange={v => v && setDateRange([v[0]!.startOf('year'), v[1]!.endOf('year')])}
+              presets={[
+                { label: '今年',   value: [dayjs().startOf('year'), dayjs().endOf('year')] },
+                { label: '去年',   value: [dayjs().subtract(1, 'year').startOf('year'), dayjs().subtract(1, 'year').endOf('year')] },
+                { label: '近两年', value: [dayjs().subtract(1, 'year').startOf('year'), dayjs().endOf('year')] },
+              ]}
+            />
+          ) : (
+            <DatePicker.RangePicker
+              value={dateRange}
+              onChange={v => v && setDateRange(v as [Dayjs, Dayjs])}
+              presets={[
+                { label: '本月', value: [dayjs().startOf('month'), dayjs().endOf('month')] },
+                { label: '上月', value: [dayjs().subtract(1, 'month').startOf('month'), dayjs().subtract(1, 'month').endOf('month')] },
+                { label: '本年', value: [dayjs().startOf('year'), dayjs().endOf('year')] },
+              ]}
+            />
+          )}
         </div>
       </div>
 
@@ -220,15 +309,21 @@ export default function RankingsReport() {
         <Spin size="large" style={{ display: 'block', margin: '60px auto' }} />
       ) : viewMode === 'chart' && isTimeDim ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-          {/* Amount bar chart */}
           <div>
             <div style={{ fontWeight: 600, marginBottom: 8, color: '#333' }}>
               {isSales ? '销售金额' : '进货金额'}趋势
             </div>
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={chartData} margin={{ top: 4, right: 24, bottom: 4, left: 16 }}>
+              <BarChart data={chartData} margin={{ top: 4, right: 24, bottom: isMonthly ? 20 : 4, left: 16 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                <XAxis
+                  dataKey="name"
+                  tick={isMonthly
+                    ? (props) => <MonthTick {...props} chartData={chartData} />
+                    : { fontSize: 12 }
+                  }
+                  height={isMonthly ? 44 : 30}
+                />
                 <YAxis tickFormatter={FMT} tick={{ fontSize: 12 }} width={80} />
                 <Tooltip formatter={(v: number) => [`¥${v.toLocaleString()}`, isSales ? '销售金额' : '进货金额']} />
                 <Bar dataKey="totalAmount" name={isSales ? '销售金额' : '进货金额'} fill="#4096ff" radius={[3, 3, 0, 0]} />
@@ -236,58 +331,49 @@ export default function RankingsReport() {
             </ResponsiveContainer>
           </div>
 
-          {/* Qty (line, left axis) + pieces (bar, right axis) combined chart */}
           <div>
             <div style={{ fontWeight: 600, marginBottom: 8, color: '#333' }}>
               {isSales ? '销售数量' : '进货数量'} / 件数趋势
             </div>
             <ResponsiveContainer width="100%" height={260}>
-              <ComposedChart data={chartData} margin={{ top: 4, right: 48, bottom: 4, left: 16 }}>
+              <ComposedChart data={chartData} margin={{ top: 4, right: 48, bottom: isMonthly ? 20 : 4, left: 16 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                <YAxis
-                  yAxisId="qty"
-                  orientation="left"
-                  tick={{ fontSize: 12 }}
+                <XAxis
+                  dataKey="name"
+                  tick={isMonthly
+                    ? (props) => <MonthTick {...props} chartData={chartData} />
+                    : { fontSize: 12 }
+                  }
+                  height={isMonthly ? 44 : 30}
+                />
+                <YAxis yAxisId="qty" orientation="left" tick={{ fontSize: 12 }}
                   label={{ value: isSales ? '销售数量' : '进货数量', angle: -90, position: 'insideLeft', offset: -4, style: { fontSize: 11, fill: '#52c41a' } }}
                 />
-                <YAxis
-                  yAxisId="pieces"
-                  orientation="right"
-                  tick={{ fontSize: 12 }}
+                <YAxis yAxisId="pieces" orientation="right" tick={{ fontSize: 12 }}
                   label={{ value: '件数', angle: 90, position: 'insideRight', offset: -4, style: { fontSize: 11, fill: '#faad14' } }}
                 />
                 <Tooltip />
                 <Legend />
-                <Bar
-                  yAxisId="pieces"
-                  dataKey="totalPieces"
-                  name="件数"
-                  fill="#faad14"
-                  opacity={0.7}
-                  radius={[3, 3, 0, 0]}
-                />
-                <Line
-                  yAxisId="qty"
-                  type="monotone"
-                  dataKey="totalQty"
-                  name={isSales ? '销售数量' : '进货数量'}
-                  stroke="#52c41a"
-                  strokeWidth={2.5}
-                  dot={{ r: 3 }}
-                  activeDot={{ r: 5 }}
-                />
+                <Bar yAxisId="pieces" dataKey="totalPieces" name="件数" fill="#faad14" opacity={0.7} radius={[3, 3, 0, 0]} />
+                <Line yAxisId="qty" type="monotone" dataKey="totalQty" name={isSales ? '销售数量' : '进货数量'}
+                  stroke="#52c41a" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Order count bar */}
           <div>
             <div style={{ fontWeight: 600, marginBottom: 8, color: '#333' }}>订单数趋势</div>
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={chartData} margin={{ top: 4, right: 24, bottom: 4, left: 16 }}>
+              <BarChart data={chartData} margin={{ top: 4, right: 24, bottom: isMonthly ? 20 : 4, left: 16 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                <XAxis
+                  dataKey="name"
+                  tick={isMonthly
+                    ? (props) => <MonthTick {...props} chartData={chartData} />
+                    : { fontSize: 12 }
+                  }
+                  height={isMonthly ? 44 : 30}
+                />
                 <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
                 <Tooltip formatter={(v: number) => [v, '订单数']} />
                 <Bar dataKey="orderCount" name="订单数" fill="#722ed1" radius={[3, 3, 0, 0]} />
@@ -295,10 +381,23 @@ export default function RankingsReport() {
             </ResponsiveContainer>
           </div>
         </div>
+      ) : isMonthly ? (
+        <Table
+          rowKey="name"
+          columns={monthlyColumns as ColumnsType<object>}
+          dataSource={monthlyDisplayRows}
+          loading={loading}
+          size="middle"
+          pagination={false}
+          onRow={(r) => (r as MonthlyRow)._isSubtotal
+            ? { style: { background: '#fafafa', fontWeight: 600, borderTop: '1px solid #e8e8e8' } }
+            : {}
+          }
+        />
       ) : (
         <Table
           rowKey="name"
-          columns={columns}
+          columns={standardColumns}
           dataSource={rows}
           loading={loading}
           size="middle"

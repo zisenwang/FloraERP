@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
-import { Table, InputNumber, Button, Tag, App, Popconfirm, Input, Select, Space } from 'antd'
-import { CheckOutlined, SearchOutlined, SortAscendingOutlined, SortDescendingOutlined } from '@ant-design/icons'
-import type { ColumnsType } from 'antd/es/table'
+import { Table, InputNumber, Button, Tag, App, Popconfirm, Input, Select } from 'antd'
+import { CheckOutlined, SearchOutlined } from '@ant-design/icons'
+import type { ColumnsType, SorterResult } from 'antd/es/table/interface'
 import { getInventory, createAdjustment, type InventoryRow } from '@/api/inventory'
 import { getProductCategories } from '@/api/products'
 import { getErrorMessage } from '@/utils/error'
@@ -9,10 +9,8 @@ import { PAGE_SIZE } from '@/constants/pagination'
 import styles from './Inventory.module.css'
 
 interface CheckRow extends InventoryRow {
-  actual: number | null  // null = not counted yet
+  actual: number | null
 }
-
-type SortField = 'stock' | 'pieces' | 'productCode'
 
 function getPieces(r: InventoryRow) {
   return r.unitsPerPiece ? Math.ceil(r.stock / r.unitsPerPiece) : null
@@ -26,8 +24,8 @@ export default function InventoryCheck() {
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<string | undefined>()
   const [categories, setCategories] = useState<string[]>([])
-  const [sortField, setSortField] = useState<SortField>('stock')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [sortKey, setSortKey] = useState<string>('stock')
+  const [sortOrder, setSortOrder] = useState<'ascend' | 'descend'>('descend')
   const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
@@ -76,73 +74,58 @@ export default function InventoryCheck() {
       const matchCategory = !categoryFilter || r.category === categoryFilter
       return matchSearch && matchCategory
     })
-    filtered.sort((a, b) => {
-      let va: number | string
-      let vb: number | string
-      if (sortField === 'stock') {
-        va = a.stock; vb = b.stock
-      } else if (sortField === 'pieces') {
-        va = getPieces(a) ?? 0; vb = getPieces(b) ?? 0
-      } else {
-        va = a.productCode; vb = b.productCode
+
+    const dir = sortOrder === 'descend' ? -1 : 1
+    return [...filtered].sort((a, b) => {
+      let cmp = 0
+      switch (sortKey) {
+        case 'productName':   cmp = a.productName.localeCompare(b.productName); break
+        case 'supplierName':  cmp = a.supplierName.localeCompare(b.supplierName); break
+        case 'unit':          cmp = a.unit.localeCompare(b.unit); break
+        case 'stock':         cmp = a.stock - b.stock; break
+        case 'pieces':        cmp = (getPieces(a) ?? 0) - (getPieces(b) ?? 0); break
+        case 'unitsPerPiece': cmp = (a.unitsPerPiece ?? 0) - (b.unitsPerPiece ?? 0); break
+        case 'actual':        cmp = (a.actual ?? -1) - (b.actual ?? -1); break
+        default:              cmp = a.productCode.localeCompare(b.productCode)
       }
-      if (va < vb) return sortDir === 'asc' ? -1 : 1
-      if (va > vb) return sortDir === 'asc' ? 1 : -1
-      return 0
+      return dir * cmp
     })
-    return filtered
-  }, [rows, search, categoryFilter, sortField, sortDir])
-
-  function toggleSort(field: SortField) {
-    if (sortField === field) {
-      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortField(field)
-      setSortDir(field === 'productCode' ? 'asc' : 'desc')
-    }
-    setCurrentPage(1)
-  }
-
-  function SortBtn({ field, label }: { field: SortField; label: string }) {
-    const active = sortField === field
-    const icon = active
-      ? (sortDir === 'asc' ? <SortAscendingOutlined /> : <SortDescendingOutlined />)
-      : null
-    return (
-      <Button
-        size="small"
-        type={active ? 'primary' : 'default'}
-        icon={icon}
-        onClick={() => toggleSort(field)}
-      >
-        {label}
-      </Button>
-    )
-  }
+  }, [rows, search, categoryFilter, sortKey, sortOrder])
 
   const countedRows = rows.filter(r => r.actual !== null)
   const diffRows = rows.filter(r => r.actual !== null && r.actual !== r.stock)
   const countedInView = sortedRows.filter(r => r.actual !== null).length
 
+  const col = (key: string) => ({
+    key,
+    sorter: () => 0 as number,
+    sortOrder: (sortKey === key ? sortOrder : undefined) as 'ascend' | 'descend' | undefined,
+    showSorterTooltip: false,
+  })
+
   const columns: ColumnsType<CheckRow> = [
-    { title: '编码', dataIndex: 'productCode', width: 100 },
-    { title: '货品名称', dataIndex: 'productName', width: 160 },
-    { title: '供应商', dataIndex: 'supplierName', width: 100 },
-    { title: '单位', dataIndex: 'unit', width: 70, align: 'center' },
+    { ...col('productCode'),  title: '编码',     dataIndex: 'productCode',  width: 100 },
+    { ...col('productName'),  title: '货品名称',  dataIndex: 'productName',  width: 160 },
+    { ...col('supplierName'), title: '供应商',    dataIndex: 'supplierName', width: 100 },
+    { ...col('unit'),         title: '单位',     dataIndex: 'unit',         width: 70, align: 'center' },
     {
+      ...col('stock'),
       title: '系统库存', dataIndex: 'stock', width: 100, align: 'center',
       render: (v: number) => <strong>{v}</strong>,
     },
     {
+      ...col('pieces'),
       title: '件数', width: 80, align: 'center',
       render: (_: unknown, r: CheckRow) =>
         r.unitsPerPiece ? Math.ceil(r.stock / r.unitsPerPiece) : '—',
     },
     {
+      ...col('unitsPerPiece'),
       title: '每件数量', dataIndex: 'unitsPerPiece', width: 70, align: 'center',
       render: (v: number | null) => v ?? '—',
     },
     {
+      ...col('actual'),
       title: '实盘数量', width: 110, align: 'center',
       render: (_: unknown, record: CheckRow) => (
         <InputNumber
@@ -192,12 +175,6 @@ export default function InventoryCheck() {
           options={categories.map(c => ({ value: c, label: c }))}
           onChange={val => { setCategoryFilter(val); setCurrentPage(1) }}
         />
-        <Space size={4}>
-          <span style={{ fontSize: 12, color: '#888' }}>排序：</span>
-          <SortBtn field="stock" label="数量" />
-          <SortBtn field="pieces" label="件数" />
-          <SortBtn field="productCode" label="编码" />
-        </Space>
         <span style={{ fontSize: 13, color: '#555' }}>
           已盘点：<strong>{countedRows.length}</strong> / {rows.length}（当前视图 {countedInView}/{sortedRows.length}）&emsp;
           有差异：<strong style={{ color: diffRows.length > 0 ? '#cf1322' : '#389e0d' }}>{diffRows.length}</strong>
@@ -232,6 +209,17 @@ export default function InventoryCheck() {
           showTotal: total => `共 ${total} 条`,
         }}
         size="small"
+        onChange={(_pagination, _filters, sorter) => {
+          const s = Array.isArray(sorter) ? sorter[0] : sorter as SorterResult<CheckRow>
+          if (s.columnKey && s.order) {
+            setSortKey(s.columnKey as string)
+            setSortOrder(s.order)
+          } else {
+            setSortKey('stock')
+            setSortOrder('descend')
+          }
+          setCurrentPage(1)
+        }}
       />
     </>
   )

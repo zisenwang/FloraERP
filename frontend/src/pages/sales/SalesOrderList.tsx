@@ -110,8 +110,6 @@ export default function SalesOrderList() {
     dayjs().startOf('month'),
     dayjs().endOf('month'),
   ])
-  const [paymentStatus, setPaymentStatus] = useState<string | undefined>()
-
   const [quickPayOrderId, setQuickPayOrderId] = useState<number | null>(null)
 
   const [voiding, setVoiding] = useState<Record<string, boolean>>({})
@@ -127,17 +125,13 @@ export default function SalesOrderList() {
     // In summary mode the search is server-side only for customerName/customerCode/orderNo fields via existing API (no searchField support there)
     // We pass search keyword to the existing orders API (which already supports search on those fields)
     const search = searchKeyword.trim() || undefined
-    const fetchOrders = paymentStatus !== '退货'
-      ? getSalesOrders({ startDate, endDate, paymentStatus, search })
-      : Promise.resolve([] as SalesOrder[])
-    const fetchReturns = !paymentStatus || paymentStatus === '退货'
-      ? getSalesReturns({ startDate, endDate, search })
-      : Promise.resolve([] as SalesReturn[])
+    const fetchOrders = getSalesOrders({ startDate, endDate, search })
+    const fetchReturns = getSalesReturns({ startDate, endDate, search })
     Promise.all([fetchOrders, fetchReturns])
       .then(([o, r]) => { setOrders(o); setReturns(r) })
       .catch(err => message.error(getErrorMessage(err)))
       .finally(() => setLoading(false))
-  }, [dateRange, paymentStatus, searchKeyword])
+  }, [dateRange, searchKeyword])
 
   const fetchDetail = useCallback(() => {
     setDetailLoading(true)
@@ -158,7 +152,7 @@ export default function SalesOrderList() {
   useEffect(() => {
     if (mode === 'summary') fetchAll()
     else fetchDetail()
-  }, [mode, dateRange, paymentStatus, searchKeyword, searchField])
+  }, [mode, dateRange, searchKeyword, searchField])
 
   const handleVoid = async (row: UnifiedRow) => {
     setVoiding(prev => ({ ...prev, [row._key]: true }))
@@ -352,19 +346,6 @@ export default function SalesOrderList() {
               { label: '上月', value: [dayjs().subtract(1, 'month').startOf('month'), dayjs().subtract(1, 'month').endOf('month')] },
             ]}
           />
-          {mode === 'summary' && (
-            <Select
-              allowClear placeholder="收款状态"
-              style={{ width: 120 }}
-              options={[
-                { value: '未收款',  label: '未收款' },
-                { value: '部分收款', label: '部分收款' },
-                { value: '已收款',  label: '已收款' },
-                { value: '退货',    label: '退货' },
-              ]}
-              onChange={v => setPaymentStatus(v)}
-            />
-          )}
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/sales/orders/new')}>
