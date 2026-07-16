@@ -67,6 +67,7 @@ function buildMonthlyTable(rows: ReportGroupRow[]): MonthlyRow[] {
     // Subtotal row
     result.push({
       name: `${year}-subtotal`,
+      id: 0,
       orderCount:   yearRows.reduce((s, r) => s + (r.orderCount  ?? 0), 0),
       totalQty:     yearRows.reduce((s, r) => s + r.totalQty,           0),
       totalPieces:  yearRows.reduce((s, r) => s + (r.totalPieces ?? 0), 0),
@@ -84,10 +85,11 @@ function buildMonthlyTable(rows: ReportGroupRow[]): MonthlyRow[] {
 // ── Custom XAxis tick for monthly chart (shows year below month when it changes) ──
 
 function MonthTick({ x, y, payload, chartData }: {
-  x: number; y: number
+  x: number | string; y: number | string
   payload: { value: string }
   chartData: ReportGroupRow[]
 }) {
+  const nx = Number(x); const ny = Number(y)
   const name  = payload.value        // "2026-01"
   const month = name.slice(5, 7)
   const year  = name.slice(0, 4)
@@ -95,10 +97,10 @@ function MonthTick({ x, y, payload, chartData }: {
   const showYear = idx === 0 || chartData[idx - 1]?.name.slice(0, 4) !== year
 
   return (
-    <g transform={`translate(${x},${y})`}>
+    <g transform={`translate(${nx},${ny})`}>
       <text x={0} y={0} dy={14} textAnchor="middle" fill="#555" fontSize={12}>{month}</text>
       {showYear && (
-        <text x={0} y={0} dy={28} textAnchor="middle" fill="#aaa" fontSize={11}>{year}</text>
+        <text x={0} y={0} dy={30} textAnchor="middle" fill="#444" fontSize={13} fontWeight={600}>{year}</text>
       )}
     </g>
   )
@@ -322,10 +324,10 @@ export default function RankingsReport() {
                     ? (props) => <MonthTick {...props} chartData={chartData} />
                     : { fontSize: 12 }
                   }
-                  height={isMonthly ? 44 : 30}
+                  height={isMonthly ? 50 : 30}
                 />
                 <YAxis tickFormatter={FMT} tick={{ fontSize: 12 }} width={80} />
-                <Tooltip formatter={(v: number) => [`¥${v.toLocaleString()}`, isSales ? '销售金额' : '进货金额']} />
+                <Tooltip formatter={(v) => [`¥${Number(v ?? 0).toLocaleString()}`, isSales ? '销售金额' : '进货金额']} />
                 <Bar dataKey="totalAmount" name={isSales ? '销售金额' : '进货金额'} fill="#4096ff" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -344,7 +346,7 @@ export default function RankingsReport() {
                     ? (props) => <MonthTick {...props} chartData={chartData} />
                     : { fontSize: 12 }
                   }
-                  height={isMonthly ? 44 : 30}
+                  height={isMonthly ? 50 : 30}
                 />
                 <YAxis yAxisId="qty" orientation="left" tick={{ fontSize: 12 }}
                   label={{ value: isSales ? '销售数量' : '进货数量', angle: -90, position: 'insideLeft', offset: -4, style: { fontSize: 11, fill: '#52c41a' } }}
@@ -372,10 +374,10 @@ export default function RankingsReport() {
                     ? (props) => <MonthTick {...props} chartData={chartData} />
                     : { fontSize: 12 }
                   }
-                  height={isMonthly ? 44 : 30}
+                  height={isMonthly ? 50 : 30}
                 />
                 <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                <Tooltip formatter={(v: number) => [v, '订单数']} />
+                <Tooltip formatter={(v) => [Number(v), '订单数']} />
                 <Bar dataKey="orderCount" name="订单数" fill="#722ed1" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
