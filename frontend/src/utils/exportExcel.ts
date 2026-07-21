@@ -194,7 +194,7 @@ export function exportSalesOrdersDetailExcel(
     '金额': orderRows.reduce((s, r) => s + r.amount, 0) - returnRows.reduce((s, r) => s + r.amount, 0),
     '件数': orderRows.reduce((s, r) => s + r.pieces, 0) - returnRows.reduce((s, r) => s + r.pieces, 0),
     '毛利': '', '经办人': '', '备注': '',
-  })
+  } as never)
   const ws = XLSX.utils.json_to_sheet(sheetData)
   autoWidth(ws)
   const wb = XLSX.utils.book_new()
@@ -279,7 +279,7 @@ export function exportPurchaseOrdersDetailExcel(
     '金额': orderRows.reduce((s, r) => s + r.amount, 0) - returnRows.reduce((s, r) => s + r.amount, 0),
     '件数': orderRows.reduce((s, r) => s + r.pieces, 0) - returnRows.reduce((s, r) => s + r.pieces, 0),
     '经办人': '', '备注': '',
-  })
+  } as never)
   const ws = XLSX.utils.json_to_sheet(sheetData)
   autoWidth(ws)
   const wb = XLSX.utils.book_new()
