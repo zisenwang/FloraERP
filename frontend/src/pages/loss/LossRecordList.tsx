@@ -7,6 +7,7 @@ import type { Dayjs } from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
 import { getLossRecords, type LossRecord } from '@/api/loss'
 import { getErrorMessage } from '@/utils/error'
+import { C_AMOUNT, C_LABEL } from '@/constants/colors'
 import styles from './Loss.module.css'
 
 export default function LossRecordList() {
@@ -32,9 +33,9 @@ export default function LossRecordList() {
   const columns: ColumnsType<LossRecord> = [
     { title: '日期', dataIndex: 'date', width: 110 },
     { title: '编码', dataIndex: 'productCode', width: 100 },
-    { title: '货品名称', dataIndex: 'productName' },
+    { title: '货品名称', dataIndex: 'productName', render: (v: string) => <span style={{ color: C_LABEL }}>{v}</span> },
     { title: '单位', dataIndex: 'unit', width: 70, align: 'center' },
-    { title: '数量', dataIndex: 'qty', width: 80, align: 'center' },
+    { title: '数量', dataIndex: 'qty', width: 80, align: 'center', render: (v: number) => <span style={{ color: C_AMOUNT, fontWeight: 600 }}>{v}</span> },
     { title: '原因', dataIndex: 'reason', ellipsis: true },
     { title: '备注', dataIndex: 'notes', ellipsis: true },
     { title: '操作人', dataIndex: 'operator', width: 90 },

@@ -16,6 +16,7 @@ import {
   type PurchaseRankDim,
 } from '@/api/reports'
 import { getErrorMessage } from '@/utils/error'
+import { C_AMOUNT, C_LABEL } from '@/constants/colors'
 import styles from './Reports.module.css'
 
 const SALES_TABS: { key: SalesRankDim; label: string }[] = [
@@ -201,8 +202,8 @@ export default function RankingsReport() {
       title: isSales ? '销售金额' : '进货金额', dataIndex: 'totalAmount', align: 'right', width: 120,
       render: (v: number, r: MonthlyRow) =>
         r._isSubtotal
-          ? <strong>¥{v.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</strong>
-          : <span>¥{v.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</span>,
+          ? <strong style={{ color: C_AMOUNT }}>¥{v.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</strong>
+          : <span style={{ color: C_AMOUNT }}>¥{v.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</span>,
     },
   ]
 
@@ -215,7 +216,7 @@ export default function RankingsReport() {
     {
       title: nameLabel, dataIndex: 'name',
       sorter: (a, b) => a.name.localeCompare(b.name),
-      render: (v: string) => <span style={{ fontWeight: 500 }}>{v}</span>,
+      render: (v: string) => <span style={{ color: C_LABEL, fontWeight: 500 }}>{v}</span>,
     },
     {
       title: '订单数', dataIndex: 'orderCount', align: 'center',
@@ -235,7 +236,7 @@ export default function RankingsReport() {
       title: isSales ? '销售金额' : '进货金额', dataIndex: 'totalAmount', align: 'right',
       defaultSortOrder: 'descend',
       sorter: (a, b) => a.totalAmount - b.totalAmount,
-      render: (v: number) => <strong>¥{v.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</strong>,
+      render: (v: number) => <strong style={{ color: C_AMOUNT }}>¥{v.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</strong>,
     },
   ]
 

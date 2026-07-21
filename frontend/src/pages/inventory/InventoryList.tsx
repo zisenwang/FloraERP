@@ -5,6 +5,7 @@ import type { ColumnsType, SorterResult } from 'antd/es/table/interface'
 import { getInventory, type InventoryRow } from '@/api/inventory'
 import { getProductCategories } from '@/api/products'
 import { getErrorMessage } from '@/utils/error'
+import { C_AMOUNT, C_LABEL } from '@/constants/colors'
 import { PAGE_SIZE } from '@/constants/pagination'
 import styles from './Inventory.module.css'
 
@@ -79,8 +80,8 @@ export default function InventoryList() {
 
   const columns: ColumnsType<InventoryRow> = [
     { ...col('productCode'),  title: '编码',     dataIndex: 'productCode',  width: 100 },
-    { ...col('productName'),  title: '货品名称',  dataIndex: 'productName',  width: 160 },
-    { ...col('supplierName'), title: '供应商',    dataIndex: 'supplierName', width: 100 },
+    { ...col('productName'),  title: '货品名称',  dataIndex: 'productName',  width: 160, render: (v: string) => <span style={{ color: C_LABEL }}>{v}</span> },
+    { ...col('supplierName'), title: '供应商',    dataIndex: 'supplierName', width: 100, render: (v: string) => <span style={{ color: C_LABEL }}>{v}</span> },
     {
       ...col('category'),
       title: '分类', dataIndex: 'category', width: 100,
@@ -90,7 +91,7 @@ export default function InventoryList() {
     {
       ...col('stock'),
       title: '当前库存', dataIndex: 'stock', width: 100, align: 'center',
-      render: (v: number) => <span className={styles.stockOk}>{v}</span>,
+      render: (v: number) => <span style={{ color: C_AMOUNT, fontWeight: 600 }}>{v}</span>,
     },
     {
       ...col('pieces'),

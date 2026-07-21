@@ -8,6 +8,7 @@ import {
 } from '@/api/products'
 import { getSuppliers, type Supplier } from '@/api/suppliers'
 import { getErrorMessage } from '@/utils/error'
+import { C_AMOUNT, C_LABEL } from '@/constants/colors'
 import styles from './SupplierList.module.css'
 
 export default function ProductList() {
@@ -168,15 +169,15 @@ export default function ProductList() {
 
   const columns: ColumnsType<Product> = [
     { ...col('code'),         title: '编码',     dataIndex: 'code',         width: 110 },
-    { ...col('name'),         title: '货品名称',  dataIndex: 'name',         width: 150 },
-    { ...col('supplierName'), title: '供应商',    dataIndex: 'supplierName', width: 100 },
+    { ...col('name'),         title: '货品名称',  dataIndex: 'name',         width: 150, render: (v: string) => <span style={{ color: C_LABEL }}>{v}</span> },
+    { ...col('supplierName'), title: '供应商',    dataIndex: 'supplierName', width: 100, render: (v: string) => <span style={{ color: C_LABEL }}>{v}</span> },
     { ...col('category'),     title: '品类',     dataIndex: 'category',     width: 100, render: (v: string) => v ?? '—' },
     { ...col('grade'),        title: '等级',     dataIndex: 'grade',        width: 80,  render: (v: string) => v ?? '—' },
     { ...col('unit'),         title: '单位',     dataIndex: 'unit',         width: 60  },
     { ...col('unitsPerPiece'),title: '每件数量',  dataIndex: 'unitsPerPiece',width: 75,  render: (v: number) => v ?? '—' },
-    { ...col('costPrice'),    title: '最新进价',  dataIndex: 'costPrice',    width: 90,  render: (v: number) => v ? `¥${v}` : '—' },
-    { ...col('price'),        title: '单价',     dataIndex: 'price',        width: 80,  render: (v: number) => v != null ? `¥${v}` : '—' },
-    { ...col('stock'),        title: '库存',     dataIndex: 'stock',        width: 70  },
+    { ...col('costPrice'),    title: '最新进价',  dataIndex: 'costPrice',    width: 90,  render: (v: number) => v ? <span style={{ color: C_AMOUNT, fontWeight: 600 }}>¥{v}</span> : '—' },
+    { ...col('price'),        title: '单价',     dataIndex: 'price',        width: 80,  render: (v: number) => v != null ? <span style={{ color: C_AMOUNT, fontWeight: 600 }}>¥{v}</span> : '—' },
+    { ...col('stock'),        title: '库存',     dataIndex: 'stock',        width: 70,  render: (v: number) => <span style={{ color: C_AMOUNT, fontWeight: 600 }}>{v}</span> },
     {
       ...col('pieces'),
       title: '件数', width: 65,

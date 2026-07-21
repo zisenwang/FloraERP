@@ -14,6 +14,7 @@ import {
   type PurchaseDetailRow,
 } from '@/api/purchase'
 import { getErrorMessage } from '@/utils/error'
+import { C_AMOUNT, C_LABEL } from '@/constants/colors'
 import { PAGE_SIZE } from '@/constants/pagination'
 import styles from './Purchase.module.css'
 
@@ -176,7 +177,7 @@ export default function PurchaseOrderList() {
       render: (_, r) => (
         <span>
           {r.rowType === 'return' && <Tag color="orange" style={{ marginRight: 4 }}>退</Tag>}
-          {r.no}
+          <span style={{ color: C_LABEL }}>{r.no}</span>
         </span>
       ),
     },
@@ -184,7 +185,7 @@ export default function PurchaseOrderList() {
     {
       title: '金额', dataIndex: 'amount', align: 'center',
       render: (v: number, r) => (
-        <span style={{ color: r.rowType === 'return' ? '#cf1322' : undefined }}>
+        <span style={{ color: r.rowType === 'return' ? '#cf1322' : C_AMOUNT, fontWeight: 600 }}>
           {r.rowType === 'return' ? '-' : ''}¥{v.toLocaleString()}
         </span>
       ),
@@ -245,7 +246,7 @@ export default function PurchaseOrderList() {
     {
       title: '金额', dataIndex: 'amount', width: 110, align: 'center',
       render: (v: number, r) => (
-        <span style={{ color: r.rowType === 'return' ? '#cf1322' : undefined }}>
+        <span style={{ color: r.rowType === 'return' ? '#cf1322' : C_AMOUNT, fontWeight: 600 }}>
           {r.rowType === 'return' ? '-' : ''}¥{v.toFixed(2)}
         </span>
       ),

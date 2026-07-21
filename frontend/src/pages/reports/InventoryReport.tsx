@@ -6,6 +6,7 @@ import { getInventoryReport, type InventoryReportItem } from '@/api/reports'
 import { getProductCategories } from '@/api/products'
 import { getErrorMessage } from '@/utils/error'
 import { exportInventoryExcel } from '@/utils/exportExcel'
+import { C_AMOUNT, C_LABEL } from '@/constants/colors'
 import { PAGE_SIZE } from '@/constants/pagination'
 import styles from './Reports.module.css'
 
@@ -81,8 +82,8 @@ export default function InventoryReport() {
 
   const columns: ColumnsType<InventoryReportItem> = [
     { ...col('productCode'),  title: '编码',     dataIndex: 'productCode',  width: 100 },
-    { ...col('productName'),  title: '货品名称',  dataIndex: 'productName',  width: 160 },
-    { ...col('supplierName'), title: '供应商',    dataIndex: 'supplierName', width: 120 },
+    { ...col('productName'),  title: '货品名称',  dataIndex: 'productName',  width: 160, render: (v: string) => <span style={{ color: C_LABEL }}>{v}</span> },
+    { ...col('supplierName'), title: '供应商',    dataIndex: 'supplierName', width: 120, render: (v: string) => <span style={{ color: C_LABEL }}>{v}</span> },
     {
       ...col('category'),
       title: '分类', dataIndex: 'category', width: 100,
@@ -92,7 +93,7 @@ export default function InventoryReport() {
     {
       ...col('stock'),
       title: '当前库存', dataIndex: 'stock', width: 100, align: 'center',
-      render: (v: number) => <span style={{ fontWeight: v === 0 ? undefined : 500 }}>{v}</span>,
+      render: (v: number) => <span style={{ color: C_AMOUNT, fontWeight: 600 }}>{v}</span>,
     },
     {
       ...col('pieces'),
@@ -108,12 +109,12 @@ export default function InventoryReport() {
     {
       ...col('costPrice'),
       title: '成本价', dataIndex: 'costPrice', width: 90, align: 'right',
-      render: (v: number) => v != null ? `¥${v.toFixed(2)}` : '—',
+      render: (v: number) => v != null ? <span style={{ color: C_AMOUNT, fontWeight: 600 }}>¥{v.toFixed(2)}</span> : '—',
     },
     {
       ...col('price'),
       title: '售价', dataIndex: 'price', width: 90, align: 'right',
-      render: (v: number) => v != null ? `¥${v.toFixed(2)}` : '—',
+      render: (v: number) => v != null ? <span style={{ color: C_AMOUNT, fontWeight: 600 }}>¥{v.toFixed(2)}</span> : '—',
     },
   ]
 

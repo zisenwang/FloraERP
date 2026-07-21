@@ -3,6 +3,7 @@ import { Table, Spin } from 'antd'
 import { useNavigate } from 'react-router-dom'
 import { getDashboardSummary, type DashboardSummary, type DailySalesRow } from '@/api/dashboard'
 import { getInventory, type InventoryRow } from '@/api/inventory'
+import { C_AMOUNT, C_LABEL } from '@/constants/colors'
 import styles from './Dashboard.module.css'
 
 export default function Dashboard() {
@@ -38,21 +39,21 @@ export default function Dashboard() {
 
   const salesRankColumns = [
     { title: '排名', key: 'rank', render: (_: unknown, __: unknown, i: number) => i + 1, width: 55 },
-    { title: '客户', render: (_: unknown, r: { customerCode: string; customerName: string }) => `${r.customerCode} ${r.customerName}`, width: 200 },
-    { title: '金额', dataIndex: 'totalAmount', render: (v: number) => `¥${v.toLocaleString()}`, align: 'right' as const, width: 200 },
+    { title: '客户', render: (_: unknown, r: { customerCode: string; customerName: string }) => <span style={{ color: C_LABEL }}>{r.customerCode} {r.customerName}</span>, width: 200 },
+    { title: '金额', dataIndex: 'totalAmount', render: (v: number) => <span style={{ color: C_AMOUNT, fontWeight: 600 }}>¥{v.toLocaleString()}</span>, align: 'right' as const, width: 200 },
     { title: '件数', dataIndex: 'totalPieces', align: 'right' as const, width: 70 },
   ]
 
   const purchaseSupplierRankColumns = [
     { title: '排名', key: 'rank', render: (_: unknown, __: unknown, i: number) => i + 1, width: 55 },
-    { title: '供应商', render: (_: unknown, r: { supplierCode: string; supplierName: string }) => `${r.supplierCode} ${r.supplierName}`, width: 200 },
+    { title: '供应商', render: (_: unknown, r: { supplierCode: string; supplierName: string }) => <span style={{ color: C_LABEL }}>{r.supplierCode} {r.supplierName}</span>, width: 200 },
     { title: '进货数量', dataIndex: 'totalQty', align: 'right' as const, width: 200 },
   ]
 
   const purchaseProductRankColumns = [
     { title: '排名', key: 'rank', render: (_: unknown, __: unknown, i: number) => i + 1, width: 55 },
-    { title: '货品', render: (_: unknown, r: { productCode: string; productName: string }) => `${r.productCode} ${r.productName}`, width: 200 },
-    { title: '供应商', render: (_: unknown, r: { supplierCode: string; supplierName: string }) => `${r.supplierCode} ${r.supplierName}`, width: 200 },
+    { title: '货品', render: (_: unknown, r: { productCode: string; productName: string }) => <span style={{ color: C_LABEL }}>{r.productCode} {r.productName}</span>, width: 200 },
+    { title: '供应商', render: (_: unknown, r: { supplierCode: string; supplierName: string }) => <span style={{ color: C_LABEL }}>{r.supplierCode} {r.supplierName}</span>, width: 200 },
     { title: '进货数量', dataIndex: 'totalQty', align: 'right' as const, width: 90 },
   ]
 
@@ -61,7 +62,7 @@ export default function Dashboard() {
     { title: '销售数量', dataIndex: 'salesQty', align: 'right' as const, width: 80 },
     {
       title: '销售金额', dataIndex: 'salesAmount', align: 'right' as const, width: 100,
-      render: (v: number) => `¥${v.toLocaleString()}`,
+      render: (v: number) => <span style={{ color: C_AMOUNT, fontWeight: 600 }}>¥{v.toLocaleString()}</span>,
     },
     { title: '件数', dataIndex: 'pieces', align: 'right' as const, width: 65 },
     { title: '退货数量', dataIndex: 'returnQty', align: 'right' as const, width: 80,
@@ -69,7 +70,7 @@ export default function Dashboard() {
     },
     {
       title: '退货金额', dataIndex: 'returnAmount', align: 'right' as const, width: 100,
-      render: (v: number) => v > 0 ? <span style={{ color: '#cf1322' }}>¥{v.toLocaleString()}</span> : '—',
+      render: (v: number) => v > 0 ? <span style={{ color: '#cf1322', fontWeight: 600 }}>¥{v.toLocaleString()}</span> : '—',
     },
   ]
 
@@ -92,7 +93,7 @@ export default function Dashboard() {
           <span className={styles.dotOrange} />
           <span className={styles.overviewText}>
             今日销售：<strong>{todayQty.toLocaleString()}</strong> 盆，共 <strong>{data.todaySales.toLocaleString()}</strong> 元
-            （{todayPieces} 件）
+            （<strong>{todayPieces}</strong> 件）
           </span>
           <span className={styles.overviewAction} onClick={() => navigate('/sales/orders/new')}>销售开单 →</span>
         </div>
@@ -100,7 +101,7 @@ export default function Dashboard() {
           <span className={styles.dotGreen} />
           <span className={styles.overviewText}>
             本月销售：<strong>{dailyTotals.salesQty.toLocaleString()}</strong> 盆，共 <strong>{dailyTotals.salesAmount.toLocaleString()}</strong> 元
-            （{dailyTotals.pieces} 件）
+            （<strong>{dailyTotals.pieces}</strong> 件）
             {dailyTotals.returnQty > 0 && (
               <span className={styles.overviewReturn}>
                 　退货 {dailyTotals.returnQty} 盆 / ¥{dailyTotals.returnAmount.toLocaleString()}
@@ -121,8 +122,8 @@ export default function Dashboard() {
         <div className={styles.overviewRow} onClick={() => navigate('/inventory')} style={{ cursor: 'pointer' }}>
           <span className={styles.dotPurple} />
           <span className={styles.overviewText}>
-            当前库存：<strong>{totalStock.toLocaleString()}</strong> 盆，共 <strong className={styles.green}>{totalPieces.toLocaleString()}</strong> 件
-            （{productTypes} 种有货）
+            当前库存：<strong>{totalStock.toLocaleString()}</strong> 盆，共 <strong>{totalPieces.toLocaleString()}</strong> 件
+            （<strong>{productTypes}</strong> 种有货）
           </span>
           <span className={styles.overviewLink}>查看库存 →</span>
         </div>

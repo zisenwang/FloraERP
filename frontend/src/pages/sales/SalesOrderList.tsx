@@ -14,6 +14,7 @@ import {
   type SalesDetailRow,
 } from '@/api/sales'
 import { getErrorMessage } from '@/utils/error'
+import { C_AMOUNT, C_LABEL } from '@/constants/colors'
 import { PAGE_SIZE } from '@/constants/pagination'
 import AddPaymentModal from '@/components/AddPaymentModal'
 import styles from './Sales.module.css'
@@ -113,6 +114,7 @@ export default function SalesOrderList() {
   const [quickPayOrderId, setQuickPayOrderId] = useState<number | null>(null)
 
   const [voiding, setVoiding] = useState<Record<string, boolean>>({})
+  const [payFilter, setPayFilter] = useState<string>('all')
 
   // Detail mode
   const [detailRows, setDetailRows] = useState<SalesDetailRow[]>([])
@@ -168,10 +170,14 @@ export default function SalesOrderList() {
     }
   }
 
-  const combined: UnifiedRow[] = [
+  const allCombined: UnifiedRow[] = [
     ...orders.map(toUnified),
     ...returns.map(toUnifiedReturn),
   ].sort((a, b) => b.time.localeCompare(a.time))
+
+  const combined = payFilter === 'all' ? allCombined
+    : payFilter === '退货' ? allCombined.filter(r => r.rowType === 'return')
+    : allCombined.filter(r => r.rowType === 'order' && r.paymentStatus === payFilter)
 
   const columns: ColumnsType<UnifiedRow> = [
     { title: '日期', dataIndex: 'date', align: 'center' },
@@ -184,7 +190,7 @@ export default function SalesOrderList() {
       render: (_, r) => (
         <span>
           {r.rowType === 'return' && <Tag color="orange" style={{ marginRight: 4 }}>退</Tag>}
-          {r.no}
+          <span style={{ color: C_LABEL }}>{r.no}</span>
         </span>
       ),
     },
@@ -192,7 +198,7 @@ export default function SalesOrderList() {
     {
       title: '合计金额', dataIndex: 'amount', align: 'center',
       render: (v: number, r) => (
-        <span style={{ color: r.rowType === 'return' ? '#cf1322' : undefined }}>
+        <span style={{ color: r.rowType === 'return' ? '#cf1322' : C_AMOUNT, fontWeight: 600 }}>
           {r.rowType === 'return' ? '-' : ''}¥{v.toFixed(2)}
         </span>
       ),
@@ -273,7 +279,7 @@ export default function SalesOrderList() {
     {
       title: '金额', dataIndex: 'amount', width: 110, align: 'center',
       render: (v: number, r) => (
-        <span style={{ color: r.rowType === 'return' ? '#cf1322' : undefined }}>
+        <span style={{ color: r.rowType === 'return' ? '#cf1322' : C_AMOUNT, fontWeight: 600 }}>
           {r.rowType === 'return' ? '-' : ''}¥{v.toFixed(2)}
         </span>
       ),
@@ -346,6 +352,19 @@ export default function SalesOrderList() {
               { label: '上月', value: [dayjs().subtract(1, 'month').startOf('month'), dayjs().subtract(1, 'month').endOf('month')] },
             ]}
           />
+          {mode === 'summary' && (
+            <Select
+              value={payFilter}
+              onChange={v => setPayFilter(v)}
+              style={{ width: 100 }}
+              options={[
+                { label: '全部状态', value: 'all' },
+                { label: '未收款', value: '未收款' },
+                { label: '已收款', value: '已收款' },
+                { label: '退货', value: '退货' },
+              ]}
+            />
+          )}
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/sales/orders/new')}>

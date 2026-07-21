@@ -7,6 +7,7 @@ import type { ColumnsType } from 'antd/es/table'
 import { getPayments, deletePayment, type Payment } from '@/api/payments'
 import { getSalesOrders, type SalesOrder } from '@/api/sales'
 import { getErrorMessage } from '@/utils/error'
+import { C_AMOUNT, C_LABEL } from '@/constants/colors'
 import { PAGE_SIZE } from '@/constants/pagination'
 import SalesOrderModal from '@/components/SalesOrderModal'
 import AddPaymentModal from '@/components/AddPaymentModal'
@@ -91,12 +92,12 @@ export default function PaymentList() {
     },
     {
       title: '客户', width: 160,
-      render: (_: unknown, r: Payment) => `${r.customerCode} ${r.customerName}`,
+      render: (_: unknown, r: Payment) => <span style={{ color: C_LABEL }}>{r.customerCode} {r.customerName}</span>,
     },
     {
       title: '金额', dataIndex: 'amount', width: 120, align: 'right',
       render: (v: number) => (
-        <span style={{ color: '#389e0d', fontWeight: 600 }}>¥{v.toFixed(2)}</span>
+        <span style={{ color: C_AMOUNT, fontWeight: 600 }}>¥{v.toFixed(2)}</span>
       ),
     },
     { title: '方式', dataIndex: 'method',   width: 90 },

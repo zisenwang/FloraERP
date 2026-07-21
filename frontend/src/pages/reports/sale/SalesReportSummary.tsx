@@ -11,6 +11,7 @@ import {
 } from '@/api/reports'
 import { getErrorMessage } from '@/utils/error'
 import { exportSalesExcel } from '@/utils/exportExcel'
+import { C_AMOUNT, C_LABEL } from '@/constants/colors'
 import type { SalesDim } from './SalesReport'
 import styles from '../Reports.module.css'
 
@@ -140,7 +141,7 @@ export default function SalesReportSummary({
     {
       title: '折后金额', dataIndex: 'finalAmount', width: 95, align: 'right',
       render: (v: number, r: ReportOrderRow) => (
-        <span style={{ color: r.isReturn ? '#cf1322' : undefined }}>¥{v.toFixed(2)}</span>
+        <span style={{ color: r.isReturn ? '#cf1322' : C_AMOUNT, fontWeight: 600 }}>¥{v.toFixed(2)}</span>
       ),
     },
     { title: '成本价', dataIndex: 'costPrice', width: 85, align: 'right', render: (v: number | null) => v != null ? `¥${v.toFixed(2)}` : '—' },
@@ -155,10 +156,10 @@ export default function SalesReportSummary({
   ]
 
   const l2Columns: ColumnsType<ReportGroupRow> = [
-    { title: l2Label, dataIndex: 'name', width: 200 },
+    { title: l2Label, dataIndex: 'name', width: 200, render: (v: string) => <span style={{ color: C_LABEL }}>{v}</span> },
     { title: '订单数', dataIndex: 'orderCount', width: 80, align: 'center' },
     { title: '数量', dataIndex: 'totalQty', width: 80, align: 'center' },
-    { title: '金额', dataIndex: 'totalAmount', width: 110, align: 'right', render: (v: number) => `¥${v.toFixed(2)}` },
+    { title: '金额', dataIndex: 'totalAmount', width: 110, align: 'right', render: (v: number) => <span style={{ color: C_AMOUNT, fontWeight: 600 }}>¥{v.toFixed(2)}</span> },
     { title: '件数', dataIndex: 'totalPieces', width: 75, align: 'center', render: v => v || '—' },
     {
       title: '毛利', dataIndex: 'totalProfit', width: 110, align: 'right',
@@ -183,10 +184,10 @@ export default function SalesReportSummary({
   })
 
   const l1Columns: ColumnsType<ReportGroupRow> = [
-    { title: l1Label, dataIndex: 'name', width: 220 },
+    { title: l1Label, dataIndex: 'name', width: 220, render: (v: string) => <span style={{ color: C_LABEL }}>{v}</span> },
     { title: '订单数', dataIndex: 'orderCount', width: 80, align: 'center' },
     { title: '数量', dataIndex: 'totalQty', width: 80, align: 'center' },
-    { title: '金额', dataIndex: 'totalAmount', width: 120, align: 'right', render: (v: number) => `¥${v.toFixed(2)}` },
+    { title: '金额', dataIndex: 'totalAmount', width: 120, align: 'right', render: (v: number) => <span style={{ color: C_AMOUNT, fontWeight: 600 }}>¥{v.toFixed(2)}</span> },
     { title: '件数', dataIndex: 'totalPieces', width: 75, align: 'center', render: v => v || '—' },
     {
       title: '毛利', dataIndex: 'totalProfit', width: 120, align: 'right',
