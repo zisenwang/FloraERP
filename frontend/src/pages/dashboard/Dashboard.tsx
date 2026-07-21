@@ -94,7 +94,7 @@ export default function Dashboard() {
             今日销售：<strong>{todayQty.toLocaleString()}</strong> 盆，共 <strong>{data.todaySales.toLocaleString()}</strong> 元
             （{todayPieces} 件）
           </span>
-          <span className={styles.overviewAction} onClick={() => navigate('/sales/new')}>销售开单 →</span>
+          <span className={styles.overviewAction} onClick={() => navigate('/sales/orders/new')}>销售开单 →</span>
         </div>
         <div className={styles.overviewRow}>
           <span className={styles.dotGreen} />
