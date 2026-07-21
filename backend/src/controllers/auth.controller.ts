@@ -16,6 +16,15 @@ interface UserRow extends RowDataPacket {
   status: number
 }
 
+interface PermRow extends RowDataPacket { permission: string }
+
+async function getUserPermissions(userId: number): Promise<string[]> {
+  const [rows] = await pool.query<PermRow[]>(
+    'SELECT permission FROM user_permissions WHERE user_id = ?', [userId],
+  )
+  return rows.map(r => r.permission)
+}
+
 export async function login(req: Request, res: Response): Promise<void> {
   try {
     const { username, password } = req.body as { username?: string; password?: string }
@@ -40,13 +49,14 @@ export async function login(req: Request, res: Response): Promise<void> {
       return
     }
 
+    const permissions = await getUserPermissions(user.id)
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, {
       expiresIn: '8h',
     })
     res.json({
       data: {
         token,
-        user: { id: user.id, username: user.username, role: user.role, name: user.name },
+        user: { id: user.id, username: user.username, role: user.role, name: user.name, permissions },
       },
     })
   } catch (err) {
@@ -59,7 +69,47 @@ export async function listUsers(_req: AuthRequest, res: Response): Promise<void>
   const [rows] = await pool.query<UserRow[]>(
     'SELECT id, username, name, role, status FROM users ORDER BY id ASC',
   )
-  res.json({ data: rows })
+  const [permRows] = await pool.query<(PermRow & { user_id: number } & RowDataPacket)[]>(
+    'SELECT user_id, permission FROM user_permissions',
+  )
+  const permMap: Record<number, string[]> = {}
+  for (const p of permRows) {
+    if (!permMap[p.user_id]) permMap[p.user_id] = []
+    permMap[p.user_id].push(p.permission)
+  }
+  res.json({ data: rows.map(u => ({ ...u, permissions: permMap[u.id] ?? [] })) })
+}
+
+export async function getPermissions(req: AuthRequest, res: Response): Promise<void> {
+  const userId = Number(req.params.id)
+  const perms = await getUserPermissions(userId)
+  res.json({ data: perms })
+}
+
+export async function setPermissions(req: AuthRequest, res: Response): Promise<void> {
+  const userId = Number(req.params.id)
+  const { permissions } = req.body as { permissions: string[] }
+  const grantedBy = req.user!.id
+
+  const VALID = new Set(['inventory_adjust', 'inventory_check', 'payment', 'loss'])
+  const filtered = (permissions ?? []).filter(p => VALID.has(p))
+
+  const conn = await pool.getConnection()
+  try {
+    await conn.beginTransaction()
+    await conn.query('DELETE FROM user_permissions WHERE user_id = ?', [userId])
+    if (filtered.length > 0) {
+      const vals = filtered.map(p => [userId, p, grantedBy])
+      await conn.query('INSERT INTO user_permissions (user_id, permission, granted_by) VALUES ?', [vals])
+    }
+    await conn.commit()
+    res.json({ data: filtered })
+  } catch (err) {
+    await conn.rollback()
+    throw err
+  } finally {
+    conn.release()
+  }
 }
 
 export async function createUser(req: AuthRequest, res: Response): Promise<void> {

@@ -14,7 +14,7 @@ import {
 } from '@ant-design/icons'
 import type { MenuProps } from 'antd'
 
-type MenuItem = Required<MenuProps>['items'][number]
+type MenuItem = Required<MenuProps>['items'][number] & { adminOnly?: boolean; permission?: string; children?: MenuItem[] }
 
 const menuItems: MenuItem[] = [
   {
@@ -58,14 +58,15 @@ const menuItems: MenuItem[] = [
     label: '库存管理',
     children: [
       { key: '/inventory', label: '产品库存' },
-      { key: '/inventory/adjust', label: '库存调整' },
-      { key: '/inventory/check', label: '库存盘点' },
+      { key: '/inventory/adjust', label: '库存调整', permission: 'inventory_adjust' },
+      { key: '/inventory/check', label: '库存盘点', permission: 'inventory_check' },
     ],
   },
   {
     key: 'loss',
     icon: <WarningOutlined />,
     label: '报损管理',
+    permission: 'loss',
     children: [
       { key: '/loss', label: '报损记录' },
       { key: '/loss/new', label: '新增报损' },
@@ -86,11 +87,13 @@ const menuItems: MenuItem[] = [
     key: '/payment',
     icon: <WalletOutlined />,
     label: '收支管理',
+    permission: 'payment',
   },
   {
     key: '/settings',
     icon: <SettingOutlined />,
     label: '系统设置',
+    adminOnly: true,
   },
 ]
 

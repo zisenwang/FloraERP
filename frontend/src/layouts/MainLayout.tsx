@@ -18,6 +18,32 @@ export default function MainLayout() {
   const { settings } = useSettings()
   const isAdmin = user?.role === 'admin'
 
+  type MenuItem = Required<import('antd').MenuProps>['items'][number] & { adminOnly?: boolean; permission?: string; children?: MenuItem[] }
+
+  const permissions: string[] = user?.permissions ?? []
+
+  function canAccess(item: MenuItem): boolean {
+    if (isAdmin) return true
+    if (item.adminOnly) return false
+    if (item.permission) return permissions.includes(item.permission)
+    return true
+  }
+
+  function filterMenu(items: MenuItem[]): MenuItem[] {
+    return items
+      .filter(item => canAccess(item as MenuItem))
+      .map(item => {
+        const children = (item as MenuItem).children
+        if (!children) return item
+        const filtered = filterMenu(children)
+        return { ...item, children: filtered }
+      })
+      .filter(item => {
+        const children = (item as MenuItem).children
+        return !children || children.length > 0
+      })
+  }
+
   const openKey = location.pathname.split('/')[1] || 'sales'
 
   const userMenu = {
@@ -56,9 +82,7 @@ export default function MainLayout() {
             inlineCollapsed={collapsed}
             selectedKeys={[location.pathname]}
             defaultOpenKeys={[openKey]}
-            items={menuItems.filter(item =>
-              item && 'key' in item && item.key === '/settings' ? isAdmin : true
-            )}
+            items={filterMenu(menuItems as MenuItem[])}
             onClick={({ key }) => navigate(key)}
             style={{ border: 'none', flex: 1 }}
           />

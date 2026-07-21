@@ -64,6 +64,22 @@ function RequireAdmin({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+function hasPermission(permission: string): boolean {
+  if (isAdmin()) return true
+  try {
+    const raw = localStorage.getItem('user')
+    if (!raw) return false
+    const user = JSON.parse(raw)
+    return Array.isArray(user.permissions) && user.permissions.includes(permission)
+  } catch { return false }
+}
+
+function RequirePermission({ permission, children }: { permission: string; children: React.ReactNode }) {
+  if (!isLoggedIn()) return <Navigate to="/login" replace />
+  if (!hasPermission(permission)) return <Navigate to="/" replace />
+  return <>{children}</>
+}
+
 const router = createBrowserRouter([
   {
     path: '/login',
@@ -102,12 +118,12 @@ const router = createBrowserRouter([
 
       // 库存管理
       { path: 'inventory', element: <InventoryList /> },
-      { path: 'inventory/adjust', element: <InventoryAdjust /> },
-      { path: 'inventory/check', element: <InventoryCheck /> },
+      { path: 'inventory/adjust', element: <RequirePermission permission="inventory_adjust"><InventoryAdjust /></RequirePermission> },
+      { path: 'inventory/check', element: <RequirePermission permission="inventory_check"><InventoryCheck /></RequirePermission> },
 
       // 报损管理
-      { path: 'loss', element: <LossRecordList /> },
-      { path: 'loss/new', element: <LossRecordNew /> },
+      { path: 'loss', element: <RequirePermission permission="loss"><LossRecordList /></RequirePermission> },
+      { path: 'loss/new', element: <RequirePermission permission="loss"><LossRecordNew /></RequirePermission> },
 
       // 报表中心
       { path: 'reports/sales', element: <SalesReport /> },
@@ -116,7 +132,7 @@ const router = createBrowserRouter([
       { path: 'reports/rankings', element: <RankingsReport /> },
 
       // 收支管理
-      { path: 'payment', element: <PaymentList /> },
+      { path: 'payment', element: <RequirePermission permission="payment"><PaymentList /></RequirePermission> },
 
       // 系统设置 (admin only)
       { path: 'settings', element: <RequireAdmin><Settings /></RequireAdmin> },

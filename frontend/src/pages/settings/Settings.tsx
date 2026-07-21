@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react'
 import {
   Form, Input, Button, App, Divider, Spin, Tabs, Table, Tag, Modal, Select, Switch,
 } from 'antd'
-import { PlusOutlined, EditOutlined, LockOutlined } from '@ant-design/icons'
+import { PlusOutlined, EditOutlined, LockOutlined, SafetyOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { updateSettings } from '@/api/settings'
-import { listUsers, createUser, updateUser, changePassword, type UserRow } from '@/api/auth'
+import { listUsers, createUser, updateUser, changePassword, setUserPermissions, type UserRow } from '@/api/auth'
 import { useSettings } from '@/store/SettingsContext'
 import { useAuth } from '@/store/AuthContext'
 import { getErrorMessage } from '@/utils/error'
@@ -14,6 +14,13 @@ import styles from './Settings.module.css'
 const ROLE_OPTIONS = [
   { value: 'admin', label: '管理员' },
   { value: 'operator', label: '操作员' },
+]
+
+const PERMISSION_OPTIONS = [
+  { value: 'inventory_adjust', label: '库存调整' },
+  { value: 'inventory_check', label: '库存盘点' },
+  { value: 'payment',         label: '收支管理' },
+  { value: 'loss',            label: '报损管理' },
 ]
 
 // ─── Company Info Tab ────────────────────────────────────────────────────────
@@ -94,6 +101,9 @@ function UserTab() {
   const [addOpen, setAddOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<UserRow | null>(null)
   const [pwdTarget, setPwdTarget] = useState<UserRow | null>(null)
+  const [permTarget, setPermTarget] = useState<UserRow | null>(null)
+  const [permValues, setPermValues] = useState<string[]>([])
+  const [permSaving, setPermSaving] = useState(false)
 
   const [addForm] = Form.useForm()
   const [editForm] = Form.useForm()
@@ -155,6 +165,26 @@ function UserTab() {
     })
   }
 
+  const openPerms = (record: UserRow) => {
+    setPermTarget(record)
+    setPermValues(record.permissions ?? [])
+  }
+
+  const handleSavePerms = async () => {
+    if (!permTarget) return
+    setPermSaving(true)
+    try {
+      await setUserPermissions(permTarget.id, permValues)
+      message.success('权限已更新')
+      setPermTarget(null)
+      load()
+    } catch (err) {
+      message.error(getErrorMessage(err, '保存失败'))
+    } finally {
+      setPermSaving(false)
+    }
+  }
+
   const handleChangePwd = () => {
     pwdForm.validateFields().then(async (values) => {
       setSubmitting(true)
@@ -189,11 +219,14 @@ function UserTab() {
         : <Tag color="red">禁用</Tag>,
     },
     {
-      title: '操作', key: 'action', width: 160,
+      title: '操作', key: 'action', width: 220,
       render: (_: unknown, record: UserRow) => (
         <span style={{ display: 'flex', gap: 8 }}>
           <Button size="small" icon={<EditOutlined />} onClick={() => setEditTarget(record)}>编辑</Button>
           <Button size="small" icon={<LockOutlined />} onClick={() => { setPwdTarget(record); pwdForm.resetFields() }}>改密</Button>
+          {record.role === 'operator' && (
+            <Button size="small" icon={<SafetyOutlined />} onClick={() => openPerms(record)}>权限</Button>
+          )}
         </span>
       ),
     },
@@ -269,6 +302,33 @@ function UserTab() {
             <Switch checkedChildren="启用" unCheckedChildren="禁用" />
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* Permissions Modal */}
+      <Modal
+        title={`权限设置 — ${permTarget?.name ?? ''}`}
+        open={!!permTarget}
+        onOk={handleSavePerms}
+        onCancel={() => setPermTarget(null)}
+        confirmLoading={permSaving}
+        okText="保存"
+        cancelText="取消"
+        destroyOnClose
+      >
+        <div style={{ marginTop: 16 }}>
+          <div style={{ marginBottom: 8, color: '#666', fontSize: 13 }}>勾选后该操作员可访问对应模块：</div>
+          {PERMISSION_OPTIONS.map(opt => (
+            <div key={opt.value} style={{ padding: '8px 0', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>{opt.label}</span>
+              <Switch
+                checked={permValues.includes(opt.value)}
+                onChange={checked => setPermValues(prev =>
+                  checked ? [...prev, opt.value] : prev.filter(p => p !== opt.value)
+                )}
+              />
+            </div>
+          ))}
+        </div>
       </Modal>
 
       {/* Change Password Modal */}
