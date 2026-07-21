@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Table, Button, DatePicker, Input, Tag, Select, App, Popconfirm, Segmented } from 'antd'
-import { PlusOutlined, EditOutlined, StopOutlined, SearchOutlined } from '@ant-design/icons'
+import { PlusOutlined, EditOutlined, StopOutlined, SearchOutlined, DownloadOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
@@ -14,6 +14,7 @@ import {
   type PurchaseDetailRow,
 } from '@/api/purchase'
 import { getErrorMessage } from '@/utils/error'
+import { exportPurchaseOrdersExcel, exportPurchaseOrdersDetailExcel } from '@/utils/exportExcel'
 import { C_AMOUNT, C_LABEL } from '@/constants/colors'
 import { PAGE_SIZE } from '@/constants/pagination'
 import styles from './Purchase.module.css'
@@ -309,6 +310,17 @@ export default function PurchaseOrderList() {
           />
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
+          <Button
+            icon={<DownloadOutlined />}
+            onClick={() => {
+              const sd = dateRange[0].format('YYYY-MM-DD')
+              const ed = dateRange[1].format('YYYY-MM-DD')
+              if (mode === 'summary') exportPurchaseOrdersExcel(combined, sd, ed)
+              else exportPurchaseOrdersDetailExcel(detailRows, sd, ed)
+            }}
+          >
+            导出
+          </Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/purchase/orders/new')}>
             采购入库
           </Button>

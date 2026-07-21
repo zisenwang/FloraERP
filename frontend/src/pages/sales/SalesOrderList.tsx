@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Table, Button, Select, DatePicker, Input, Tag, App, Popconfirm, Segmented } from 'antd'
-import { PlusOutlined, EditOutlined, StopOutlined, SearchOutlined } from '@ant-design/icons'
+import { PlusOutlined, EditOutlined, StopOutlined, SearchOutlined, DownloadOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
@@ -14,6 +14,7 @@ import {
   type SalesDetailRow,
 } from '@/api/sales'
 import { getErrorMessage } from '@/utils/error'
+import { exportSalesOrdersExcel, exportSalesOrdersDetailExcel } from '@/utils/exportExcel'
 import { C_AMOUNT, C_LABEL } from '@/constants/colors'
 import { PAGE_SIZE } from '@/constants/pagination'
 import AddPaymentModal from '@/components/AddPaymentModal'
@@ -367,6 +368,17 @@ export default function SalesOrderList() {
           )}
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
+          <Button
+            icon={<DownloadOutlined />}
+            onClick={() => {
+              const sd = dateRange[0].format('YYYY-MM-DD')
+              const ed = dateRange[1].format('YYYY-MM-DD')
+              if (mode === 'summary') exportSalesOrdersExcel(combined, sd, ed)
+              else exportSalesOrdersDetailExcel(detailRows, sd, ed)
+            }}
+          >
+            导出
+          </Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/sales/orders/new')}>
             新建销售单
           </Button>

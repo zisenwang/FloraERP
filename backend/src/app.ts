@@ -5,6 +5,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 import { errorHandler } from './middleware/errorHandler'
+import { requestLogger } from './middleware/logger'
 import authRouter from './routes/auth'
 import dashboardRouter from './routes/dashboard'
 import suppliersRouter from './routes/suppliers'
@@ -22,6 +23,7 @@ const app = express()
 
 app.use(cors())
 app.use(express.json())
+app.use(requestLogger)
 
 // Routes
 app.use('/api/auth', authRouter)

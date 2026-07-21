@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Table, DatePicker, Input, Button, App} from 'antd'
-import { PlusOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons'
+import { PlusOutlined, DeleteOutlined, SearchOutlined, DownloadOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
 import { getPayments, deletePayment, type Payment } from '@/api/payments'
 import { getSalesOrders, type SalesOrder } from '@/api/sales'
 import { getErrorMessage } from '@/utils/error'
+import { exportPaymentsExcel } from '@/utils/exportExcel'
 import { C_AMOUNT, C_LABEL } from '@/constants/colors'
 import { PAGE_SIZE } from '@/constants/pagination'
 import SalesOrderModal from '@/components/SalesOrderModal'
@@ -136,6 +137,16 @@ export default function PaymentList() {
             { label: '上月', value: [dayjs().subtract(1, 'month').startOf('month'), dayjs().subtract(1, 'month').endOf('month')] },
           ]}
         />
+        <Button
+          icon={<DownloadOutlined />}
+          onClick={() => {
+            const sd = dateRange?.[0].format('YYYY-MM-DD') ?? ''
+            const ed = dateRange?.[1].format('YYYY-MM-DD') ?? ''
+            exportPaymentsExcel(filtered, sd, ed)
+          }}
+        >
+          导出
+        </Button>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>
           新增收款
         </Button>

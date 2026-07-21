@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { Table, Button, Input, Modal, Form, App, Tag, Select, InputNumber, Space } from 'antd'
-import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons'
 import type { ColumnsType, SorterResult } from 'antd/es/table/interface'
 import {
   getProducts, createProduct, updateProduct, deleteProduct, getNextProductCode,
@@ -8,6 +8,7 @@ import {
 } from '@/api/products'
 import { getSuppliers, type Supplier } from '@/api/suppliers'
 import { getErrorMessage } from '@/utils/error'
+import { exportProductsExcel } from '@/utils/exportExcel'
 import { C_AMOUNT, C_LABEL } from '@/constants/colors'
 import styles from './SupplierList.module.css'
 
@@ -222,6 +223,7 @@ export default function ProductList() {
             onChange={val => setFilterSupplierId(val)}
           />
         </div>
+        <Button icon={<DownloadOutlined />} onClick={() => exportProductsExcel(displayRows)}>导出</Button>
         <Button type="primary" icon={<PlusOutlined />} onClick={openAdd}>新增货品</Button>
       </div>
 

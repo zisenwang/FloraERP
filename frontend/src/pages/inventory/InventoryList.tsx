@@ -1,10 +1,11 @@
 import { useEffect, useState, useMemo } from 'react'
-import { Table, Input, Select, Tag, App } from 'antd'
-import { SearchOutlined } from '@ant-design/icons'
+import { Table, Input, Select, Tag, App, Button } from 'antd'
+import { SearchOutlined, DownloadOutlined } from '@ant-design/icons'
 import type { ColumnsType, SorterResult } from 'antd/es/table/interface'
 import { getInventory, type InventoryRow } from '@/api/inventory'
 import { getProductCategories } from '@/api/products'
 import { getErrorMessage } from '@/utils/error'
+import { exportInventoryListExcel } from '@/utils/exportExcel'
 import { C_AMOUNT, C_LABEL } from '@/constants/colors'
 import { PAGE_SIZE } from '@/constants/pagination'
 import styles from './Inventory.module.css'
@@ -129,6 +130,7 @@ export default function InventoryList() {
           options={categories.map(c => ({ value: c, label: c }))}
           onChange={val => { setCategoryFilter(val); setCurrentPage(1) }}
         />
+        <Button icon={<DownloadOutlined />} onClick={() => exportInventoryListExcel(sortedItems)}>导出</Button>
       </div>
 
       <Table
