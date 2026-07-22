@@ -84,7 +84,6 @@ function toUnifiedReturn(r: SalesReturn): UnifiedRow {
 }
 
 const SEARCH_FIELD_OPTIONS = [
-  { value: 'all',          label: '全部' },
   { value: 'customerName', label: '客户名称' },
   { value: 'customerCode', label: '客户编码' },
   { value: 'orderNo',      label: '单号' },
@@ -105,7 +104,7 @@ export default function SalesOrderList() {
   const [loading, setLoading] = useState(false)
 
   // Search state
-  const [searchField, setSearchField] = useState<string>('all')
+  const [searchField, setSearchField] = useState<string>('customerName')
   const [searchKeyword, setSearchKeyword] = useState('')
 
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([

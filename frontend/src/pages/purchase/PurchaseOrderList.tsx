@@ -80,7 +80,6 @@ function toUnifiedReturn(r: PurchaseReturn): UnifiedRow {
 }
 
 const SEARCH_FIELD_OPTIONS = [
-  { value: 'all',          label: '全部' },
   { value: 'supplierName', label: '供应商名称' },
   { value: 'supplierCode', label: '供应商编码' },
   { value: 'orderNo',      label: '单号' },
@@ -101,7 +100,7 @@ export default function PurchaseOrderList() {
   const [loading, setLoading] = useState(false)
 
   // Search state
-  const [searchField, setSearchField] = useState<string>('all')
+  const [searchField, setSearchField] = useState<string>('supplierName')
   const [searchKeyword, setSearchKeyword] = useState('')
 
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
