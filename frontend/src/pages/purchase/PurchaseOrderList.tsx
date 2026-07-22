@@ -168,13 +168,16 @@ export default function PurchaseOrderList() {
   ].sort((a, b) => b.time.localeCompare(a.time))
 
   const columns: ColumnsType<UnifiedRow> = [
-    { title: '日期', dataIndex: 'date', align: 'center' },
+    { title: '日期', dataIndex: 'date', align: 'center', sorter: (a, b) => a.date.localeCompare(b.date) },
     {
       title: '供应商', align: 'center',
+      sorter: (a, b) => a.supplierName.localeCompare(b.supplierName),
       render: (_, r) => `${r.supplierCode} ${r.supplierName}`,
     },
     {
       title: '单号', align: 'center',
+      defaultSortOrder: 'descend',
+      sorter: (a, b) => a.no.localeCompare(b.no),
       render: (_, r) => (
         <span>
           {r.rowType === 'return' && <Tag color="orange" style={{ marginRight: 4 }}>退</Tag>}
@@ -182,9 +185,10 @@ export default function PurchaseOrderList() {
         </span>
       ),
     },
-    { title: '数量', dataIndex: 'qty', align: 'center' },
+    { title: '数量', dataIndex: 'qty', align: 'center', sorter: (a, b) => a.qty - b.qty },
     {
       title: '金额', dataIndex: 'amount', align: 'center',
+      sorter: (a, b) => a.amount - b.amount,
       render: (v: number, r) => (
         <span style={{ color: r.rowType === 'return' ? '#cf1322' : C_AMOUNT, fontWeight: 600 }}>
           {r.rowType === 'return' ? '-' : ''}¥{v.toLocaleString()}
@@ -193,6 +197,7 @@ export default function PurchaseOrderList() {
     },
     {
       title: '件数', dataIndex: 'pieces', align: 'center',
+      sorter: (a, b) => a.pieces - b.pieces,
       render: (v: number) => v || '—',
     },
     {
@@ -233,26 +238,29 @@ export default function PurchaseOrderList() {
 
   // ——— Detail mode columns ———
   const detailColumns: ColumnsType<PurchaseDetailRow> = [
-    { title: '日期',     dataIndex: 'date',         width: 110, align: 'center' },
+    { title: '日期',     dataIndex: 'date',         width: 110, align: 'center', sorter: (a, b) => a.date.localeCompare(b.date) },
     {
       title: '供应商', width: 150, align: 'center',
+      sorter: (a, b) => a.supplierName.localeCompare(b.supplierName),
       render: (_, r) => `${r.supplierCode} ${r.supplierName}`,
     },
-    { title: '单号',     dataIndex: 'no',           width: 175, align: 'center' },
-    { title: '产品编码', dataIndex: 'productCode',  width: 120, align: 'center' },
-    { title: '产品名称', dataIndex: 'productName',  width: 160, align: 'center' },
+    { title: '单号',     dataIndex: 'no',           width: 175, align: 'center', defaultSortOrder: 'descend', sorter: (a, b) => a.no.localeCompare(b.no) },
+    { title: '产品编码', dataIndex: 'productCode',  width: 120, align: 'center', sorter: (a, b) => a.productCode.localeCompare(b.productCode) },
+    { title: '产品名称', dataIndex: 'productName',  width: 160, align: 'center', sorter: (a, b) => a.productName.localeCompare(b.productName) },
     { title: '单位',     dataIndex: 'unit',         width: 60,  align: 'center' },
-    { title: '数量',     dataIndex: 'qty',          width: 70,  align: 'center' },
-    { title: '单价',     dataIndex: 'unitPrice',    width: 90,  align: 'center', render: (v: number) => `¥${v}` },
+    { title: '数量',     dataIndex: 'qty',          width: 70,  align: 'center', sorter: (a, b) => a.qty - b.qty },
+    { title: '单价',     dataIndex: 'unitPrice',    width: 90,  align: 'center', sorter: (a, b) => a.unitPrice - b.unitPrice, render: (v: number) => `¥${v}` },
     {
       title: '金额', dataIndex: 'amount', width: 110, align: 'center',
+      defaultSortOrder: 'descend',
+      sorter: (a, b) => a.amount - b.amount,
       render: (v: number, r) => (
         <span style={{ color: r.rowType === 'return' ? '#cf1322' : C_AMOUNT, fontWeight: 600 }}>
           {r.rowType === 'return' ? '-' : ''}¥{v.toFixed(2)}
         </span>
       ),
     },
-    { title: '件数',   dataIndex: 'pieces',   width: 70,  align: 'center' },
+    { title: '件数',   dataIndex: 'pieces',   width: 70,  align: 'center', sorter: (a, b) => (a.pieces ?? 0) - (b.pieces ?? 0) },
     { title: '经办人', dataIndex: 'operator', width: 90,  align: 'center', render: (v: string | null) => v ?? '—' },
     { title: '备注',   dataIndex: 'notes',    width: 120, align: 'center', render: (v: string | null) => v ?? '—' },
   ]

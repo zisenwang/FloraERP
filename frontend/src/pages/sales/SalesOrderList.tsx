@@ -181,13 +181,16 @@ export default function SalesOrderList() {
     : allCombined.filter(r => r.rowType === 'order' && r.paymentStatus === payFilter)
 
   const columns: ColumnsType<UnifiedRow> = [
-    { title: '日期', dataIndex: 'date', align: 'center' },
+    { title: '日期', dataIndex: 'date', align: 'center', sorter: (a, b) => a.date.localeCompare(b.date) },
     {
       title: '客户', align: 'center',
+      sorter: (a, b) => a.customerName.localeCompare(b.customerName),
       render: (_, r) => `${r.customerCode} ${r.customerName}`,
     },
     {
       title: '单号', align: 'center',
+      defaultSortOrder: 'descend',
+      sorter: (a, b) => a.no.localeCompare(b.no),
       render: (_, r) => (
         <span>
           {r.rowType === 'return' && <Tag color="orange" style={{ marginRight: 4 }}>退</Tag>}
@@ -195,16 +198,17 @@ export default function SalesOrderList() {
         </span>
       ),
     },
-    { title: '数量', dataIndex: 'qty', align: 'center' },
+    { title: '数量', dataIndex: 'qty', align: 'center', sorter: (a, b) => a.qty - b.qty },
     {
       title: '合计金额', dataIndex: 'amount', align: 'center',
+      sorter: (a, b) => a.amount - b.amount,
       render: (v: number, r) => (
         <span style={{ color: r.rowType === 'return' ? '#cf1322' : C_AMOUNT, fontWeight: 600 }}>
           {r.rowType === 'return' ? '-' : ''}¥{v.toFixed(2)}
         </span>
       ),
     },
-    { title: '件数', dataIndex: 'pieces', align: 'center' },
+    { title: '件数', dataIndex: 'pieces', align: 'center', sorter: (a, b) => a.pieces - b.pieces },
     {
       title: '收款状态', align: 'center',
       render: (_, r) => {
@@ -225,6 +229,7 @@ export default function SalesOrderList() {
     },
     {
       title: '总毛利', dataIndex: 'profit', align: 'center',
+      sorter: (a, b) => a.profit - b.profit,
       render: (v: number, r) => {
         if (r.rowType === 'return') return <span style={{ color: '#aaa' }}>—</span>
         return (
@@ -265,29 +270,32 @@ export default function SalesOrderList() {
 
   // ——— Detail mode columns ———
   const detailColumns: ColumnsType<SalesDetailRow> = [
-    { title: '日期',     dataIndex: 'date',         width: 110, align: 'center' },
+    { title: '日期',     dataIndex: 'date',         width: 110, align: 'center', sorter: (a, b) => a.date.localeCompare(b.date) },
     {
       title: '客户', width: 150, align: 'center',
+      sorter: (a, b) => a.customerName.localeCompare(b.customerName),
       render: (_, r) => `${r.customerCode} ${r.customerName}`,
     },
-    { title: '单号',     dataIndex: 'no',           width: 175, align: 'center' },
-    { title: '产品编码', dataIndex: 'productCode',  width: 120, align: 'center' },
-    { title: '产品名称', dataIndex: 'productName',  width: 160, align: 'center' },
-    { title: '供应商',   dataIndex: 'supplierCode', width: 90,  align: 'center' },
+    { title: '单号',     dataIndex: 'no',           width: 175, align: 'center', defaultSortOrder: 'descend', sorter: (a, b) => a.no.localeCompare(b.no) },
+    { title: '产品编码', dataIndex: 'productCode',  width: 120, align: 'center', sorter: (a, b) => a.productCode.localeCompare(b.productCode) },
+    { title: '产品名称', dataIndex: 'productName',  width: 160, align: 'center', sorter: (a, b) => a.productName.localeCompare(b.productName) },
+    { title: '供应商',   dataIndex: 'supplierCode', width: 90,  align: 'center', sorter: (a, b) => (a.supplierCode ?? '').localeCompare(b.supplierCode ?? '') },
     { title: '单位',     dataIndex: 'unit',         width: 60,  align: 'center' },
-    { title: '数量',     dataIndex: 'qty',          width: 70,  align: 'center' },
-    { title: '单价',     dataIndex: 'unitPrice',    width: 90,  align: 'center', render: (v: number) => `¥${v}` },
+    { title: '数量',     dataIndex: 'qty',          width: 70,  align: 'center', sorter: (a, b) => a.qty - b.qty },
+    { title: '单价',     dataIndex: 'unitPrice',    width: 90,  align: 'center', sorter: (a, b) => a.unitPrice - b.unitPrice, render: (v: number) => `¥${v}` },
     {
       title: '金额', dataIndex: 'amount', width: 110, align: 'center',
+      sorter: (a, b) => a.amount - b.amount,
       render: (v: number, r) => (
         <span style={{ color: r.rowType === 'return' ? '#cf1322' : C_AMOUNT, fontWeight: 600 }}>
           {r.rowType === 'return' ? '-' : ''}¥{v.toFixed(2)}
         </span>
       ),
     },
-    { title: '件数', dataIndex: 'pieces', width: 70, align: 'center' },
+    { title: '件数', dataIndex: 'pieces', width: 70, align: 'center', sorter: (a, b) => (a.pieces ?? 0) - (b.pieces ?? 0) },
     {
       title: '毛利', dataIndex: 'profit', width: 110, align: 'center',
+      sorter: (a, b) => (a.profit ?? 0) - (b.profit ?? 0),
       render: (v: number | null) => {
         if (v == null) return <span style={{ color: '#aaa' }}>—</span>
         return (
