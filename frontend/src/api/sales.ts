@@ -62,6 +62,7 @@ export const getSalesOrders = async (params?: {
   startDate?: string
   endDate?: string
   search?: string
+  searchField?: string
 }): Promise<SalesOrder[]> => {
   const res = await client.get<{ data: SalesOrder[] }>('/sales/orders', { params })
   return res.data.data
@@ -141,6 +142,7 @@ export const getSalesReturns = async (params?: {
   startDate?: string
   endDate?: string
   search?: string
+  searchField?: string
 }): Promise<SalesReturn[]> => {
   const res = await client.get<{ data: SalesReturn[] }>('/sales/returns', { params })
   return res.data.data

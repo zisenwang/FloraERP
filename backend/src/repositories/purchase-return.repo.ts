@@ -27,6 +27,7 @@ export async function findAll(filters: {
   startDate?: string
   endDate?: string
   search?: string
+  searchField?: string
 } = {}): Promise<PurchaseReturn[]> {
   let sql = RETURN_SELECT + ' WHERE 1=1'
   const params: unknown[] = []
@@ -34,13 +35,31 @@ export async function findAll(filters: {
   if (filters.startDate) { sql += ' AND pr.date >= ?'; params.push(filters.startDate) }
   if (filters.endDate) { sql += ' AND pr.date <= ?'; params.push(filters.endDate) }
   if (filters.search) {
-    sql += ` AND (s.name LIKE ? OR s.code LIKE ? OR pr.return_no LIKE ?
-      OR EXISTS (
-        SELECT 1 FROM purchase_return_items pri2
-        JOIN products p2 ON p2.id = pri2.product_id
-        WHERE pri2.return_id = pr.id AND (p2.name LIKE ? OR p2.code LIKE ?)
-      ))`
-    params.push(`%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`)
+    const like = `%${filters.search}%`
+    if (filters.searchField === 'notes') {
+      sql += ' AND pr.notes LIKE ?'
+      params.push(like)
+    } else if (filters.searchField === 'supplierName') {
+      sql += ' AND s.name LIKE ?'
+      params.push(like)
+    } else if (filters.searchField === 'supplierCode') {
+      sql += ' AND s.code LIKE ?'
+      params.push(like)
+    } else if (filters.searchField === 'orderNo') {
+      sql += ' AND pr.return_no LIKE ?'
+      params.push(like)
+    } else if (filters.searchField === 'operator') {
+      sql += ' AND pr.operator LIKE ?'
+      params.push(like)
+    } else {
+      sql += ` AND (s.name LIKE ? OR s.code LIKE ? OR pr.return_no LIKE ?
+        OR EXISTS (
+          SELECT 1 FROM purchase_return_items pri2
+          JOIN products p2 ON p2.id = pri2.product_id
+          WHERE pri2.return_id = pr.id AND (p2.name LIKE ? OR p2.code LIKE ?)
+        ))`
+      params.push(like, like, like, like, like)
+    }
   }
   sql += ' ORDER BY pr.date DESC, pr.id DESC'
   const [rows] = await pool.query<RowDataPacket[]>(sql, params)

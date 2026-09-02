@@ -55,6 +55,7 @@ export const getPurchaseOrders = async (params?: {
   startDate?: string
   endDate?: string
   search?: string
+  searchField?: string
 }): Promise<PurchaseOrder[]> => {
   const res = await client.get<{ data: PurchaseOrder[] }>('/purchase/orders', { params })
   return res.data.data
@@ -135,6 +136,7 @@ export const getPurchaseReturns = async (params?: {
   startDate?: string
   endDate?: string
   search?: string
+  searchField?: string
 }): Promise<PurchaseReturn[]> => {
   const res = await client.get<{ data: PurchaseReturn[] }>('/purchase/returns', { params })
   return res.data.data

@@ -1,6 +1,13 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Table, Button, Select, DatePicker, Input, Tag, App, Popconfirm, Segmented } from 'antd'
-import { PlusOutlined, EditOutlined, StopOutlined, SearchOutlined, DownloadOutlined } from '@ant-design/icons'
+import {
+  PlusOutlined,
+  EditOutlined,
+  StopOutlined,
+  SearchOutlined,
+  DownloadOutlined,
+  FilterOutlined
+} from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
@@ -103,9 +110,11 @@ export default function SalesOrderList() {
   const [returns, setReturns] = useState<SalesReturn[]>([])
   const [loading, setLoading] = useState(false)
 
-  // Search state
+  // Search state — input (UI) vs applied (committed on button click)
   const [searchField, setSearchField] = useState<string>('customerName')
   const [searchKeyword, setSearchKeyword] = useState('')
+  const [appliedField, setAppliedField] = useState<string>('customerName')
+  const [appliedKeyword, setAppliedKeyword] = useState('')
 
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
     dayjs().startOf('month'),
@@ -124,37 +133,40 @@ export default function SalesOrderList() {
     setLoading(true)
     const startDate = dateRange[0].format('YYYY-MM-DD')
     const endDate   = dateRange[1].format('YYYY-MM-DD')
-    // In summary mode the search is server-side only for customerName/customerCode/orderNo fields via existing API (no searchField support there)
-    // We pass search keyword to the existing orders API (which already supports search on those fields)
-    const search = searchKeyword.trim() || undefined
-    const fetchOrders = getSalesOrders({ startDate, endDate, search })
-    const fetchReturns = getSalesReturns({ startDate, endDate, search })
+    const search = appliedKeyword.trim() || undefined
+    const fetchOrders = getSalesOrders({ startDate, endDate, search, searchField: search ? appliedField : undefined })
+    const fetchReturns = getSalesReturns({ startDate, endDate, search, searchField: search ? appliedField : undefined })
     Promise.all([fetchOrders, fetchReturns])
       .then(([o, r]) => { setOrders(o); setReturns(r) })
       .catch(err => message.error(getErrorMessage(err)))
       .finally(() => setLoading(false))
-  }, [dateRange, searchKeyword])
+  }, [dateRange, appliedKeyword, appliedField])
 
   const fetchDetail = useCallback(() => {
     setDetailLoading(true)
     const startDate = dateRange[0].format('YYYY-MM-DD')
     const endDate   = dateRange[1].format('YYYY-MM-DD')
-    const search = searchKeyword.trim() || undefined
+    const search = appliedKeyword.trim() || undefined
     getSalesOrdersDetail({
       startDate,
       endDate,
       search,
-      searchField: search ? searchField : undefined,
+      searchField: search ? appliedField : undefined,
     })
       .then(rows => setDetailRows(rows))
       .catch(err => message.error(getErrorMessage(err)))
       .finally(() => setDetailLoading(false))
-  }, [dateRange, searchKeyword, searchField])
+  }, [dateRange, appliedKeyword, appliedField])
 
   useEffect(() => {
     if (mode === 'summary') fetchAll()
     else fetchDetail()
-  }, [mode, dateRange, searchKeyword, searchField])
+  }, [mode, dateRange, appliedKeyword, appliedField])
+
+  const handleSearch = () => {
+    setAppliedField(searchField)
+    setAppliedKeyword(searchKeyword)
+  }
 
   const handleVoid = async (row: UnifiedRow) => {
     setVoiding(prev => ({ ...prev, [row._key]: true }))
@@ -311,76 +323,80 @@ export default function SalesOrderList() {
     <>
       <div className={styles.pageTitle}>销售单据</div>
 
-      <div style={{ marginBottom: 12 }}>
+      {/* Row 1: mode switch + date + status filter */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
         <Segmented
           options={[{ label: '汇总', value: 'summary' }, { label: '明细', value: 'detail' }]}
           value={mode}
           onChange={v => setMode(v as 'summary' | 'detail')}
         />
-      </div>
-
-      <div className={styles.toolbar}>
-        <div className={styles.toolbarLeft}>
+        <DatePicker.RangePicker
+          value={dateRange}
+          onChange={v => {
+            const range: [Dayjs, Dayjs] = v && v[0] && v[1]
+              ? [v[0], v[1]]
+              : [dayjs().startOf('month'), dayjs().endOf('month')]
+            setDateRange(range)
+          }}
+          presets={[
+            { label: '本月', value: [dayjs().startOf('month'), dayjs().endOf('month')] },
+            { label: '上月', value: [dayjs().subtract(1, 'month').startOf('month'), dayjs().subtract(1, 'month').endOf('month')] },
+          ]}
+        />
+        {mode === 'summary' && (
           <Select
-            value={searchField}
-            onChange={v => setSearchField(v)}
-            options={SEARCH_FIELD_OPTIONS}
-            style={{ width: 110 }}
-          />
-          <Input
-            placeholder="搜索关键词"
-            prefix={<SearchOutlined />}
-            allowClear
-            style={{ width: 180 }}
-            value={searchKeyword}
-            onChange={e => setSearchKeyword(e.target.value)}
-          />
-          <DatePicker.RangePicker
-            value={dateRange}
-            onChange={v => {
-              const range: [Dayjs, Dayjs] = v && v[0] && v[1]
-                ? [v[0], v[1]]
-                : [dayjs().startOf('month'), dayjs().endOf('month')]
-              setDateRange(range)
-            }}
-            presets={[
-              { label: '本月', value: [dayjs().startOf('month'), dayjs().endOf('month')] },
-              { label: '上月', value: [dayjs().subtract(1, 'month').startOf('month'), dayjs().subtract(1, 'month').endOf('month')] },
+            value={payFilter}
+            onChange={v => setPayFilter(v)}
+            style={{ width: 100 }}
+            options={[
+              { label: '全部状态', value: 'all' },
+              { label: '未收款', value: '未收款' },
+              { label: '已收款', value: '已收款' },
+              { label: '退货', value: '退货' },
             ]}
           />
-          {mode === 'summary' && (
-            <Select
-              value={payFilter}
-              onChange={v => setPayFilter(v)}
-              style={{ width: 100 }}
-              options={[
-                { label: '全部状态', value: 'all' },
-                { label: '未收款', value: '未收款' },
-                { label: '已收款', value: '已收款' },
-                { label: '退货', value: '退货' },
-              ]}
-            />
-          )}
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Button
-            icon={<DownloadOutlined />}
-            onClick={() => {
-              const sd = dateRange[0].format('YYYY-MM-DD')
-              const ed = dateRange[1].format('YYYY-MM-DD')
-              if (mode === 'summary') exportSalesOrdersExcel(combined, sd, ed)
-              else exportSalesOrdersDetailExcel(detailRows, sd, ed)
-            }}
-          >
-            导出
-          </Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/sales/orders/new')}>
-            新建销售单
-          </Button>
-          <Button onClick={() => navigate('/sales/returns/new')}>
-            新增退货
-          </Button>
-        </div>
+        )}
+      </div>
+
+      {/* Row 2: search bar + action buttons */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
+        <FilterOutlined style={{ color: '#888' }} />
+        <Select
+          value={searchField}
+          onChange={v => setSearchField(v)}
+          options={SEARCH_FIELD_OPTIONS}
+          style={{ width: 110 }}
+        />
+        <Input
+          placeholder="搜索关键词"
+          allowClear
+          style={{ width: 200 }}
+          value={searchKeyword}
+          onChange={e => {
+            setSearchKeyword(e.target.value)
+            if (!e.target.value) { setAppliedKeyword(''); setAppliedField(searchField) }
+          }}
+          onPressEnter={handleSearch}
+        />
+        <Button icon={<SearchOutlined />} onClick={handleSearch}>搜索</Button>
+        <div style={{ flex: 1 }} />
+        <Button
+          icon={<DownloadOutlined />}
+          onClick={() => {
+            const sd = dateRange[0].format('YYYY-MM-DD')
+            const ed = dateRange[1].format('YYYY-MM-DD')
+            if (mode === 'summary') exportSalesOrdersExcel(combined, sd, ed)
+            else exportSalesOrdersDetailExcel(detailRows, sd, ed)
+          }}
+        >
+          导出
+        </Button>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/sales/orders/new')}>
+          新建销售单
+        </Button>
+        <Button onClick={() => navigate('/sales/returns/new')}>
+          新增退货
+        </Button>
       </div>
 
       {mode === 'summary' ? (

@@ -10,13 +10,14 @@ export async function listOrdersDetail(req: AuthRequest, res: Response): Promise
 }
 
 export async function listOrders(req: AuthRequest, res: Response): Promise<void> {
-  const { customerId, paymentStatus, startDate, endDate, search } = req.query as Record<string, string | undefined>
+  const { customerId, paymentStatus, startDate, endDate, search, searchField } = req.query as Record<string, string | undefined>
   const data = await service.listOrders({
     customerId: customerId ? Number(customerId) : undefined,
     paymentStatus,
     startDate,
     endDate,
     search,
+    searchField,
   })
   res.json({ data })
 }
@@ -52,12 +53,13 @@ export async function voidOrder(req: AuthRequest, res: Response): Promise<void> 
 }
 
 export async function listReturns(req: AuthRequest, res: Response): Promise<void> {
-  const { customerId, startDate, endDate, search } = req.query as Record<string, string | undefined>
+  const { customerId, startDate, endDate, search, searchField } = req.query as Record<string, string | undefined>
   const data = await returnService.listReturns({
     customerId: customerId ? Number(customerId) : undefined,
     startDate,
     endDate,
     search,
+    searchField,
   })
   res.json({ data })
 }
