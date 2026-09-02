@@ -227,18 +227,6 @@ export default function SalesOrderList() {
       },
     },
     {
-      title: '总毛利', dataIndex: 'profit', align: 'center',
-      sorter: (a, b) => a.profit - b.profit,
-      render: (v: number, r) => {
-        if (r.rowType === 'return') return <span style={{ color: '#aaa' }}>—</span>
-        return (
-          <span style={{ color: v >= 0 ? '#389e0d' : '#cf1322', fontWeight: 600 }}>
-            {v >= 0 ? '+' : ''}¥{v.toFixed(2)}
-          </span>
-        )
-      },
-    },
-    {
       title: '操作', align: 'center',
       render: (_, row) => {
         const isVoided = row.status === '作废'
@@ -424,12 +412,7 @@ export default function SalesOrderList() {
                 <Table.Summary.Cell index={4} align="center">¥{d.amount.toFixed(2)}</Table.Summary.Cell>
                 <Table.Summary.Cell index={5} align="center">{d.pieces}</Table.Summary.Cell>
                 <Table.Summary.Cell index={6} />
-                <Table.Summary.Cell index={7} align="center">
-                  <span style={{ color: d.profit >= 0 ? '#389e0d' : '#cf1322' }}>
-                    {d.profit >= 0 ? '+' : ''}¥{d.profit.toFixed(2)}
-                  </span>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={8} />
+                <Table.Summary.Cell index={7} />
               </Table.Summary.Row>
             )
             return (
