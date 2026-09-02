@@ -11,12 +11,11 @@ import { getErrorMessage } from '@/utils/error'
 import SalesOrderModal from '@/components/SalesOrderModal'
 
 export const METHOD_OPTIONS = [
-  { value: '公户',    label: '公户' },
-  { value: '银行卡',  label: '银行卡' },
-  { value: '微信转账', label: '微信转账' },
-  { value: '微信扫码', label: '微信扫码' },
-  { value: '支付宝扫码', label: '支付宝扫码' },
-  { value: '现金',    label: '现金' },
+  { value: '公户',  label: '公户' },
+  { value: '银行卡', label: '银行卡' },
+  { value: '微信',  label: '微信' },
+  { value: '支付宝', label: '支付宝' },
+  { value: '现金',  label: '现金' },
 ]
 
 const PAY_STATUS_COLOR: Record<string, string> = {
@@ -208,7 +207,7 @@ export default function AddPaymentModal({ open, onClose, onSuccess, preselectedO
               <Form.Item name="paymentDate" label="收款日期" rules={[{ required: true }]}>
                 <DatePicker defaultValue={dayjs()} style={{ width: 140 }} />
               </Form.Item>
-              <Form.Item name="method" label="收款方式" initialValue="公户">
+              <Form.Item name="method" label="收款方式" initialValue="微信">
                 <Select options={METHOD_OPTIONS} style={{ width: 120 }} />
               </Form.Item>
               <Form.Item name="notes" label="备注">
