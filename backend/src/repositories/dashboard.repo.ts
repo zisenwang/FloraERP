@@ -1,7 +1,7 @@
 import pool from '@/db/pool'
 import { rowsToCamel } from '@/utils/camel'
 import type { RowDataPacket } from 'mysql2'
-import type { SalesRankRow, PurchaseSupplierRankRow, PurchaseProductRankRow, DailySalesRow } from '@/dto/dashboard.dto'
+import type { SalesRankRow, DailySalesRow } from '@/dto/dashboard.dto'
 
 export async function getTodayStats(today: string): Promise<{
   todaySales: number
@@ -43,37 +43,6 @@ export async function getMonthlySalesRank(monthStart: string): Promise<SalesRank
     [monthStart],
   )
   return rowsToCamel<SalesRankRow>(rows as Record<string, unknown>[])
-}
-
-export async function getMonthlyPurchaseSupplierRank(monthStart: string): Promise<PurchaseSupplierRankRow[]> {
-  const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT s.code AS supplier_code, s.name AS supplier_name, SUM(poi.qty) AS total_qty
-     FROM purchase_order_items poi
-     JOIN purchase_orders po ON po.id = poi.order_id
-     JOIN suppliers s ON s.id = po.supplier_id
-     WHERE po.date >= ?
-     GROUP BY po.supplier_id, s.code, s.name
-     ORDER BY total_qty DESC LIMIT 10`,
-    [monthStart],
-  )
-  return rowsToCamel<PurchaseSupplierRankRow>(rows as Record<string, unknown>[])
-}
-
-export async function getMonthlyPurchaseProductRank(monthStart: string): Promise<PurchaseProductRankRow[]> {
-  const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
-            s.code AS supplier_code, s.name AS supplier_name,
-            SUM(poi.qty) AS total_qty
-     FROM purchase_order_items poi
-     JOIN purchase_orders po ON po.id = poi.order_id
-     JOIN products p ON p.id = poi.product_id
-     JOIN suppliers s ON s.id = p.supplier_id
-     WHERE po.date >= ?
-     GROUP BY poi.product_id, p.code, p.name, s.code, s.name
-     ORDER BY total_qty DESC LIMIT 10`,
-    [monthStart],
-  )
-  return rowsToCamel<PurchaseProductRankRow>(rows as Record<string, unknown>[])
 }
 
 export async function getMonthlySalesDaily(monthStart: string, monthEnd: string): Promise<DailySalesRow[]> {

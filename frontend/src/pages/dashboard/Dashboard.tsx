@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Table, Spin } from 'antd'
 import { useNavigate } from 'react-router-dom'
+import dayjs from 'dayjs'
 import { getDashboardSummary, type DashboardSummary, type DailySalesRow } from '@/api/dashboard'
 import { getInventory, type InventoryRow } from '@/api/inventory'
+import { getSalesGroup, type ReportGroupRow } from '@/api/reports'
 import { C_AMOUNT, C_LABEL } from '@/constants/colors'
 import styles from './Dashboard.module.css'
 
@@ -10,13 +12,25 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const [data, setData] = useState<DashboardSummary | null>(null)
   const [inventory, setInventory] = useState<InventoryRow[]>([])
+  const [salesProductRank, setSalesProductRank] = useState<ReportGroupRow[]>([])
+  const [salesSupplierRank, setSalesSupplierRank] = useState<ReportGroupRow[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([getDashboardSummary(), getInventory()])
-      .then(([summary, inv]) => {
+    const today = dayjs().format('YYYY-MM-DD')
+    const monthStart = dayjs().startOf('month').format('YYYY-MM-DD')
+
+    Promise.all([
+      getDashboardSummary(),
+      getInventory(),
+      getSalesGroup({ by: 'product', startDate: monthStart, endDate: today }),
+      getSalesGroup({ by: 'supplier', startDate: monthStart, endDate: today }),
+    ])
+      .then(([summary, inv, productRank, supplierRank]) => {
         setData(summary)
         setInventory(inv)
+        setSalesProductRank(productRank.slice(0, 10))
+        setSalesSupplierRank(supplierRank.slice(0, 10))
       })
       .finally(() => setLoading(false))
   }, [])
@@ -37,6 +51,19 @@ export default function Dashboard() {
   const todayQty = todayRow?.salesQty ?? 0
   const todayPieces = todayRow?.pieces ?? 0
 
+  const dailyTotals = (data.monthlySalesDaily ?? []).reduce(
+    (acc, r: DailySalesRow) => ({
+      salesQty: acc.salesQty + r.salesQty,
+      salesAmount: acc.salesAmount + r.salesAmount,
+      pieces: acc.pieces + r.pieces,
+      returnQty: acc.returnQty + r.returnQty,
+      returnAmount: acc.returnAmount + r.returnAmount,
+    }),
+    { salesQty: 0, salesAmount: 0, pieces: 0, returnQty: 0, returnAmount: 0 },
+  )
+
+  // ── Column definitions ────────────────────────────────────────────────────
+
   const salesRankColumns = [
     { title: '排名', key: 'rank', render: (_: unknown, __: unknown, i: number) => i + 1, width: 55 },
     { title: '客户', render: (_: unknown, r: { customerCode: string; customerName: string }) => <span style={{ color: C_LABEL }}>{r.customerCode} {r.customerName}</span>, width: 200 },
@@ -44,17 +71,18 @@ export default function Dashboard() {
     { title: '件数', dataIndex: 'totalPieces', align: 'right' as const, width: 70 },
   ]
 
-  const purchaseSupplierRankColumns = [
+  const salesProductRankColumns = [
     { title: '排名', key: 'rank', render: (_: unknown, __: unknown, i: number) => i + 1, width: 55 },
-    { title: '供应商', render: (_: unknown, r: { supplierCode: string; supplierName: string }) => <span style={{ color: C_LABEL }}>{r.supplierCode} {r.supplierName}</span>, width: 200 },
-    { title: '进货数量', dataIndex: 'totalQty', align: 'right' as const, width: 200 },
+    { title: '货品', dataIndex: 'name', render: (v: string) => <span style={{ color: C_LABEL }}>{v}</span> },
+    { title: '金额', dataIndex: 'totalAmount', render: (v: number) => <span style={{ color: C_AMOUNT, fontWeight: 600 }}>¥{v.toLocaleString()}</span>, align: 'right' as const, width: 120 },
+    { title: '数量', dataIndex: 'totalQty', align: 'right' as const, width: 70 },
   ]
 
-  const purchaseProductRankColumns = [
+  const salesSupplierRankColumns = [
     { title: '排名', key: 'rank', render: (_: unknown, __: unknown, i: number) => i + 1, width: 55 },
-    { title: '货品', render: (_: unknown, r: { productCode: string; productName: string }) => <span style={{ color: C_LABEL }}>{r.productCode} {r.productName}</span>, width: 200 },
-    { title: '供应商', render: (_: unknown, r: { supplierCode: string; supplierName: string }) => <span style={{ color: C_LABEL }}>{r.supplierCode} {r.supplierName}</span>, width: 200 },
-    { title: '进货数量', dataIndex: 'totalQty', align: 'right' as const, width: 90 },
+    { title: '供应商', dataIndex: 'name', render: (v: string) => <span style={{ color: C_LABEL }}>{v}</span> },
+    { title: '金额', dataIndex: 'totalAmount', render: (v: number) => <span style={{ color: C_AMOUNT, fontWeight: 600 }}>¥{v.toLocaleString()}</span>, align: 'right' as const, width: 120 },
+    { title: '数量', dataIndex: 'totalQty', align: 'right' as const, width: 70 },
   ]
 
   const dailySalesColumns = [
@@ -73,17 +101,6 @@ export default function Dashboard() {
       render: (v: number) => v > 0 ? <span style={{ color: '#cf1322', fontWeight: 600 }}>¥{v.toLocaleString()}</span> : '—',
     },
   ]
-
-  const dailyTotals = (data.monthlySalesDaily ?? []).reduce(
-    (acc, r: DailySalesRow) => ({
-      salesQty: acc.salesQty + r.salesQty,
-      salesAmount: acc.salesAmount + r.salesAmount,
-      pieces: acc.pieces + r.pieces,
-      returnQty: acc.returnQty + r.returnQty,
-      returnAmount: acc.returnAmount + r.returnAmount,
-    }),
-    { salesQty: 0, salesAmount: 0, pieces: 0, returnQty: 0, returnAmount: 0 },
-  )
 
   return (
     <div className={styles.page}>
@@ -129,8 +146,30 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Rank Tables */}
+      {/* Row 1: Daily sales (left, wider) + Customer rank (right) */}
       <div className={styles.rankRow}>
+        <div className={styles.section} style={{ flex: 2 }}>
+          <div className={styles.sectionTitle}>
+            <span>
+              本月每日销售情况
+            </span>
+            <span
+              className={styles.sectionTitleLink}
+              onClick={() => navigate('/reports/rankings?type=sales&by=daily')}
+            >
+              查看图表 →
+            </span>
+          </div>
+          <Table
+            columns={dailySalesColumns}
+            dataSource={data.monthlySalesDaily}
+            rowKey="date"
+            pagination={false}
+            size="small"
+            scroll={{ y: 320 }}
+            onRow={() => ({ style: { cursor: 'pointer' }, onClick: () => navigate('/reports/rankings?type=sales&by=daily') })}
+          />
+        </div>
         <div className={styles.section}>
           <div className={styles.sectionTitle}>
             本月销售排行（客户）
@@ -150,72 +189,46 @@ export default function Dashboard() {
             onRow={() => ({ style: { cursor: 'pointer' }, onClick: () => navigate('/reports/rankings?type=sales&by=customer') })}
           />
         </div>
-        <div className={styles.section}>
-          <div className={styles.sectionTitle}>
-            本月进货排行（货品）
-            <span
-              className={styles.sectionTitleLink}
-              onClick={() => navigate('/reports/rankings?type=purchase&by=product')}
-            >
-              查看全部 →
-            </span>
-          </div>
-          <Table
-            columns={purchaseProductRankColumns}
-            dataSource={data.monthlyPurchaseProductRank}
-            rowKey="productCode"
-            pagination={false}
-            size="small"
-            onRow={() => ({ style: { cursor: 'pointer' }, onClick: () => navigate('/reports/rankings?type=purchase&by=product') })}
-          />
-        </div>
       </div>
 
-
+      {/* Row 2: Sales product rank + Sales supplier rank */}
       <div className={styles.rankRow}>
         <div className={styles.section}>
           <div className={styles.sectionTitle}>
-            本月进货排行（供应商）
+            本月销售排行（货品）
             <span
               className={styles.sectionTitleLink}
-              onClick={() => navigate('/reports/rankings?type=purchase&by=supplier')}
+              onClick={() => navigate('/reports/rankings?type=sales&by=product')}
             >
               查看全部 →
             </span>
           </div>
           <Table
-            columns={purchaseSupplierRankColumns}
-            dataSource={data.monthlyPurchaseSupplierRank}
-            rowKey="supplierName"
+            columns={salesProductRankColumns}
+            dataSource={salesProductRank}
+            rowKey="name"
             pagination={false}
             size="small"
-            onRow={() => ({ style: { cursor: 'pointer' }, onClick: () => navigate('/reports/rankings?type=purchase&by=supplier') })}
+            onRow={() => ({ style: { cursor: 'pointer' }, onClick: () => navigate('/reports/rankings?type=sales&by=product') })}
           />
         </div>
-        <div className={styles.section} style={{ flex: 2 }}>
+        <div className={styles.section}>
           <div className={styles.sectionTitle}>
-            <span>
-              本月每日销售情况
-              <span style={{ fontSize: 12, fontWeight: 400, marginLeft: 12, color: '#888' }}>
-                合计：销售 {dailyTotals.salesQty} 盆 / ¥{dailyTotals.salesAmount.toLocaleString()} / {dailyTotals.pieces} 件
-                {dailyTotals.returnQty > 0 && `　退货 ${dailyTotals.returnQty} 盆 / ¥${dailyTotals.returnAmount.toLocaleString()}`}
-              </span>
-            </span>
+            本月销售排行（供应商）
             <span
               className={styles.sectionTitleLink}
-              onClick={() => navigate('/reports/rankings?type=sales&by=daily')}
+              onClick={() => navigate('/reports/rankings?type=sales&by=supplier')}
             >
-              查看图表 →
+              查看全部 →
             </span>
           </div>
           <Table
-            columns={dailySalesColumns}
-            dataSource={data.monthlySalesDaily}
-            rowKey="date"
+            columns={salesSupplierRankColumns}
+            dataSource={salesSupplierRank}
+            rowKey="name"
             pagination={false}
             size="small"
-            scroll={{ y: 320 }}
-            onRow={() => ({ style: { cursor: 'pointer' }, onClick: () => navigate('/reports/rankings?type=sales&by=daily') })}
+            onRow={() => ({ style: { cursor: 'pointer' }, onClick: () => navigate('/reports/rankings?type=sales&by=supplier') })}
           />
         </div>
       </div>

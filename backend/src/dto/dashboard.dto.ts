@@ -5,29 +5,6 @@ export interface SalesRankRow {
   totalPieces: number
 }
 
-export interface PurchaseSupplierRankRow {
-  supplierCode: string
-  supplierName: string
-  totalQty: number
-}
-
-export interface PurchaseProductRankRow {
-  productCode: string
-  productName: string
-  supplierCode: string
-  supplierName: string
-  totalQty: number
-}
-
-export interface ProductProfitRankRow {
-  productCode: string
-  productName: string
-  supplierCode: string
-  supplierName: string
-  totalProfit: number
-  totalQty: number
-}
-
 export interface DailySalesRow {
   date: string
   salesQty: number
@@ -43,7 +20,5 @@ export interface DashboardSummary {
   todayPurchase: number
   todayOrderCount: number
   monthlySalesRank: SalesRankRow[]
-  monthlyPurchaseSupplierRank: PurchaseSupplierRankRow[]
-  monthlyPurchaseProductRank: PurchaseProductRankRow[]
   monthlySalesDaily: DailySalesRow[]
 }

@@ -302,11 +302,6 @@ export default function RankingsReport() {
         </div>
       </div>
 
-      <div style={{ marginBottom: 8, color: '#666', fontSize: 13 }}>
-        共 {rows.length} 条 · 合计金额 <strong>¥{totalAmount.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</strong>
-        &emsp;合计数量 <strong>{totalQty}</strong>
-      </div>
-
       {loading ? (
         <Spin size="large" style={{ display: 'block', margin: '60px auto' }} />
       ) : viewMode === 'chart' && isTimeDim ? (
@@ -404,6 +399,25 @@ export default function RankingsReport() {
           loading={loading}
           size="middle"
           pagination={{ pageSize: 50, showTotal: t => `共 ${t} 条` }}
+          summary={() => (
+            <Table.Summary fixed="bottom">
+              <Table.Summary.Row style={{ fontWeight: 600, background: '#f0f5ff' }}>
+                <Table.Summary.Cell index={0} colSpan={2} align="right">合计</Table.Summary.Cell>
+                <Table.Summary.Cell index={2} align="center">
+                  {rows.reduce((s, r) => s + (r.orderCount ?? 0), 0) || '—'}
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={3} align="center">{totalQty}</Table.Summary.Cell>
+                <Table.Summary.Cell index={4} align="center">
+                  {rows.reduce((s, r) => s + (r.totalPieces ?? 0), 0) || '—'}
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={5} align="center">
+                  <strong style={{ color: C_AMOUNT }}>
+                    ¥{totalAmount.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}
+                  </strong>
+                </Table.Summary.Cell>
+              </Table.Summary.Row>
+            </Table.Summary>
+          )}
         />
       )}
     </>

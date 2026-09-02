@@ -20,18 +20,6 @@ export interface DashboardSummary {
     totalAmount: number;
     totalPieces: number;
   }[];
-  monthlyPurchaseSupplierRank: {
-    supplierCode: string;
-    supplierName: string;
-    totalQty: number;
-  }[];
-  monthlyPurchaseProductRank: {
-    productCode: string;
-    productName: string;
-    supplierCode: string;
-    supplierName: string;
-    totalQty: number;
-  }[];
   monthlySalesDaily: DailySalesRow[];
 }
 
