@@ -251,20 +251,20 @@ export default function PurchaseOrderList() {
 
   // ——— Detail mode columns ———
   const detailColumns: ColumnsType<PurchaseDetailRow> = [
-    { title: '日期',     dataIndex: 'date',         width: 110, align: 'center', sorter: (a, b) => a.date.localeCompare(b.date) },
+    { title: '日期',     dataIndex: 'date',         width: 95,  align: 'center', sorter: (a, b) => a.date.localeCompare(b.date) },
     {
-      title: '供应商', width: 150, align: 'center',
+      title: '供应商', width: 140, align: 'center',
       sorter: (a, b) => a.supplierName.localeCompare(b.supplierName),
       render: (_, r) => `${r.supplierCode} ${r.supplierName}`,
     },
-    { title: '单号',     dataIndex: 'no',           width: 175, align: 'center', defaultSortOrder: 'descend', sorter: (a, b) => a.no.localeCompare(b.no) },
-    { title: '产品编码', dataIndex: 'productCode',  width: 120, align: 'center', sorter: (a, b) => a.productCode.localeCompare(b.productCode) },
-    { title: '产品名称', dataIndex: 'productName',  width: 160, align: 'center', sorter: (a, b) => a.productName.localeCompare(b.productName) },
-    { title: '单位',     dataIndex: 'unit',         width: 60,  align: 'center' },
-    { title: '数量',     dataIndex: 'qty',          width: 70,  align: 'center', sorter: (a, b) => a.qty - b.qty },
-    { title: '单价',     dataIndex: 'unitPrice',    width: 90,  align: 'center', sorter: (a, b) => a.unitPrice - b.unitPrice, render: (v: number) => `¥${v}` },
+    { title: '单号',     dataIndex: 'no',           width: 160, align: 'center', defaultSortOrder: 'descend', sorter: (a, b) => a.no.localeCompare(b.no) },
+    { title: '产品编码', dataIndex: 'productCode',  width: 80,  align: 'center', sorter: (a, b) => a.productCode.localeCompare(b.productCode) },
+    { title: '产品名称', dataIndex: 'productName',  width: 150, align: 'center', sorter: (a, b) => a.productName.localeCompare(b.productName) },
+    { title: '单位',     dataIndex: 'unit',         width: 55,  align: 'center' },
+    { title: '数量',     dataIndex: 'qty',          width: 60,  align: 'center', sorter: (a, b) => a.qty - b.qty },
+    { title: '单价',     dataIndex: 'unitPrice',    width: 80,  align: 'center', sorter: (a, b) => a.unitPrice - b.unitPrice, render: (v: number) => `¥${v}` },
     {
-      title: '金额', dataIndex: 'amount', width: 110, align: 'center',
+      title: '金额', dataIndex: 'amount', width: 100, align: 'center',
       defaultSortOrder: 'descend',
       sorter: (a, b) => a.amount - b.amount,
       render: (v: number, r) => (
@@ -273,9 +273,22 @@ export default function PurchaseOrderList() {
         </span>
       ),
     },
-    { title: '件数',   dataIndex: 'pieces',   width: 70,  align: 'center', sorter: (a, b) => (a.pieces ?? 0) - (b.pieces ?? 0) },
-    { title: '经办人', dataIndex: 'operator', width: 90,  align: 'center', render: (v: string | null) => v ?? '—' },
-    { title: '备注',   dataIndex: 'notes',    width: 120, align: 'center', render: (v: string | null) => v ?? '—' },
+    { title: '件数',   dataIndex: 'pieces',   width: 60,  align: 'center', sorter: (a, b) => (a.pieces ?? 0) - (b.pieces ?? 0) },
+    { title: '经办人', dataIndex: 'operator', width: 60,  align: 'center', render: (v: string | null) => v ?? '—' },
+    { title: '备注',   dataIndex: 'notes',    width: 100, align: 'center', render: (v: string | null) => v ?? '—' },
+    {
+      title: '操作', width: 90, align: 'center', fixed: 'right',
+      render: (_, r) => (
+        <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+          <Button type="link" size="small"
+            onClick={() => navigate(r.rowType === 'order' ? `/purchase/orders/${r.id}` : `/purchase/returns/${r.id}`)}>
+            查看
+          </Button>
+          <Button type="link" size="small" icon={<EditOutlined />}
+            onClick={() => navigate(r.rowType === 'order' ? `/purchase/orders/${r.id}/edit` : `/purchase/returns/${r.id}/edit`)} />
+        </div>
+      ),
+    },
   ]
 
   const calcDetailSummary = (rows: PurchaseDetailRow[]) => {
@@ -400,7 +413,7 @@ export default function PurchaseOrderList() {
           dataSource={detailRows}
           loading={detailLoading}
           size="middle"
-          scroll={{ x: 1300 }}
+          scroll={{ x: 1230 }}
           pagination={{ pageSize: PAGE_SIZE, showTotal: total => `共 ${total} 条` }}
           summary={pageData => {
             const page  = calcDetailSummary(pageData as PurchaseDetailRow[])
@@ -414,6 +427,7 @@ export default function PurchaseOrderList() {
                 <Table.Summary.Cell index={9} align="center">{d.pieces}</Table.Summary.Cell>
                 <Table.Summary.Cell index={10} />
                 <Table.Summary.Cell index={11} />
+                <Table.Summary.Cell index={12} />
               </Table.Summary.Row>
             )
             return (

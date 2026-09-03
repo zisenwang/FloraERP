@@ -172,6 +172,7 @@ export const voidSalesReturn = async (id: number): Promise<SalesReturn> => {
 
 export interface SalesDetailRow {
   rowType: 'order' | 'return'
+  id: number
   no: string
   date: string
   customerCode: string

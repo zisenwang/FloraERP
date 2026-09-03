@@ -166,6 +166,7 @@ export const voidPurchaseReturn = async (id: number): Promise<PurchaseReturn> =>
 
 export interface PurchaseDetailRow {
   rowType: 'order' | 'return'
+  id: number
   no: string
   date: string
   supplierCode: string

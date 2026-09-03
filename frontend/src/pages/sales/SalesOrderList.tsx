@@ -269,21 +269,21 @@ export default function SalesOrderList() {
 
   // ——— Detail mode columns ———
   const detailColumns: ColumnsType<SalesDetailRow> = [
-    { title: '日期',     dataIndex: 'date',         width: 110, align: 'center', sorter: (a, b) => a.date.localeCompare(b.date) },
+    { title: '日期',     dataIndex: 'date',         width: 95,  align: 'center', sorter: (a, b) => a.date.localeCompare(b.date) },
     {
-      title: '客户', width: 150, align: 'center',
+      title: '客户', width: 140, align: 'center',
       sorter: (a, b) => a.customerName.localeCompare(b.customerName),
       render: (_, r) => `${r.customerCode} ${r.customerName}`,
     },
-    { title: '单号',     dataIndex: 'no',           width: 175, align: 'center', defaultSortOrder: 'descend', sorter: (a, b) => a.no.localeCompare(b.no) },
-    { title: '产品编码', dataIndex: 'productCode',  width: 120, align: 'center', sorter: (a, b) => a.productCode.localeCompare(b.productCode) },
-    { title: '产品名称', dataIndex: 'productName',  width: 160, align: 'center', sorter: (a, b) => a.productName.localeCompare(b.productName) },
-    { title: '供应商',   dataIndex: 'supplierCode', width: 90,  align: 'center', sorter: (a, b) => (a.supplierCode ?? '').localeCompare(b.supplierCode ?? '') },
-    { title: '单位',     dataIndex: 'unit',         width: 60,  align: 'center' },
-    { title: '数量',     dataIndex: 'qty',          width: 70,  align: 'center', sorter: (a, b) => a.qty - b.qty },
-    { title: '单价',     dataIndex: 'unitPrice',    width: 90,  align: 'center', sorter: (a, b) => a.unitPrice - b.unitPrice, render: (v: number) => `¥${v}` },
+    { title: '单号',     dataIndex: 'no',           width: 160, align: 'center', defaultSortOrder: 'descend', sorter: (a, b) => a.no.localeCompare(b.no) },
+    { title: '产品编码', dataIndex: 'productCode',  width: 80,  align: 'center', sorter: (a, b) => a.productCode.localeCompare(b.productCode) },
+    { title: '产品名称', dataIndex: 'productName',  width: 150, align: 'center', sorter: (a, b) => a.productName.localeCompare(b.productName) },
+    { title: '供应商',   dataIndex: 'supplierCode', width: 75,  align: 'center', sorter: (a, b) => (a.supplierCode ?? '').localeCompare(b.supplierCode ?? '') },
+    { title: '单位',     dataIndex: 'unit',         width: 55,  align: 'center' },
+    { title: '数量',     dataIndex: 'qty',          width: 60,  align: 'center', sorter: (a, b) => a.qty - b.qty },
+    { title: '单价',     dataIndex: 'unitPrice',    width: 80,  align: 'center', sorter: (a, b) => a.unitPrice - b.unitPrice, render: (v: number) => `¥${v}` },
     {
-      title: '金额', dataIndex: 'amount', width: 110, align: 'center',
+      title: '金额', dataIndex: 'amount', width: 100, align: 'center',
       sorter: (a, b) => a.amount - b.amount,
       render: (v: number, r) => (
         <span style={{ color: r.rowType === 'return' ? '#cf1322' : C_AMOUNT, fontWeight: 600 }}>
@@ -291,9 +291,9 @@ export default function SalesOrderList() {
         </span>
       ),
     },
-    { title: '件数', dataIndex: 'pieces', width: 70, align: 'center', sorter: (a, b) => (a.pieces ?? 0) - (b.pieces ?? 0) },
+    { title: '件数', dataIndex: 'pieces', width: 60, align: 'center', sorter: (a, b) => (a.pieces ?? 0) - (b.pieces ?? 0) },
     {
-      title: '毛利', dataIndex: 'profit', width: 110, align: 'center',
+      title: '毛利', dataIndex: 'profit', width: 100, align: 'center',
       sorter: (a, b) => (a.profit ?? 0) - (b.profit ?? 0),
       render: (v: number | null) => {
         if (v == null) return <span style={{ color: '#aaa' }}>—</span>
@@ -304,8 +304,21 @@ export default function SalesOrderList() {
         )
       },
     },
-    { title: '经办人', dataIndex: 'operator', width: 90,  align: 'center', render: (v: string | null) => v ?? '—' },
-    { title: '备注',   dataIndex: 'notes',    width: 120, align: 'center', render: (v: string | null) => v ?? '—' },
+    { title: '经办人', dataIndex: 'operator', width: 60,  align: 'center', render: (v: string | null) => v ?? '—' },
+    { title: '备注',   dataIndex: 'notes',    width: 100, align: 'center', render: (v: string | null) => v ?? '—' },
+    {
+      title: '操作', width: 90, align: 'center', fixed: 'right',
+      render: (_, r) => (
+        <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+          <Button type="link" size="small"
+            onClick={() => navigate(r.rowType === 'order' ? `/sales/orders/${r.id}` : `/sales/returns/${r.id}`)}>
+            查看
+          </Button>
+          <Button type="link" size="small" icon={<EditOutlined />}
+            onClick={() => navigate(r.rowType === 'order' ? `/sales/orders/${r.id}/edit` : `/sales/returns/${r.id}/edit`)} />
+        </div>
+      ),
+    },
   ]
 
   const calcDetailSummary = (rows: SalesDetailRow[]) => {
@@ -446,7 +459,7 @@ export default function SalesOrderList() {
           dataSource={detailRows}
           loading={detailLoading}
           size="middle"
-          scroll={{ x: 1400 }}
+          scroll={{ x: 1405 }}
           pagination={{ pageSize: PAGE_SIZE, showTotal: total => `共 ${total} 条` }}
           summary={pageData => {
             const page  = calcDetailSummary(pageData as SalesDetailRow[])
@@ -465,6 +478,7 @@ export default function SalesOrderList() {
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={12} />
                 <Table.Summary.Cell index={13} />
+                <Table.Summary.Cell index={14} />
               </Table.Summary.Row>
             )
             return (

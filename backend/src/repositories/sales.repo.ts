@@ -315,6 +315,7 @@ export async function findDetail(
   const sql = `
     SELECT
       'order' AS row_type,
+      so.id AS id,
       so.order_no AS no,
       DATE_FORMAT(so.date, '%Y-%m-%d') AS date,
       c.code AS customer_code, c.name AS customer_name,
@@ -336,6 +337,7 @@ export async function findDetail(
 
     SELECT
       'return' AS row_type,
+      sr.id AS id,
       sr.return_no AS no,
       DATE_FORMAT(sr.date, '%Y-%m-%d') AS date,
       c.code AS customer_code, c.name AS customer_name,
