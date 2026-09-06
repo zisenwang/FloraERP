@@ -5,11 +5,11 @@ import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
 import {
-  getPurchaseGroup, getPurchaseOrderRows,
+  getPurchaseGroup,
   type ReportGroupRow,
 } from '@/api/reports'
 import { getErrorMessage } from '@/utils/error'
-import { exportPurchaseExcel } from '@/utils/exportExcel'
+import { exportPurchaseGroupExcel } from '@/utils/exportExcel'
 import { C_AMOUNT, C_LABEL } from '@/constants/colors'
 import type { PurchaseDim } from './PurchaseReport'
 import styles from '../Reports.module.css'
@@ -36,7 +36,6 @@ export default function PurchaseReportSummary({
   const [l1Loading, setL1Loading] = useState(false)
   const [l1Search, setL1Search] = useState('')
   const [exporting, setExporting] = useState(false)
-  const [exportingId, setExportingId] = useState<number | null>(null)
 
   useEffect(() => {
     setL1Loading(true)
@@ -58,26 +57,6 @@ export default function PurchaseReportSummary({
     orderCount:  filteredL1.reduce((s, r) => s + r.orderCount, 0),
   }
 
-  // ── Export handlers ─────────────────────────────────────────────────────────
-  const handleExport = () => {
-    setExporting(true)
-    getPurchaseOrderRows({ startDate, endDate })
-      .then(rows => exportPurchaseExcel(rows, startDate, endDate))
-      .catch(() => message.error('导出失败'))
-      .finally(() => setExporting(false))
-  }
-
-  const handleExportL1 = (row: ReportGroupRow) => {
-    setExportingId(row.id)
-    const params: Parameters<typeof getPurchaseOrderRows>[0] = { startDate, endDate }
-    if (groupBy === 'supplier') params.supplierId = row.id
-    else params.productId = row.id
-    getPurchaseOrderRows(params)
-      .then(rows => exportPurchaseExcel(rows, startDate, endDate, row.name))
-      .catch(() => message.error('导出失败'))
-      .finally(() => setExportingId(null))
-  }
-
   // ── Labels ──────────────────────────────────────────────────────────────────
   const l1Label = groupBy === 'supplier' ? '供应商' : '货品'
 
@@ -89,13 +68,9 @@ export default function PurchaseReportSummary({
     { title: '件数', dataIndex: 'totalPieces', width: 75, align: 'center', render: v => v || '—' },
     { title: '金额', dataIndex: 'totalAmount', width: 130, align: 'right', render: (v: number) => <span style={{ color: C_AMOUNT, fontWeight: 600 }}>¥{v.toFixed(2)}</span> },
     {
-      title: '操作', width: 120, align: 'center', fixed: 'right',
+      title: '操作', width: 80, align: 'center', fixed: 'right',
       render: (_: unknown, r: ReportGroupRow) => (
-        <span style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
-          <Button size="small" type="link" icon={<EyeOutlined />} onClick={() => onSelectL1(r)}>查看</Button>
-          <Button size="small" type="link" icon={<DownloadOutlined />}
-            loading={exportingId === r.id} onClick={() => handleExportL1(r)}>导出</Button>
-        </span>
+        <Button size="small" type="link" icon={<EyeOutlined />} onClick={() => onSelectL1(r)}>查看</Button>
       ),
     },
   ]
@@ -123,7 +98,10 @@ export default function PurchaseReportSummary({
         <Input prefix={<SearchOutlined />} placeholder={`搜索${l1Label}名称/编码`}
           allowClear style={{ width: 220 }} value={l1Search}
           onChange={e => setL1Search(e.target.value)} />
-        <Button icon={<DownloadOutlined />} loading={exporting} onClick={handleExport}>导出Excel</Button>
+        <Button icon={<DownloadOutlined />} loading={exporting}
+          onClick={() => { setExporting(true); exportPurchaseGroupExcel(filteredL1, l1Label, startDate, endDate); setExporting(false) }}>
+          导出Excel
+        </Button>
       </div>
 
       <Table

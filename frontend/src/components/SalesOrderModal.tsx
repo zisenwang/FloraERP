@@ -23,6 +23,7 @@ const itemColumns: ColumnsType<SalesOrderItem> = [
   { title: '折扣', dataIndex: 'discount', width: 60, align: 'center', render: (v: number) => `${v}%` },
   { title: '折后金额', dataIndex: 'finalAmount', width: 90, align: 'right', render: (v: number) => `¥${v.toFixed(2)}` },
   { title: '件数', dataIndex: 'pieces', width: 60, align: 'center', render: (v: number) => v || '—' },
+  { title: '备注', dataIndex: 'notes', width: 100, render: (v: string) => v || '—' },
   {
     title: '利润', width: 90, align: 'right',
     render: (_: unknown, r: SalesOrderItem) => {
@@ -107,7 +108,7 @@ export default function SalesOrderModal({ orderId, onClose }: Props) {
             rowKey="id"
             size="small"
             pagination={false}
-            scroll={{ x: 780 }}
+            scroll={{ x: 880 }}
             dataSource={order.items}
             columns={itemColumns}
           />

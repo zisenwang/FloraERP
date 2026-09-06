@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx'
-import type { ReportOrderRow, InventoryReportItem } from '@/api/reports'
+import type { ReportGroupRow, ReportOrderRow, InventoryReportItem } from '@/api/reports'
 import type { SalesDetailRow } from '@/api/sales'
 import type { PurchaseDetailRow } from '@/api/purchase'
 import type { Product } from '@/api/products'
@@ -22,6 +22,75 @@ function write(wb: XLSX.WorkBook, filename: string) {
   XLSX.writeFile(wb, `${filename}.xlsx`)
 }
 
+// ─── Sales Report Summary ────────────────────────────────────────────────────
+
+export function exportSalesGroupExcel(
+  rows: ReportGroupRow[],
+  groupLabel: string,
+  startDate: string,
+  endDate: string,
+) {
+  const sheetData = rows.map(r => {
+    const margin = r.totalAmount && r.totalProfit != null
+      ? (r.totalProfit / r.totalAmount * 100).toFixed(1) + '%'
+      : '—'
+    return {
+      [groupLabel]: r.name,
+      '订单数': r.orderCount,
+      '数量': r.totalQty,
+      '金额': r.totalAmount,
+      '件数': r.totalPieces || 0,
+      '毛利': r.totalProfit ?? 0,
+      '毛利率': margin,
+    }
+  })
+  const totalAmount = rows.reduce((s, r) => s + r.totalAmount, 0)
+  const totalProfit = rows.reduce((s, r) => s + (r.totalProfit ?? 0), 0)
+  sheetData.push({
+    [groupLabel]: '合计',
+    '订单数': rows.reduce((s, r) => s + r.orderCount, 0),
+    '数量': rows.reduce((s, r) => s + r.totalQty, 0),
+    '金额': totalAmount,
+    '件数': rows.reduce((s, r) => s + r.totalPieces, 0),
+    '毛利': totalProfit,
+    '毛利率': totalAmount ? (totalProfit / totalAmount * 100).toFixed(1) + '%' : '—',
+  })
+  const ws = XLSX.utils.json_to_sheet(sheetData)
+  autoWidth(ws)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, '销售汇总')
+  write(wb, `销售报表_按${groupLabel}汇总_${startDate}_${endDate}`)
+}
+
+// ─── Purchase Report Summary ──────────────────────────────────────────────────
+
+export function exportPurchaseGroupExcel(
+  rows: ReportGroupRow[],
+  groupLabel: string,
+  startDate: string,
+  endDate: string,
+) {
+  const sheetData = rows.map(r => ({
+    [groupLabel]: r.name,
+    '订单数': r.orderCount,
+    '数量': r.totalQty,
+    '件数': r.totalPieces || 0,
+    '金额': r.totalAmount,
+  }))
+  sheetData.push({
+    [groupLabel]: '合计',
+    '订单数': rows.reduce((s, r) => s + r.orderCount, 0),
+    '数量': rows.reduce((s, r) => s + r.totalQty, 0),
+    '件数': rows.reduce((s, r) => s + r.totalPieces, 0),
+    '金额': rows.reduce((s, r) => s + r.totalAmount, 0),
+  })
+  const ws = XLSX.utils.json_to_sheet(sheetData)
+  autoWidth(ws)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, '采购汇总')
+  write(wb, `采购报表_按${groupLabel}汇总_${startDate}_${endDate}`)
+}
+
 // ─── Sales Report (report center) ────────────────────────────────────────────
 
 export function exportSalesExcel(
@@ -32,21 +101,29 @@ export function exportSalesExcel(
 ) {
   const sheetData = rows.map(r => ({
     '日期': r.orderDate,
-    '单号': r.orderNo,
     '客户': r.customerName ?? '',
-    '货品编码': r.productCode ?? '',
-    '货品名称': r.productName ?? '',
+    '单号': r.orderNo,
+    '产品编码': r.productCode ?? '',
+    '产品名称': r.productName ?? '',
     '供应商': r.supplierCode ?? '',
+    '单位': r.unit ?? '',
     '数量': r.qty,
     '单价': r.unitPrice,
     '金额': r.finalAmount,
     '件数': r.pieces || 0,
+    '毛利': r.isReturn ? '' : (r.profit ?? ''),
+    '经办人': r.operator ?? '',
     '备注': r.notes ?? '',
   }))
   const totalQty    = rows.reduce((s, r) => s + r.qty, 0)
   const totalPieces = rows.reduce((s, r) => s + (r.pieces || 0), 0)
   const totalAmount = rows.reduce((s, r) => s + r.finalAmount, 0)
-  sheetData.push({ '日期': '', '单号': '', '客户': '', '货品编码': '', '货品名称': '合计', '供应商': '', '数量': totalQty, '单价': '', '金额': totalAmount, '件数': totalPieces, '备注': '' } as never)
+  const totalProfit = rows.filter(r => !r.isReturn).reduce((s, r) => s + (r.profit ?? 0), 0)
+  sheetData.push({
+    '日期': '', '客户': '', '单号': '合计', '产品编码': '', '产品名称': '',
+    '供应商': '', '单位': '', '数量': totalQty, '单价': '', '金额': totalAmount,
+    '件数': totalPieces, '毛利': totalProfit, '经办人': '', '备注': '',
+  } as never)
   const ws = XLSX.utils.json_to_sheet(sheetData)
   autoWidth(ws)
   const wb = XLSX.utils.book_new()
@@ -64,21 +141,26 @@ export function exportPurchaseExcel(
 ) {
   const sheetData = rows.map(r => ({
     '日期': r.orderDate,
+    '供应商': r.supplierCode ?? '',
     '单号': r.orderNo,
-    '供应商': r.supplierName ?? '',
-    '货品编码': r.productCode ?? '',
-    '货品名称': r.productName ?? '',
+    '产品编码': r.productCode ?? '',
+    '产品名称': r.productName ?? '',
+    '单位': r.unit ?? '',
     '数量': r.qty,
     '单价': r.unitPrice,
-    '原价金额': r.amount,
-    '折扣(%)': r.discount,
-    '折后金额': r.finalAmount,
+    '金额': r.finalAmount,
     '件数': r.pieces || 0,
+    '经办人': r.operator ?? '',
+    '备注': r.notes ?? '',
   }))
   const totalQty    = rows.reduce((s, r) => s + r.qty, 0)
   const totalPieces = rows.reduce((s, r) => s + (r.pieces || 0), 0)
   const totalAmount = rows.reduce((s, r) => s + r.finalAmount, 0)
-  sheetData.push({ '日期': '', '单号': '', '供应商': '', '货品编码': '', '货品名称': '合计', '数量': totalQty, '单价': '', '原价金额': '', '折扣(%)': '', '折后金额': totalAmount, '件数': totalPieces } as never)
+  sheetData.push({
+    '日期': '', '供应商': '', '单号': '合计', '产品编码': '', '产品名称': '',
+    '单位': '', '数量': totalQty, '单价': '', '金额': totalAmount,
+    '件数': totalPieces, '经办人': '', '备注': '',
+  } as never)
   const ws = XLSX.utils.json_to_sheet(sheetData)
   autoWidth(ws)
   const wb = XLSX.utils.book_new()

@@ -5,11 +5,11 @@ import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
 import {
-  getSalesGroup, getSalesOrderRows,
+  getSalesGroup,
   type ReportGroupRow,
 } from '@/api/reports'
 import { getErrorMessage } from '@/utils/error'
-import { exportSalesExcel } from '@/utils/exportExcel'
+import { exportSalesGroupExcel } from '@/utils/exportExcel'
 import { C_AMOUNT, C_LABEL } from '@/constants/colors'
 import type { SalesDim } from './SalesReport'
 import styles from '../Reports.module.css'
@@ -36,7 +36,6 @@ export default function SalesReportSummary({
   const [l1Loading, setL1Loading] = useState(false)
   const [l1Search, setL1Search] = useState('')
   const [exporting, setExporting] = useState(false)
-  const [exportingId, setExportingId] = useState<number | null>(null)
 
   useEffect(() => {
     setL1Loading(true)
@@ -61,27 +60,6 @@ export default function SalesReportSummary({
   const margin = stats.totalAmount
     ? (stats.totalProfit / stats.totalAmount * 100).toFixed(1)
     : null
-
-  // ── Export handlers ─────────────────────────────────────────────────────────
-  const handleExport = () => {
-    setExporting(true)
-    getSalesOrderRows({ startDate, endDate })
-      .then(rows => exportSalesExcel(rows, startDate, endDate))
-      .catch(() => message.error('导出失败'))
-      .finally(() => setExporting(false))
-  }
-
-  const handleExportL1 = (row: ReportGroupRow) => {
-    setExportingId(row.id)
-    const params: Parameters<typeof getSalesOrderRows>[0] = { startDate, endDate }
-    if (groupBy === 'customer') params.customerId = row.id
-    else if (groupBy === 'product') params.productId = row.id
-    else params.supplierId = row.id
-    getSalesOrderRows(params)
-      .then(rows => exportSalesExcel(rows, startDate, endDate, row.name))
-      .catch(() => message.error('导出失败'))
-      .finally(() => setExportingId(null))
-  }
 
   // ── Labels ──────────────────────────────────────────────────────────────────
   const l1Label = groupBy === 'customer' ? '客户' : groupBy === 'product' ? '货品' : '供应商'
@@ -110,13 +88,9 @@ export default function SalesReportSummary({
       },
     },
     {
-      title: '操作', width: 120, align: 'center', fixed: 'right',
+      title: '操作', width: 80, align: 'center', fixed: 'right',
       render: (_: unknown, r: ReportGroupRow) => (
-        <span style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
-          <Button size="small" type="link" icon={<EyeOutlined />} onClick={() => onSelectL1(r)}>查看</Button>
-          <Button size="small" type="link" icon={<DownloadOutlined />}
-            loading={exportingId === r.id} onClick={() => handleExportL1(r)}>导出</Button>
-        </span>
+        <Button size="small" type="link" icon={<EyeOutlined />} onClick={() => onSelectL1(r)}>查看</Button>
       ),
     },
   ]
@@ -145,7 +119,10 @@ export default function SalesReportSummary({
         <Input prefix={<SearchOutlined />} placeholder={`搜索${l1Label}名称/编码`}
           allowClear style={{ width: 220 }} value={l1Search}
           onChange={e => setL1Search(e.target.value)} />
-        <Button icon={<DownloadOutlined />} loading={exporting} onClick={handleExport}>导出Excel</Button>
+        <Button icon={<DownloadOutlined />} loading={exporting}
+          onClick={() => { setExporting(true); exportSalesGroupExcel(filteredL1, l1Label, startDate, endDate); setExporting(false) }}>
+          导出Excel
+        </Button>
       </div>
 
       <Table
