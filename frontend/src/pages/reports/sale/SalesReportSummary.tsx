@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Table, DatePicker, Radio, App, Button, Spin, Input, Tag } from 'antd'
+import { Table, DatePicker, Radio, App, Button, Input } from 'antd'
 import { EyeOutlined, SearchOutlined, DownloadOutlined } from '@ant-design/icons'
-import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
 import {
-  getSalesGroup, getSalesSubgroup, getSalesOrderRows,
-  type ReportGroupRow, type ReportOrderRow,
+  getSalesGroup, getSalesOrderRows,
+  type ReportGroupRow,
 } from '@/api/reports'
 import { getErrorMessage } from '@/utils/error'
 import { exportSalesExcel } from '@/utils/exportExcel'
@@ -22,10 +21,6 @@ interface Props {
   onGroupByChange: (by: SalesDim) => void
   startDate: string
   endDate: string
-  l2Cache: Record<number, ReportGroupRow[]>
-  setL2Cache: React.Dispatch<React.SetStateAction<Record<number, ReportGroupRow[]>>>
-  l3Cache: Record<string, ReportOrderRow[]>
-  setL3Cache: React.Dispatch<React.SetStateAction<Record<string, ReportOrderRow[]>>>
   onSelectL1: (row: ReportGroupRow) => void
   onOpenDrawer: (orderId: number) => void
 }
@@ -33,17 +28,13 @@ interface Props {
 export default function SalesReportSummary({
   dateRange, onDateChange, groupBy, onGroupByChange,
   startDate, endDate,
-  l2Cache, setL2Cache, l3Cache, setL3Cache,
   onSelectL1, onOpenDrawer,
 }: Props) {
   const { message } = App.useApp()
-  const navigate = useNavigate()
 
   const [l1Data, setL1Data] = useState<ReportGroupRow[]>([])
   const [l1Loading, setL1Loading] = useState(false)
   const [l1Search, setL1Search] = useState('')
-  const [l2Loading, setL2Loading] = useState<Record<number, boolean>>({})
-  const [l3Loading, setL3Loading] = useState<Record<string, boolean>>({})
   const [exporting, setExporting] = useState(false)
   const [exportingId, setExportingId] = useState<number | null>(null)
 
@@ -71,30 +62,6 @@ export default function SalesReportSummary({
     ? (stats.totalProfit / stats.totalAmount * 100).toFixed(1)
     : null
 
-  // ── Lazy expand handlers ────────────────────────────────────────────────────
-  const handleL1Expand = (expanded: boolean, row: ReportGroupRow) => {
-    if (!expanded || l2Cache[row.id] !== undefined) return
-    setL2Loading(prev => ({ ...prev, [row.id]: true }))
-    getSalesSubgroup({ by: groupBy, parentId: row.id, startDate, endDate })
-      .then(data => setL2Cache(prev => ({ ...prev, [row.id]: data })))
-      .catch(() => setL2Cache(prev => ({ ...prev, [row.id]: [] })))
-      .finally(() => setL2Loading(prev => ({ ...prev, [row.id]: false })))
-  }
-
-  const handleL2Expand = (expanded: boolean, l1Row: ReportGroupRow, l2Row: ReportGroupRow) => {
-    const key = `${l1Row.id}-${l2Row.id}`
-    if (!expanded || l3Cache[key] !== undefined) return
-    setL3Loading(prev => ({ ...prev, [key]: true }))
-    const params: Parameters<typeof getSalesOrderRows>[0] = { startDate, endDate }
-    if (groupBy === 'customer') { params.customerId = l1Row.id; params.productId = l2Row.id }
-    else if (groupBy === 'product') { params.productId = l1Row.id; params.customerId = l2Row.id }
-    else { params.supplierId = l1Row.id; params.productId = l2Row.id }
-    getSalesOrderRows(params)
-      .then(data => setL3Cache(prev => ({ ...prev, [key]: data })))
-      .catch(() => setL3Cache(prev => ({ ...prev, [key]: [] })))
-      .finally(() => setL3Loading(prev => ({ ...prev, [key]: false })))
-  }
-
   // ── Export handlers ─────────────────────────────────────────────────────────
   const handleExport = () => {
     setExporting(true)
@@ -118,71 +85,8 @@ export default function SalesReportSummary({
 
   // ── Labels ──────────────────────────────────────────────────────────────────
   const l1Label = groupBy === 'customer' ? '客户' : groupBy === 'product' ? '货品' : '供应商'
-  const l2Label = groupBy === 'customer' ? '货品' : groupBy === 'product' ? '客户' : '货品'
 
   // ── Columns ─────────────────────────────────────────────────────────────────
-  const l3Columns: ColumnsType<ReportOrderRow> = [
-    {
-      title: '单号', dataIndex: 'orderNo', width: 190,
-      render: (v: string, r: ReportOrderRow) => (
-        <span>
-          {r.isReturn ? <Tag color="orange" style={{ marginRight: 4 }}>退</Tag> : null}
-          <Button type="link" size="small" style={{ padding: 0 }}
-            onClick={() => r.isReturn ? navigate(`/sales/returns/${r.orderId}`) : onOpenDrawer(r.orderId)}>
-            {v}
-          </Button>
-        </span>
-      ),
-    },
-    { title: '日期', dataIndex: 'orderDate', width: 100 },
-    { title: '数量', dataIndex: 'qty', width: 70, align: 'center' },
-    { title: '件数', dataIndex: 'pieces', width: 70, align: 'center', render: v => v || '—' },
-    { title: '单价', dataIndex: 'unitPrice', width: 85, align: 'right', render: (v: number) => `¥${v.toFixed(2)}` },
-    {
-      title: '折后金额', dataIndex: 'finalAmount', width: 95, align: 'right',
-      render: (v: number, r: ReportOrderRow) => (
-        <span style={{ color: r.isReturn ? '#cf1322' : C_AMOUNT, fontWeight: 600 }}>¥{v.toFixed(2)}</span>
-      ),
-    },
-    { title: '成本价', dataIndex: 'costPrice', width: 85, align: 'right', render: (v: number | null) => v != null ? `¥${v.toFixed(2)}` : '—' },
-    {
-      title: '利润', dataIndex: 'profit', width: 90, align: 'right',
-      render: (v: number) => (
-        <span style={{ color: v >= 0 ? '#389e0d' : '#cf1322', fontWeight: 500 }}>
-          {v >= 0 ? '+' : ''}¥{v.toFixed(2)}
-        </span>
-      ),
-    },
-  ]
-
-  const l2Columns: ColumnsType<ReportGroupRow> = [
-    { title: l2Label, dataIndex: 'name', width: 200, render: (v: string) => <span style={{ color: C_LABEL }}>{v}</span> },
-    { title: '订单数', dataIndex: 'orderCount', width: 80, align: 'center' },
-    { title: '数量', dataIndex: 'totalQty', width: 80, align: 'center' },
-    { title: '金额', dataIndex: 'totalAmount', width: 110, align: 'right', render: (v: number) => <span style={{ color: C_AMOUNT, fontWeight: 600 }}>¥{v.toFixed(2)}</span> },
-    { title: '件数', dataIndex: 'totalPieces', width: 75, align: 'center', render: v => v || '—' },
-    {
-      title: '毛利', dataIndex: 'totalProfit', width: 110, align: 'right',
-      render: (v: number) => (
-        <span style={{ color: v >= 0 ? '#389e0d' : '#cf1322' }}>
-          {v >= 0 ? '+' : ''}¥{v.toFixed(2)}
-        </span>
-      ),
-    },
-  ]
-
-  const makeL2Expandable = (l1Row: ReportGroupRow) => ({
-    expandedRowRender: (l2Row: ReportGroupRow) => {
-      const key = `${l1Row.id}-${l2Row.id}`
-      if (l3Loading[key]) return <Spin size="small" style={{ display: 'block', padding: 12 }} />
-      return (
-        <Table rowKey="orderNo" size="small" pagination={false}
-          dataSource={l3Cache[key] ?? []} columns={l3Columns} scroll={{ x: 950 }} />
-      )
-    },
-    onExpand: (expanded: boolean, l2Row: ReportGroupRow) => handleL2Expand(expanded, l1Row, l2Row),
-  })
-
   const l1Columns: ColumnsType<ReportGroupRow> = [
     { title: l1Label, dataIndex: 'name', width: 220, render: (v: string) => <span style={{ color: C_LABEL }}>{v}</span> },
     { title: '订单数', dataIndex: 'orderCount', width: 80, align: 'center' },
@@ -280,17 +184,6 @@ export default function SalesReportSummary({
         dataSource={filteredL1} columns={l1Columns}
         pagination={{ pageSize: 20, showTotal: t => `共 ${t} 条` }}
         scroll={{ x: 800 }}
-        expandable={{
-          onExpand: handleL1Expand,
-          expandedRowRender: (l1Row: ReportGroupRow) => {
-            if (l2Loading[l1Row.id]) return <Spin size="small" style={{ display: 'block', padding: 12 }} />
-            return (
-              <Table rowKey="id" size="small" pagination={false}
-                dataSource={l2Cache[l1Row.id] ?? []} columns={l2Columns}
-                scroll={{ x: 700 }} expandable={makeL2Expandable(l1Row)} />
-            )
-          },
-        }}
       />
     </>
   )

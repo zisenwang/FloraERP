@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react'
-import { Table, App, Button, Spin, Tag } from 'antd'
+import { Table, App, Button, Tag } from 'antd'
 import { ArrowLeftOutlined, DownloadOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import type { ColumnsType } from 'antd/es/table'
 import {
-  getSalesSubgroup, getSalesOrderRows,
+  getSalesOrderRows,
   type ReportGroupRow, type ReportOrderRow,
 } from '@/api/reports'
 import { exportSalesExcel } from '@/utils/exportExcel'
 import type { SalesDim } from './SalesReport'
+import { C_AMOUNT } from '@/constants/colors'
 import styles from '../Reports.module.css'
 
 interface Props {
@@ -16,98 +17,38 @@ interface Props {
   startDate: string
   endDate: string
   groupBy: SalesDim
-  l2Cache: Record<number, ReportGroupRow[]>
-  setL2Cache: React.Dispatch<React.SetStateAction<Record<number, ReportGroupRow[]>>>
-  l3Cache: Record<string, ReportOrderRow[]>
-  setL3Cache: React.Dispatch<React.SetStateAction<Record<string, ReportOrderRow[]>>>
   onBack: () => void
   onOpenDrawer: (orderId: number) => void
 }
 
 export default function SalesReportDetail({
-  selectedL1, startDate, endDate, groupBy,
-  l2Cache, setL2Cache, l3Cache, setL3Cache,
-  onBack, onOpenDrawer,
+  selectedL1, startDate, endDate, groupBy, onBack, onOpenDrawer,
 }: Props) {
   const { message } = App.useApp()
   const navigate = useNavigate()
-  const [detailLoading, setDetailLoading] = useState(false)
-  const [detailExpandedKeys, setDetailExpandedKeys] = useState<number[]>([])
-  const [l3Loading, setL3Loading] = useState<Record<string, boolean>>({})
-  const [exporting, setExporting] = useState(false)
+  const [rows, setRows] = useState<ReportOrderRow[]>([])
+  const [loading, setLoading] = useState(false)
 
   const l1Label = groupBy === 'customer' ? '客户' : groupBy === 'product' ? '货品' : '供应商'
-  const l2Label = groupBy === 'customer' ? '货品' : groupBy === 'product' ? '客户' : '货品'
 
-  // On mount (or if entity/range changes), eagerly load all L2 + L3 so they
-  // are pre-expanded for the user.
   useEffect(() => {
-    setDetailLoading(true)
-    setDetailExpandedKeys([])
-
-    const fetchAll = async () => {
-      let l2List = l2Cache[selectedL1.id]
-      if (!l2List) {
-        l2List = await getSalesSubgroup({ by: groupBy, parentId: selectedL1.id, startDate, endDate })
-        setL2Cache(prev => ({ ...prev, [selectedL1.id]: l2List! }))
-      }
-
-      const results = await Promise.allSettled(
-        l2List.map(async l2Row => {
-          const key = `${selectedL1.id}-${l2Row.id}`
-          if (l3Cache[key] !== undefined) return { key, data: l3Cache[key] }
-          const params: Parameters<typeof getSalesOrderRows>[0] = { startDate, endDate }
-          if (groupBy === 'customer') { params.customerId = selectedL1.id; params.productId = l2Row.id }
-          else if (groupBy === 'product') { params.productId = selectedL1.id; params.customerId = l2Row.id }
-          else { params.supplierId = selectedL1.id; params.productId = l2Row.id }
-          const data = await getSalesOrderRows(params)
-          return { key, data }
-        })
-      )
-
-      const newL3: Record<string, ReportOrderRow[]> = {}
-      results.forEach(r => { if (r.status === 'fulfilled') newL3[r.value.key] = r.value.data })
-      setL3Cache(prev => ({ ...prev, ...newL3 }))
-      setDetailExpandedKeys(l2List.map(r => r.id))
-    }
-
-    fetchAll()
-      .catch(() => message.error('加载详情失败'))
-      .finally(() => setDetailLoading(false))
-  }, [selectedL1.id, startDate, endDate, groupBy])
-
-  // Lazy-load a single L3 if user manually collapses then re-expands
-  const handleL2Expand = (expanded: boolean, l2Row: ReportGroupRow) => {
-    const key = `${selectedL1.id}-${l2Row.id}`
-    if (!expanded || l3Cache[key] !== undefined) return
-    setL3Loading(prev => ({ ...prev, [key]: true }))
-    const params: Parameters<typeof getSalesOrderRows>[0] = { startDate, endDate }
-    if (groupBy === 'customer') { params.customerId = selectedL1.id; params.productId = l2Row.id }
-    else if (groupBy === 'product') { params.productId = selectedL1.id; params.customerId = l2Row.id }
-    else { params.supplierId = selectedL1.id; params.productId = l2Row.id }
-    getSalesOrderRows(params)
-      .then(data => setL3Cache(prev => ({ ...prev, [key]: data })))
-      .catch(() => setL3Cache(prev => ({ ...prev, [key]: [] })))
-      .finally(() => setL3Loading(prev => ({ ...prev, [key]: false })))
-  }
-
-  const handleExport = () => {
-    setExporting(true)
+    setLoading(true)
     const params: Parameters<typeof getSalesOrderRows>[0] = { startDate, endDate }
     if (groupBy === 'customer') params.customerId = selectedL1.id
     else if (groupBy === 'product') params.productId = selectedL1.id
     else params.supplierId = selectedL1.id
     getSalesOrderRows(params)
-      .then(rows => exportSalesExcel(rows, startDate, endDate, selectedL1.name))
-      .catch(() => message.error('导出失败'))
-      .finally(() => setExporting(false))
-  }
+      .then(setRows)
+      .catch(() => message.error('加载详情失败'))
+      .finally(() => setLoading(false))
+  }, [selectedL1.id, startDate, endDate, groupBy])
 
-  // ── Columns ─────────────────────────────────────────────────────────────────
-  const l3Columns: ColumnsType<ReportOrderRow> = [
+  const columns: ColumnsType<ReportOrderRow> = [
+    { title: '日期',     dataIndex: 'orderDate',     width: 100, align: 'center' },
+    { title: '客户',     dataIndex: 'customerName',  width: 140, align: 'center' },
     {
-      title: '单号', dataIndex: 'orderNo', width: 190,
-      render: (v: string, r: ReportOrderRow) => (
+      title: '单号', dataIndex: 'orderNo', width: 160, align: 'center',
+      render: (v: string, r) => (
         <span>
           {r.isReturn ? <Tag color="orange" style={{ marginRight: 4 }}>退</Tag> : null}
           <Button type="link" size="small" style={{ padding: 0 }}
@@ -117,39 +58,41 @@ export default function SalesReportDetail({
         </span>
       ),
     },
-    { title: '日期', dataIndex: 'orderDate', width: 100 },
-    { title: '数量', dataIndex: 'qty', width: 70, align: 'center' },
-    { title: '件数', dataIndex: 'pieces', width: 70, align: 'center', render: v => v || '—' },
-    { title: '单价', dataIndex: 'unitPrice', width: 85, align: 'right', render: (v: number) => `¥${v.toFixed(2)}` },
+    { title: '产品编码', dataIndex: 'productCode',   width: 90,  align: 'center' },
+    { title: '产品名称', dataIndex: 'productName',   width: 130, align: 'center' },
+    { title: '供应商',   dataIndex: 'supplierCode',  width: 70,  align: 'center' },
+    { title: '单位',     dataIndex: 'unit',          width: 55,  align: 'center', render: (v: string | null) => v ?? '—' },
+    { title: '数量',     dataIndex: 'qty',           width: 65,  align: 'center' },
+    { title: '单价',     dataIndex: 'unitPrice',     width: 80,  align: 'right',  render: (v: number) => `¥${v.toFixed(2)}` },
     {
-      title: '折后金额', dataIndex: 'finalAmount', width: 95, align: 'right',
-      render: (v: number, r: ReportOrderRow) => (
-        <span style={{ color: r.isReturn ? '#cf1322' : undefined }}>¥{v.toFixed(2)}</span>
-      ),
-    },
-    { title: '成本价', dataIndex: 'costPrice', width: 85, align: 'right', render: (v: number | null) => v != null ? `¥${v.toFixed(2)}` : '—' },
-    {
-      title: '利润', dataIndex: 'profit', width: 90, align: 'right',
-      render: (v: number) => (
-        <span style={{ color: v >= 0 ? '#389e0d' : '#cf1322', fontWeight: 500 }}>
-          {v >= 0 ? '+' : ''}¥{v.toFixed(2)}
+      title: '金额', dataIndex: 'finalAmount', width: 100, align: 'right',
+      render: (v: number, r) => (
+        <span style={{ color: r.isReturn ? '#cf1322' : C_AMOUNT, fontWeight: 600 }}>
+          {r.isReturn ? '-' : ''}¥{v.toFixed(2)}
         </span>
       ),
     },
-  ]
-
-  const l2Columns: ColumnsType<ReportGroupRow> = [
-    { title: l2Label, dataIndex: 'name', width: 200 },
-    { title: '订单数', dataIndex: 'orderCount', width: 80, align: 'center' },
-    { title: '数量', dataIndex: 'totalQty', width: 80, align: 'center' },
-    { title: '件数', dataIndex: 'totalPieces', width: 75, align: 'center', render: v => v || '—' },
-    { title: '金额', dataIndex: 'totalAmount', width: 110, align: 'right', render: (v: number) => `¥${v.toFixed(2)}` },
+    { title: '件数', dataIndex: 'pieces',   width: 60,  align: 'center', render: (v: number) => v || '—' },
     {
-      title: '毛利', dataIndex: 'totalProfit', width: 110, align: 'right',
-      render: (v: number) => (
-        <span style={{ color: v >= 0 ? '#389e0d' : '#cf1322' }}>
-          {v >= 0 ? '+' : ''}¥{v.toFixed(2)}
-        </span>
+      title: '毛利', dataIndex: 'profit', width: 95, align: 'right',
+      render: (v: number | null | undefined) => {
+        if (v == null) return <span style={{ color: '#aaa' }}>—</span>
+        return (
+          <span style={{ color: v >= 0 ? '#389e0d' : '#cf1322', fontWeight: 500 }}>
+            {v >= 0 ? '+' : ''}¥{v.toFixed(2)}
+          </span>
+        )
+      },
+    },
+    { title: '经办人', dataIndex: 'operator', width: 60,  align: 'center', render: (v: string | null) => v ?? '—' },
+    { title: '备注',   dataIndex: 'notes',    width: 100, align: 'center', render: (v: string | null) => v ?? '—' },
+    {
+      title: '操作', width: 60, align: 'center', fixed: 'right',
+      render: (_, r) => (
+        <Button type="link" size="small"
+          onClick={() => r.isReturn ? navigate(`/sales/returns/${r.orderId}`) : onOpenDrawer(r.orderId)}>
+          查看
+        </Button>
       ),
     },
   ]
@@ -167,7 +110,9 @@ export default function SalesReportDetail({
           {l1Label}：{selectedL1.name}
         </span>
         <span style={{ color: '#888', fontSize: 13 }}>{startDate} ~ {endDate}</span>
-        <Button icon={<DownloadOutlined />} loading={exporting} onClick={handleExport}>导出Excel</Button>
+        <Button icon={<DownloadOutlined />} onClick={() => exportSalesExcel(rows, startDate, endDate, selectedL1.name)}>
+          导出Excel
+        </Button>
       </div>
 
       <div className={styles.statsRow}>
@@ -201,30 +146,15 @@ export default function SalesReportDetail({
         </div>
       </div>
 
-      {detailLoading
-        ? <Spin size="large" style={{ display: 'block', margin: '60px auto' }} />
-        : (
-          <Table
-            rowKey="id" size="small" pagination={false}
-            dataSource={l2Cache[selectedL1.id] ?? []}
-            columns={l2Columns}
-            scroll={{ x: 700 }}
-            expandable={{
-              expandedRowKeys: detailExpandedKeys,
-              onExpandedRowsChange: keys => setDetailExpandedKeys(keys as number[]),
-              onExpand: (expanded, l2Row) => handleL2Expand(expanded, l2Row),
-              expandedRowRender: (l2Row: ReportGroupRow) => {
-                const key = `${selectedL1.id}-${l2Row.id}`
-                if (l3Loading[key]) return <Spin size="small" style={{ display: 'block', padding: 12 }} />
-                return (
-                  <Table rowKey="orderNo" size="small" pagination={false}
-                    dataSource={l3Cache[key] ?? []} columns={l3Columns} scroll={{ x: 950 }} />
-                )
-              },
-            }}
-          />
-        )
-      }
+      <Table
+        rowKey={(r, i) => `${r.orderNo}-${i}`}
+        size="small"
+        dataSource={rows}
+        columns={columns}
+        loading={loading}
+        pagination={false}
+        scroll={{ x: 1165 }}
+      />
     </>
   )
 }

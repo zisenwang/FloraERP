@@ -87,6 +87,8 @@ export interface ReportOrderRow {
   productName?: string
   supplierCode?: string
   supplierName?: string
+  unit?: string | null
+  operator?: string | null
   qty: number
   pieces: number
   unitPrice: number

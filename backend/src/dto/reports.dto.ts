@@ -81,6 +81,8 @@ export interface ReportOrderRow {
   productName?: string
   supplierCode?: string
   supplierName?: string
+  unit?: string | null
+  operator?: string | null
   qty: number
   pieces: number
   unitPrice: number
@@ -89,6 +91,6 @@ export interface ReportOrderRow {
   finalAmount: number
   costPrice?: number | null   // sales only
   profit?: number             // sales only
-  notes?: string | null       // sales item notes
+  notes?: string | null
   isReturn?: boolean
 }
