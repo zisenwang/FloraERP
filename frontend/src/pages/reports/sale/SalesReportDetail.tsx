@@ -10,7 +10,6 @@ import {
 import { exportSalesExcel } from '@/utils/exportExcel'
 import type { SalesDim } from './SalesReport'
 import { C_AMOUNT } from '@/constants/colors'
-import styles from '../Reports.module.css'
 
 interface Props {
   selectedL1: ReportGroupRow
@@ -97,11 +96,6 @@ export default function SalesReportDetail({
     },
   ]
 
-  const profit = selectedL1.totalProfit ?? 0
-  const detailMargin = selectedL1.totalAmount
-    ? (profit / selectedL1.totalAmount * 100).toFixed(1)
-    : null
-
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
@@ -115,36 +109,6 @@ export default function SalesReportDetail({
         </Button>
       </div>
 
-      <div className={styles.statsRow}>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>销售总额</div>
-          <div className={styles.statValue}>¥{selectedL1.totalAmount.toFixed(2)}</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>合计毛利</div>
-          <div className={profit >= 0 ? styles.statValueGreen : styles.statValueRed}>
-            {profit >= 0 ? '+' : ''}¥{profit.toFixed(2)}
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>毛利率</div>
-          <div className={detailMargin !== null && Number(detailMargin) >= 0 ? styles.statValueGreen : styles.statValueRed}>
-            {detailMargin !== null ? `${detailMargin}%` : '—'}
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>总数量</div>
-          <div className={styles.statValue}>{selectedL1.totalQty}</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>总件数</div>
-          <div className={styles.statValue}>{selectedL1.totalPieces || '—'}</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>订单数</div>
-          <div className={styles.statValue}>{selectedL1.orderCount}</div>
-        </div>
-      </div>
 
       <Table
         rowKey={(r, i) => `${r.orderNo}-${i}`}
@@ -154,6 +118,33 @@ export default function SalesReportDetail({
         loading={loading}
         pagination={false}
         scroll={{ x: 1165 }}
+        summary={pageData => {
+          const totalQty    = pageData.reduce((s, r) => s + (r.qty ?? 0), 0)
+          const totalAmount = pageData.reduce((s, r) => s + (r.finalAmount ?? 0), 0)
+          const totalPieces = pageData.reduce((s, r) => s + (r.pieces ?? 0), 0)
+          const totalProfit = pageData.filter(r => !r.isReturn).reduce((s, r) => s + (r.profit ?? 0), 0)
+          return (
+            <Table.Summary fixed>
+              <Table.Summary.Row style={{ fontWeight: 600, background: '#f0f5ff' }}>
+                <Table.Summary.Cell index={0} colSpan={7} align="right">合计</Table.Summary.Cell>
+                <Table.Summary.Cell index={7} align="center">{totalQty}</Table.Summary.Cell>
+                <Table.Summary.Cell index={8} />
+                <Table.Summary.Cell index={9} align="center">
+                  <span style={{ color: C_AMOUNT }}>¥{totalAmount.toFixed(2)}</span>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={10} align="center">{totalPieces || '—'}</Table.Summary.Cell>
+                <Table.Summary.Cell index={11} align="center">
+                  <span style={{ color: totalProfit >= 0 ? '#389e0d' : '#cf1322' }}>
+                    {totalProfit >= 0 ? '+' : ''}¥{totalProfit.toFixed(2)}
+                  </span>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={12} />
+                <Table.Summary.Cell index={13} />
+                <Table.Summary.Cell index={14} />
+              </Table.Summary.Row>
+            </Table.Summary>
+          )
+        }}
       />
     </>
   )

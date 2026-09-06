@@ -89,7 +89,7 @@ export default function PurchaseReportSummary({
     { title: '件数', dataIndex: 'totalPieces', width: 75, align: 'center', render: v => v || '—' },
     { title: '金额', dataIndex: 'totalAmount', width: 130, align: 'right', render: (v: number) => <span style={{ color: C_AMOUNT, fontWeight: 600 }}>¥{v.toFixed(2)}</span> },
     {
-      title: '', width: 120, align: 'center', fixed: 'right',
+      title: '操作', width: 120, align: 'center', fixed: 'right',
       render: (_: unknown, r: ReportGroupRow) => (
         <span style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
           <Button size="small" type="link" icon={<EyeOutlined />} onClick={() => onSelectL1(r)}>查看</Button>
@@ -126,30 +126,25 @@ export default function PurchaseReportSummary({
         <Button icon={<DownloadOutlined />} loading={exporting} onClick={handleExport}>导出Excel</Button>
       </div>
 
-      <div className={styles.statsRow}>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>进货总额</div>
-          <div className={styles.statValue}>¥{stats.totalAmount.toFixed(2)}</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>总数量</div>
-          <div className={styles.statValue}>{stats.totalQty}</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>总件数</div>
-          <div className={styles.statValue}>{stats.totalPieces || '—'}</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>订单数</div>
-          <div className={styles.statValue}>{stats.orderCount}</div>
-        </div>
-      </div>
-
       <Table
         rowKey="id" size="small" loading={l1Loading}
         dataSource={filteredL1} columns={l1Columns}
         pagination={{ pageSize: 20, showTotal: t => `共 ${t} 条` }}
         scroll={{ x: 700 }}
+        summary={() => (
+          <Table.Summary fixed>
+            <Table.Summary.Row style={{ fontWeight: 600, background: '#f0f5ff' }}>
+              <Table.Summary.Cell index={0} align="right">合计</Table.Summary.Cell>
+              <Table.Summary.Cell index={1} align="center">{stats.orderCount}</Table.Summary.Cell>
+              <Table.Summary.Cell index={2} align="center">{stats.totalQty}</Table.Summary.Cell>
+              <Table.Summary.Cell index={3} align="center">{stats.totalPieces || '—'}</Table.Summary.Cell>
+              <Table.Summary.Cell index={4} align="center">
+                <span style={{ color: C_AMOUNT }}>¥{stats.totalAmount.toFixed(2)}</span>
+              </Table.Summary.Cell>
+              <Table.Summary.Cell index={5} />
+            </Table.Summary.Row>
+          </Table.Summary>
+        )}
       />
     </>
   )

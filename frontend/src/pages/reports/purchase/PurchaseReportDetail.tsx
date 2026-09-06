@@ -10,7 +10,6 @@ import {
 import { exportPurchaseExcel } from '@/utils/exportExcel'
 import type { PurchaseDim } from './PurchaseReport'
 import { C_AMOUNT } from '@/constants/colors'
-import styles from '../Reports.module.css'
 
 interface Props {
   selectedL1: ReportGroupRow
@@ -94,24 +93,6 @@ export default function PurchaseReportDetail({
         </Button>
       </div>
 
-      <div className={styles.statsRow}>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>进货总额</div>
-          <div className={styles.statValue}>¥{selectedL1.totalAmount.toFixed(2)}</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>总数量</div>
-          <div className={styles.statValue}>{selectedL1.totalQty}</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>总件数</div>
-          <div className={styles.statValue}>{selectedL1.totalPieces || '—'}</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>订单数</div>
-          <div className={styles.statValue}>{selectedL1.orderCount}</div>
-        </div>
-      </div>
 
       <Table
         rowKey={(r, i) => `${r.orderNo}-${i}`}
@@ -121,6 +102,27 @@ export default function PurchaseReportDetail({
         loading={loading}
         pagination={false}
         scroll={{ x: 1030 }}
+        summary={pageData => {
+          const totalQty    = pageData.reduce((s, r) => s + (r.qty ?? 0), 0)
+          const totalAmount = pageData.reduce((s, r) => s + (r.finalAmount ?? 0), 0)
+          const totalPieces = pageData.reduce((s, r) => s + (r.pieces ?? 0), 0)
+          return (
+            <Table.Summary fixed>
+              <Table.Summary.Row style={{ fontWeight: 600, background: '#f0f5ff' }}>
+                <Table.Summary.Cell index={0} colSpan={6} align="right">合计</Table.Summary.Cell>
+                <Table.Summary.Cell index={6} align="center">{totalQty}</Table.Summary.Cell>
+                <Table.Summary.Cell index={7} />
+                <Table.Summary.Cell index={8} align="center">
+                  <span style={{ color: C_AMOUNT }}>¥{totalAmount.toFixed(2)}</span>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={9} align="center">{totalPieces || '—'}</Table.Summary.Cell>
+                <Table.Summary.Cell index={10} />
+                <Table.Summary.Cell index={11} />
+                <Table.Summary.Cell index={12} />
+              </Table.Summary.Row>
+            </Table.Summary>
+          )
+        }}
       />
     </>
   )

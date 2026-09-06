@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
 import type { ReportGroupRow } from '@/api/reports'
-import PurchaseOrderDrawer from '@/components/PurchaseOrderDrawer'
+import PurchaseOrderModal from '@/components/PurchaseOrderModal'
 import PurchaseReportSummary from './PurchaseReportSummary'
 import PurchaseReportDetail from './PurchaseReportDetail'
 
@@ -25,7 +25,7 @@ export default function PurchaseReport() {
 
   return (
     <>
-      <PurchaseOrderDrawer orderId={drawerOrderId} onClose={() => setDrawerOrderId(null)} />
+      <PurchaseOrderModal orderId={drawerOrderId} onClose={() => setDrawerOrderId(null)} />
 
       {selectedL1
         ? <PurchaseReportDetail

@@ -110,7 +110,7 @@ export default function SalesReportSummary({
       },
     },
     {
-      title: '', width: 120, align: 'center', fixed: 'right',
+      title: '操作', width: 120, align: 'center', fixed: 'right',
       render: (_: unknown, r: ReportGroupRow) => (
         <span style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
           <Button size="small" type="link" icon={<EyeOutlined />} onClick={() => onSelectL1(r)}>查看</Button>
@@ -148,42 +148,35 @@ export default function SalesReportSummary({
         <Button icon={<DownloadOutlined />} loading={exporting} onClick={handleExport}>导出Excel</Button>
       </div>
 
-      <div className={styles.statsRow}>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>销售总额</div>
-          <div className={styles.statValue}>¥{stats.totalAmount.toFixed(2)}</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>合计毛利</div>
-          <div className={stats.totalProfit >= 0 ? styles.statValueGreen : styles.statValueRed}>
-            {stats.totalProfit >= 0 ? '+' : ''}¥{stats.totalProfit.toFixed(2)}
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>毛利率</div>
-          <div className={margin !== null && Number(margin) >= 0 ? styles.statValueGreen : styles.statValueRed}>
-            {margin !== null ? `${margin}%` : '—'}
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>总数量</div>
-          <div className={styles.statValue}>{stats.totalQty}</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>总件数</div>
-          <div className={styles.statValue}>{stats.totalPieces || '—'}</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>订单数</div>
-          <div className={styles.statValue}>{stats.orderCount}</div>
-        </div>
-      </div>
-
       <Table
         rowKey="id" size="small" loading={l1Loading}
         dataSource={filteredL1} columns={l1Columns}
         pagination={{ pageSize: 20, showTotal: t => `共 ${t} 条` }}
         scroll={{ x: 800 }}
+        summary={() => (
+          <Table.Summary fixed>
+            <Table.Summary.Row style={{ fontWeight: 600, background: '#f0f5ff' }}>
+              <Table.Summary.Cell index={0} align="right">合计</Table.Summary.Cell>
+              <Table.Summary.Cell index={1} align="center">{stats.orderCount}</Table.Summary.Cell>
+              <Table.Summary.Cell index={2} align="center">{stats.totalQty}</Table.Summary.Cell>
+              <Table.Summary.Cell index={3} align="center">
+                <span style={{ color: C_AMOUNT }}>¥{stats.totalAmount.toFixed(2)}</span>
+              </Table.Summary.Cell>
+              <Table.Summary.Cell index={4} align="center">{stats.totalPieces || '—'}</Table.Summary.Cell>
+              <Table.Summary.Cell index={5} align="center">
+                <span style={{ color: stats.totalProfit >= 0 ? '#389e0d' : '#cf1322' }}>
+                  {stats.totalProfit >= 0 ? '+' : ''}¥{stats.totalProfit.toFixed(2)}
+                </span>
+              </Table.Summary.Cell>
+              <Table.Summary.Cell index={6} align="center">
+                <span style={{ color: margin !== null && Number(margin) >= 0 ? '#389e0d' : '#cf1322' }}>
+                  {margin !== null ? `${margin}%` : '—'}
+                </span>
+              </Table.Summary.Cell>
+              <Table.Summary.Cell index={7} />
+            </Table.Summary.Row>
+          </Table.Summary>
+        )}
       />
     </>
   )
