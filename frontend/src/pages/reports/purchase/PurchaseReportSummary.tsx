@@ -22,13 +22,12 @@ interface Props {
   startDate: string
   endDate: string
   onSelectL1: (row: ReportGroupRow) => void
-  onOpenDrawer: (orderId: number) => void
 }
 
 export default function PurchaseReportSummary({
   dateRange, onDateChange, groupBy, onGroupByChange,
   startDate, endDate,
-  onSelectL1, onOpenDrawer,
+  onSelectL1,
 }: Props) {
   const { message } = App.useApp()
 

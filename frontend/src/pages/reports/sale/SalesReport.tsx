@@ -44,7 +44,6 @@ export default function SalesReport() {
             startDate={startDate}
             endDate={endDate}
             onSelectL1={setSelectedL1}
-            onOpenDrawer={setDrawerOrderId}
           />
       }
     </>
