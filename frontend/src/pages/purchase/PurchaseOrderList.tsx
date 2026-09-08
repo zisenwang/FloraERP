@@ -6,7 +6,8 @@ import {
   StopOutlined,
   SearchOutlined,
   DownloadOutlined,
-  FilterOutlined
+  FilterOutlined,
+  ClearOutlined,
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
@@ -27,6 +28,17 @@ import { PAGE_SIZE } from '@/constants/pagination'
 import styles from './Purchase.module.css'
 
 const { RangePicker } = DatePicker
+
+const FILTER_STORAGE_KEY = 'purchaseOrderList_filters'
+
+function loadSavedFilters() {
+  try {
+    const raw = sessionStorage.getItem(FILTER_STORAGE_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
 
 const STATUS_COLOR: Record<string, string> = {
   '已入库': 'green',
@@ -100,27 +112,42 @@ export default function PurchaseOrderList() {
   const { message } = App.useApp()
   const navigate = useNavigate()
 
-  const [mode, setMode] = useState<'summary' | 'detail'>('summary')
+  const [savedFilters] = useState(loadSavedFilters)
+
+  const [mode, setMode] = useState<'summary' | 'detail'>(savedFilters?.mode ?? 'summary')
 
   const [orders, setOrders] = useState<PurchaseOrder[]>([])
   const [returns, setReturns] = useState<PurchaseReturn[]>([])
   const [loading, setLoading] = useState(false)
 
   // Search state — input (UI) vs applied (committed on button click)
-  const [searchField, setSearchField] = useState<string>('supplierName')
-  const [searchKeyword, setSearchKeyword] = useState('')
-  const [appliedField, setAppliedField] = useState<string>('supplierName')
-  const [appliedKeyword, setAppliedKeyword] = useState('')
+  const [searchField, setSearchField] = useState<string>(savedFilters?.searchField ?? 'supplierName')
+  const [searchKeyword, setSearchKeyword] = useState(savedFilters?.searchKeyword ?? '')
+  const [appliedField, setAppliedField] = useState<string>(savedFilters?.appliedField ?? 'supplierName')
+  const [appliedKeyword, setAppliedKeyword] = useState(savedFilters?.appliedKeyword ?? '')
 
-  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
-    dayjs().startOf('month'),
-    dayjs().endOf('month'),
-  ])
+  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>(
+    savedFilters?.dateRange
+      ? [dayjs(savedFilters.dateRange[0]), dayjs(savedFilters.dateRange[1])]
+      : [dayjs().startOf('month'), dayjs().endOf('month')]
+  )
   const [voiding, setVoiding] = useState<Record<string, boolean>>({})
 
   // Detail mode
   const [detailRows, setDetailRows] = useState<PurchaseDetailRow[]>([])
   const [detailLoading, setDetailLoading] = useState(false)
+
+  // Persist filter state so it survives navigation away and back
+  useEffect(() => {
+    sessionStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify({
+      mode,
+      searchField,
+      searchKeyword,
+      appliedField,
+      appliedKeyword,
+      dateRange: [dateRange[0].format('YYYY-MM-DD'), dateRange[1].format('YYYY-MM-DD')],
+    }))
+  }, [mode, searchField, searchKeyword, appliedField, appliedKeyword, dateRange])
 
   const fetchAll = useCallback((range = dateRange) => {
     setLoading(true)
@@ -159,6 +186,15 @@ export default function PurchaseOrderList() {
   const handleSearch = () => {
     setAppliedField(searchField)
     setAppliedKeyword(searchKeyword)
+  }
+
+  const handleClearFilters = () => {
+    const defaultField = 'supplierName'
+    setSearchField(defaultField)
+    setSearchKeyword('')
+    setAppliedField(defaultField)
+    setAppliedKeyword('')
+    setDateRange([dayjs().startOf('month'), dayjs().endOf('month')])
   }
 
   const handleVoid = async (row: UnifiedRow) => {
@@ -348,6 +384,7 @@ export default function PurchaseOrderList() {
           onPressEnter={handleSearch}
         />
         <Button icon={<SearchOutlined />} onClick={handleSearch}>搜索</Button>
+        <Button icon={<ClearOutlined />} onClick={handleClearFilters}>清除筛选</Button>
         <div style={{ flex: 1 }} />
         <Button
           icon={<DownloadOutlined />}
