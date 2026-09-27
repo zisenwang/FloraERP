@@ -85,9 +85,8 @@ export default function ProductList() {
   const applyNextCode = (supplierId: number) => {
     setCodeLoading(true)
     getNextProductCode(supplierId).then(seq => {
-      const padded = seq.padStart(2, '0')
-      setCodeSeq(padded)
-      form.setFieldValue('code', padded)
+      setCodeSeq(seq)
+      form.setFieldValue('code', seq)
     }).catch(() => {}).finally(() => setCodeLoading(false))
   }
 
