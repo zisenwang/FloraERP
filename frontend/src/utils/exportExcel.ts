@@ -1,10 +1,9 @@
 import * as XLSX from 'xlsx'
 import type { ReportGroupRow, ReportOrderRow, InventoryReportItem } from '@/api/reports'
-import type { SalesDetailRow } from '@/api/sales'
+import type { SalesDetailRow, SalesOrder } from '@/api/sales'
 import type { PurchaseDetailRow } from '@/api/purchase'
 import type { Product } from '@/api/products'
 import type { InventoryRow } from '@/api/inventory'
-import type { Payment } from '@/api/payments'
 
 function autoWidth(ws: XLSX.WorkSheet) {
   const data = XLSX.utils.sheet_to_json<string[]>(ws, { header: 1 })
@@ -423,25 +422,35 @@ export function exportInventoryListExcel(rows: InventoryRow[]) {
 
 // ─── Payment List ─────────────────────────────────────────────────────────────
 
-export function exportPaymentsExcel(
-  rows: Payment[],
+export function exportReceivablesExcel(
+  rows: SalesOrder[],
   startDate: string,
   endDate: string,
 ) {
-  const sheetData = rows.map(r => ({
-    '日期': r.paymentDate,
+  const paid = (r: SalesOrder) => r.paidAmount ?? 0
+  const unpaid = (r: SalesOrder) => Math.max(0, +(r.totalAmount - paid(r)).toFixed(2))
+  const sheetData: Record<string, string | number>[] = rows.map(r => ({
+    '日期': r.orderDate,
     '单号': r.orderNo,
     '客户': `${r.customerCode} ${r.customerName}`,
-    '金额': r.amount,
-    '收款方式': r.method,
-    '备注': r.notes ?? '',
-    '操作人': r.operator ?? '',
+    '订单金额': r.totalAmount,
+    '收款方式': r.paymentMethods ?? '',
+    '实收': paid(r),
+    '状态': r.paymentStatus,
+    '备注': r.paymentNotes ?? '',
   }))
-  const total = rows.reduce((s, r) => s + r.amount, 0)
-  sheetData.push({ '日期': '', '单号': '', '客户': '合计', '金额': total, '收款方式': '', '备注': '', '操作人': '' })
+  sheetData.push({
+    '日期': '', '单号': '',
+    '客户': `合计总额（${rows.length} 单）`,
+    '订单金额': +rows.reduce((s, r) => s + r.totalAmount, 0).toFixed(2),
+    '收款方式': `合计已收（${rows.filter(r => paid(r) > 0).length} 单）`,
+    '实收': +rows.reduce((s, r) => s + paid(r), 0).toFixed(2),
+    '状态': `合计未付款（${rows.filter(r => unpaid(r) > 0).length} 单）`,
+    '备注': +rows.reduce((s, r) => s + unpaid(r), 0).toFixed(2),
+  })
   const ws = XLSX.utils.json_to_sheet(sheetData)
   autoWidth(ws)
   const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, '收款记录')
-  write(wb, `收款记录_${startDate}_${endDate}`)
+  XLSX.utils.book_append_sheet(wb, ws, '收款管理')
+  write(wb, `收款管理_${startDate}_${endDate}`)
 }

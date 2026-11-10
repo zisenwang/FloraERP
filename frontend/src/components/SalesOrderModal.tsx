@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Modal, Spin, App, Button, Descriptions, Table, Tag } from 'antd'
-import { PrinterOutlined } from '@ant-design/icons'
+import { PrinterOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useReactToPrint } from 'react-to-print'
 import type { ColumnsType } from 'antd/es/table'
 import { getSalesOrder, type SalesOrder, type SalesOrderItem } from '@/api/sales'
+import { getPayments, deletePayment, type Payment } from '@/api/payments'
+import { C_AMOUNT } from '@/constants/colors'
 import { useSettings } from '@/store/SettingsContext'
 import { getErrorMessage } from '@/utils/error'
 import printStyles from '../pages/sales/SalesOrderView.module.css'
@@ -11,6 +13,10 @@ import printStyles from '../pages/sales/SalesOrderView.module.css'
 interface Props {
   orderId: number | null
   onClose: () => void
+  /** Show the order's payment records, with delete */
+  showPayments?: boolean
+  /** Called after a payment is deleted so the parent can refresh */
+  onPaymentsChange?: () => void
 }
 
 const itemColumns: ColumnsType<SalesOrderItem> = [
@@ -37,24 +43,75 @@ const itemColumns: ColumnsType<SalesOrderItem> = [
   },
 ]
 
-export default function SalesOrderModal({ orderId, onClose }: Props) {
-  const { message } = App.useApp()
+export default function SalesOrderModal({ orderId, onClose, showPayments, onPaymentsChange }: Props) {
+  const { message, modal } = App.useApp()
   const { settings } = useSettings()
   const printRef = useRef<HTMLDivElement>(null)
   const handlePrint = useReactToPrint({ contentRef: printRef })
 
   const [order, setOrder] = useState<SalesOrder | null>(null)
   const [loading, setLoading] = useState(false)
+  const [payments, setPayments] = useState<Payment[]>([])
+  const [deleting, setDeleting] = useState<Record<number, boolean>>({})
+
+  const fetchPayments = (id: number) => {
+    getPayments({ salesOrderId: id })
+      .then(setPayments)
+      .catch(err => message.error(getErrorMessage(err)))
+  }
 
   useEffect(() => {
-    if (orderId == null) { setOrder(null); return }
+    if (orderId == null) { setOrder(null); setPayments([]); return }
     setLoading(true)
     setOrder(null)
+    setPayments([])
     getSalesOrder(orderId)
       .then(setOrder)
       .catch(err => message.error(getErrorMessage(err)))
       .finally(() => setLoading(false))
+    if (showPayments) fetchPayments(orderId)
   }, [orderId])
+
+  const handleDeletePayment = (record: Payment) => {
+    modal.confirm({
+      title: '确认删除',
+      content: `删除 ${record.paymentDate} 的收款记录 ¥${record.amount.toFixed(2)}？销售单状态将同步更新。`,
+      okText: '删除', okType: 'danger', cancelText: '取消',
+      onOk: () => {
+        setDeleting(prev => ({ ...prev, [record.id]: true }))
+        return deletePayment(record.id)
+          .then(() => {
+            message.success('已删除')
+            fetchPayments(record.salesOrderId)
+            getSalesOrder(record.salesOrderId).then(setOrder).catch(() => {})
+            onPaymentsChange?.()
+          })
+          .catch(err => message.error(getErrorMessage(err)))
+          .finally(() => setDeleting(prev => ({ ...prev, [record.id]: false })))
+      },
+    })
+  }
+
+  const paymentColumns: ColumnsType<Payment> = [
+    { title: '收款日期', dataIndex: 'paymentDate', width: 110 },
+    {
+      title: '金额', dataIndex: 'amount', width: 110, align: 'right',
+      render: (v: number) => <span style={{ color: C_AMOUNT, fontWeight: 600 }}>¥{v.toFixed(2)}</span>,
+    },
+    { title: '方式', dataIndex: 'method', width: 90 },
+    { title: '备注', dataIndex: 'notes', width: 200, ellipsis: true },
+    { title: '操作人', dataIndex: 'operator', width: 90 },
+    {
+      title: '操作', width: 60, align: 'center',
+      render: (_: unknown, r: Payment) => (
+        <Button
+          type="link" size="small" danger icon={<DeleteOutlined />}
+          loading={deleting[r.id]}
+          onClick={() => handleDeletePayment(r)}
+        />
+      ),
+    },
+  ]
 
   const open = orderId !== null
   const totalQty = order?.items.reduce((s, i) => s + i.qty, 0) ?? 0
@@ -112,6 +169,20 @@ export default function SalesOrderModal({ orderId, onClose }: Props) {
             dataSource={order.items}
             columns={itemColumns}
           />
+
+          {showPayments && (
+            <>
+              <div style={{ fontWeight: 600, margin: '16px 0 8px' }}>收款记录</div>
+              <Table
+                rowKey="id"
+                size="small"
+                pagination={false}
+                dataSource={payments}
+                columns={paymentColumns}
+                locale={{ emptyText: '暂无收款记录' }}
+              />
+            </>
+          )}
 
           {/* ── Hidden print template (identical to SalesOrderView) ── */}
           <div style={{ display: 'none' }}>

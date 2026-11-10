@@ -30,6 +30,12 @@ export interface SalesOrder {
   totalAmount: number
   totalPieces: number
   totalProfit: number
+  /** Sum of payments received — only populated by list queries */
+  paidAmount?: number
+  /** Distinct payment methods joined by '/' — list queries only */
+  paymentMethods?: string | null
+  /** Payment notes joined by '；' — list queries only */
+  paymentNotes?: string | null
   paymentStatus: '未收款' | '已收款' | '部分收款'
   operator: string | null
   notes: string | null

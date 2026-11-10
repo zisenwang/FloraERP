@@ -1,117 +1,113 @@
 import { useEffect, useState } from 'react'
-import { Table, DatePicker, Input, Button, App} from 'antd'
-import { PlusOutlined, DeleteOutlined, SearchOutlined, DownloadOutlined } from '@ant-design/icons'
+import { Table, DatePicker, Input, Button, Tag, Segmented, App } from 'antd'
+import { PlusOutlined, SearchOutlined, DownloadOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
-import { getPayments, deletePayment, type Payment } from '@/api/payments'
 import { getSalesOrders, type SalesOrder } from '@/api/sales'
 import { getErrorMessage } from '@/utils/error'
-import { exportPaymentsExcel } from '@/utils/exportExcel'
+import { exportReceivablesExcel } from '@/utils/exportExcel'
 import { C_AMOUNT, C_LABEL } from '@/constants/colors'
 import { PAGE_SIZE } from '@/constants/pagination'
 import SalesOrderModal from '@/components/SalesOrderModal'
 import AddPaymentModal from '@/components/AddPaymentModal'
 import styles from './Payment.module.css'
 
-// ─── Payment List Page ────────────────────────────────────────────────────────
+type StatusFilter = 'all' | 'paid' | 'unpaid'
+
+const PAY_STATUS_COLOR: Record<string, string> = {
+  '未收款': 'red', '部分收款': 'orange', '已收款': 'green',
+}
+
+const paidOf   = (o: SalesOrder) => o.paidAmount ?? 0
+const unpaidOf = (o: SalesOrder) => Math.max(0, o.totalAmount - paidOf(o))
+
+// ─── Payment List Page — one row per sales order ─────────────────────────────
 
 export default function PaymentList() {
-  const { message, modal } = App.useApp()
-  const [payments, setPayments] = useState<Payment[]>([])
+  const { message } = App.useApp()
+  const [orders, setOrders] = useState<SalesOrder[]>([])
   const [loading, setLoading] = useState(false)
   const [customerSearch, setCustomerSearch] = useState('')
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>([dayjs().startOf('month'), dayjs().endOf('month')])
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [addOpen, setAddOpen] = useState(false)
-  const [deleting, setDeleting] = useState<Record<number, boolean>>({})
+  const [payOrderId, setPayOrderId] = useState<number | null>(null)
   const [drawerOrderId, setDrawerOrderId] = useState<number | null>(null)
 
-  // Receivable summary filtered by the same date range
-  const [unpaidOrders, setUnpaidOrders] = useState<SalesOrder[]>([])
-
-  const fetchPayments = () => {
+  const fetchOrders = () => {
     setLoading(true)
-    getPayments({
-      startDate: dateRange?.[0].format('YYYY-MM-DD'),
-      endDate:   dateRange?.[1].format('YYYY-MM-DD'),
-    })
-      .then(setPayments)
-      .catch(err => message.error(getErrorMessage(err)))
-      .finally(() => setLoading(false))
-  }
-
-  const fetchUnpaid = () => {
     getSalesOrders({
       startDate: dateRange?.[0].format('YYYY-MM-DD'),
       endDate:   dateRange?.[1].format('YYYY-MM-DD'),
     })
-      .then(data => setUnpaidOrders(data.filter(o => o.paymentStatus !== '已收款')))
-      .catch(() => {})
+      // Voided orders are not receivable
+      .then(data => setOrders(data.filter(o => o.status !== '作废')))
+      .catch(err => message.error(getErrorMessage(err)))
+      .finally(() => setLoading(false))
   }
 
-  useEffect(() => { fetchPayments() }, [dateRange])
-  useEffect(() => { fetchUnpaid() }, [dateRange])
+  useEffect(() => { fetchOrders() }, [dateRange])
 
-  const handleDelete = (record: Payment) => {
-    modal.confirm({
-      title: '确认删除',
-      content: `删除「${record.orderNo}」的收款记录 ¥${record.amount.toFixed(2)}？销售单状态将同步更新。`,
-      okText: '删除', okType: 'danger', cancelText: '取消',
-      onOk: () => {
-        setDeleting(prev => ({ ...prev, [record.id]: true }))
-        return deletePayment(record.id)
-          .then(() => { message.success('已删除'); fetchPayments(); fetchUnpaid() })
-          .catch(err => message.error(getErrorMessage(err)))
-          .finally(() => setDeleting(prev => ({ ...prev, [record.id]: false })))
-      },
-    })
+  const openAddPayment = (orderId: number | null) => {
+    setPayOrderId(orderId)
+    setAddOpen(true)
   }
 
   const kw = customerSearch.trim().toLowerCase()
-  const filtered = kw
-    ? payments.filter(p =>
-        p.customerName?.toLowerCase().includes(kw) ||
-        p.customerCode?.toLowerCase().includes(kw) ||
-        p.orderNo?.toLowerCase().includes(kw)
-      )
-    : payments
+  const filtered = orders
+    .filter(o =>
+      statusFilter === 'all' ||
+      (statusFilter === 'paid' ? o.paymentStatus === '已收款' : o.paymentStatus !== '已收款')
+    )
+    .filter(o => !kw ||
+      o.customerName?.toLowerCase().includes(kw) ||
+      o.customerCode?.toLowerCase().includes(kw) ||
+      o.orderNo?.toLowerCase().includes(kw)
+    )
 
-  const totalCollected   = filtered.reduce((s, p) => s + p.amount, 0)
-  const receivableAmount = unpaidOrders.reduce((s, o) => s + o.totalAmount, 0)
-  const unpaidCount      = unpaidOrders.filter(o => o.paymentStatus === '未收款').length
+  const totalAmount = filtered.reduce((s, o) => s + o.totalAmount, 0)
+  const totalPaid   = filtered.reduce((s, o) => s + paidOf(o), 0)
+  const totalUnpaid = filtered.reduce((s, o) => s + unpaidOf(o), 0)
+  const paidCount   = filtered.filter(o => paidOf(o) > 0).length
+  const unpaidCount = filtered.filter(o => unpaidOf(o) > 0).length
 
-  const columns: ColumnsType<Payment> = [
-    { title: '日期', dataIndex: 'paymentDate', width: 110 },
+  const columns: ColumnsType<SalesOrder> = [
+    { title: '日期', dataIndex: 'orderDate', width: 110 },
     {
       title: '单号', dataIndex: 'orderNo', width: 160,
-      render: (v: string, r: Payment) => (
+      render: (v: string, r: SalesOrder) => (
         <Button type="link" size="small" style={{ padding: 0 }}
-          onClick={() => setDrawerOrderId(r.salesOrderId)}>
+          onClick={() => setDrawerOrderId(r.id)}>
           {v}
         </Button>
       ),
     },
     {
       title: '客户', width: 160,
-      render: (_: unknown, r: Payment) => <span style={{ color: C_LABEL }}>{r.customerCode} {r.customerName}</span>,
+      render: (_: unknown, r: SalesOrder) => <span style={{ color: C_LABEL }}>{r.customerCode} {r.customerName}</span>,
     },
     {
-      title: '金额', dataIndex: 'amount', width: 120, align: 'right',
-      render: (v: number) => (
-        <span style={{ color: C_AMOUNT, fontWeight: 600 }}>¥{v.toFixed(2)}</span>
-      ),
+      title: '订单金额', dataIndex: 'totalAmount', width: 120, align: 'right',
+      render: (v: number) => <span style={{ color: C_AMOUNT, fontWeight: 600 }}>¥{v.toFixed(2)}</span>,
     },
-    { title: '方式', dataIndex: 'method',   width: 90 },
-    { title: '备注', dataIndex: 'notes',    width: 200, ellipsis: true },
-    { title: '操作人', dataIndex: 'operator', width: 90 },
+    { title: '收款方式', dataIndex: 'paymentMethods', width: 130, render: (v: string | null) => v || '—' },
+    {
+      title: '实收', width: 120, align: 'right',
+      render: (_: unknown, r: SalesOrder) => <span style={{ color: '#389e0d' }}>¥{paidOf(r).toFixed(2)}</span>,
+    },
+    {
+      title: '状态', dataIndex: 'paymentStatus', width: 130, align: 'center',
+      render: (v: string) => <Tag color={PAY_STATUS_COLOR[v] ?? 'default'}>{v}</Tag>,
+    },
+    { title: '备注', dataIndex: 'paymentNotes', width: 200, ellipsis: true, render: (v: string | null) => v || '—' },
     {
       title: '操作', width: 70, align: 'center', fixed: 'right',
-      render: (_: unknown, record: Payment) => (
-        <Button
-          type="link" size="small" danger icon={<DeleteOutlined />}
-          loading={deleting[record.id]}
-          onClick={() => handleDelete(record)}
-        />
+      render: (_: unknown, r: SalesOrder) => (
+        <Button type="link" size="small" disabled={r.paymentStatus === '已收款'}
+          onClick={() => openAddPayment(r.id)}>
+          收款
+        </Button>
       ),
     },
   ]
@@ -142,29 +138,23 @@ export default function PaymentList() {
           onClick={() => {
             const sd = dateRange?.[0].format('YYYY-MM-DD') ?? ''
             const ed = dateRange?.[1].format('YYYY-MM-DD') ?? ''
-            exportPaymentsExcel(filtered, sd, ed)
+            exportReceivablesExcel(filtered, sd, ed)
           }}
         >
           导出
         </Button>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>
+        <Segmented
+          options={[
+            { label: '全部', value: 'all' },
+            { label: '已收款', value: 'paid' },
+            { label: '未收款', value: 'unpaid' },
+          ]}
+          value={statusFilter}
+          onChange={v => setStatusFilter(v as StatusFilter)}
+        />
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => openAddPayment(null)}>
           新增收款
         </Button>
-      </div>
-
-      <div className={styles.statsRow}>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>本期收款</div>
-          <div className={styles.statValueGreen}>+¥{totalCollected.toFixed(2)}</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>应收金额</div>
-          <div className={styles.statValueRed}>¥{receivableAmount.toFixed(2)}</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>未收款订单</div>
-          <div className={styles.statValue}>{unpaidCount}</div>
-        </div>
       </div>
 
       <Table
@@ -173,19 +163,43 @@ export default function PaymentList() {
         dataSource={filtered}
         loading={loading}
         size="small"
-        scroll={{ x: 800 }}
+        scroll={{ x: 1100 }}
         pagination={{ pageSize: PAGE_SIZE, showTotal: total => `共 ${total} 条` }}
+        summary={() => (
+          <Table.Summary fixed>
+            <Table.Summary.Row style={{ fontWeight: 600, background: '#f0f5ff' }}>
+              <Table.Summary.Cell index={0} />
+              <Table.Summary.Cell index={1} />
+              <Table.Summary.Cell index={2} align="center">合计总额（{filtered.length} 单）</Table.Summary.Cell>
+              <Table.Summary.Cell index={3} align="center">
+                <span style={{ color: C_AMOUNT }}>¥{totalAmount.toFixed(2)}</span>
+              </Table.Summary.Cell>
+              <Table.Summary.Cell index={4} align="center">合计已收（{paidCount} 单）</Table.Summary.Cell>
+              <Table.Summary.Cell index={5} align="center">
+                <span style={{ color: '#389e0d' }}>¥{totalPaid.toFixed(2)}</span>
+              </Table.Summary.Cell>
+              <Table.Summary.Cell index={6} align="center">合计未付款（{unpaidCount} 单）</Table.Summary.Cell>
+              <Table.Summary.Cell index={7} align="center">
+                <span style={{ color: '#cf1322' }}>¥{totalUnpaid.toFixed(2)}</span>
+              </Table.Summary.Cell>
+              <Table.Summary.Cell index={8} />
+            </Table.Summary.Row>
+          </Table.Summary>
+        )}
       />
 
       <AddPaymentModal
         open={addOpen}
-        onClose={() => setAddOpen(false)}
-        onSuccess={() => { fetchPayments(); fetchUnpaid() }}
+        preselectedOrderId={payOrderId}
+        onClose={() => { setAddOpen(false); setPayOrderId(null) }}
+        onSuccess={fetchOrders}
       />
 
       <SalesOrderModal
         orderId={drawerOrderId}
         onClose={() => setDrawerOrderId(null)}
+        showPayments
+        onPaymentsChange={fetchOrders}
       />
     </>
   )

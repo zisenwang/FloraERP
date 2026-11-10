@@ -20,7 +20,12 @@ const ORDER_SELECT_LIST = `
          DATE_FORMAT(so.date, '%Y-%m-%d') AS order_date,
          so.total_qty, so.total_amount, so.total_pieces,
          so.payment_status, so.operator, so.notes, so.status, so.created_at,
-         COALESCE(SUM(soi.final_amount - COALESCE(soi.cost_price, 0) * soi.qty), 0) AS total_profit
+         COALESCE(SUM(soi.final_amount - COALESCE(soi.cost_price, 0) * soi.qty), 0) AS total_profit,
+         (SELECT COALESCE(SUM(pay.amount), 0) FROM payments pay WHERE pay.sales_order_id = so.id) AS paid_amount,
+         (SELECT GROUP_CONCAT(DISTINCT pay.method ORDER BY pay.method SEPARATOR '/')
+            FROM payments pay WHERE pay.sales_order_id = so.id) AS payment_methods,
+         (SELECT GROUP_CONCAT(pay.notes ORDER BY pay.payment_date, pay.id SEPARATOR '；')
+            FROM payments pay WHERE pay.sales_order_id = so.id AND pay.notes <> '') AS payment_notes
   FROM sales_orders so
   JOIN customers c ON c.id = so.customer_id
   LEFT JOIN sales_order_items soi ON soi.order_id = so.id`

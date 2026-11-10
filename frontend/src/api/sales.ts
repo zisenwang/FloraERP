@@ -32,6 +32,9 @@ export interface SalesOrder {
   totalAmount: number
   totalPieces: number
   totalProfit: number
+  paidAmount?: number     // only populated by getSalesOrders (list)
+  paymentMethods?: string | null  // e.g. "微信/现金" — list only
+  paymentNotes?: string | null    // payment notes joined by "；" — list only
   paymentStatus: string   // "未收款" | "部分收款" | "已收款"
   operator: string
   notes: string
