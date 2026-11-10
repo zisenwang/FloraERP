@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Table, DatePicker, Input, Button, Tag, Segmented, App } from 'antd'
+import { Table, DatePicker, Input, Button, Tag, Segmented, Select, App } from 'antd'
 import { PlusOutlined, SearchOutlined, DownloadOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
@@ -14,6 +14,13 @@ import AddPaymentModal from '@/components/AddPaymentModal'
 import styles from './Payment.module.css'
 
 type StatusFilter = 'all' | 'paid' | 'unpaid'
+type SearchField = 'customerCode' | 'paymentMethods' | 'paymentNotes'
+
+const SEARCH_FIELD_OPTIONS = [
+  { value: 'customerCode',   label: '客户编码' },
+  { value: 'paymentMethods', label: '收款方式' },
+  { value: 'paymentNotes',   label: '备注' },
+]
 
 const PAY_STATUS_COLOR: Record<string, string> = {
   '未收款': 'red', '部分收款': 'orange', '已收款': 'green',
@@ -28,7 +35,8 @@ export default function PaymentList() {
   const { message } = App.useApp()
   const [orders, setOrders] = useState<SalesOrder[]>([])
   const [loading, setLoading] = useState(false)
-  const [customerSearch, setCustomerSearch] = useState('')
+  const [searchField, setSearchField] = useState<SearchField>('customerCode')
+  const [searchKeyword, setSearchKeyword] = useState('')
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>([dayjs().startOf('month'), dayjs().endOf('month')])
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [addOpen, setAddOpen] = useState(false)
@@ -54,17 +62,19 @@ export default function PaymentList() {
     setAddOpen(true)
   }
 
-  const kw = customerSearch.trim().toLowerCase()
+  // 客户编码 is an exact match; 收款方式 / 备注 are fuzzy (contains)
+  const kw = searchKeyword.trim().toLowerCase()
+  const matchesSearch = (o: SalesOrder) => {
+    if (!kw) return true
+    if (searchField === 'customerCode') return o.customerCode?.toLowerCase() === kw
+    return (o[searchField] ?? '').toLowerCase().includes(kw)
+  }
   const filtered = orders
     .filter(o =>
       statusFilter === 'all' ||
       (statusFilter === 'paid' ? o.paymentStatus === '已收款' : o.paymentStatus !== '已收款')
     )
-    .filter(o => !kw ||
-      o.customerName?.toLowerCase().includes(kw) ||
-      o.customerCode?.toLowerCase().includes(kw) ||
-      o.orderNo?.toLowerCase().includes(kw)
-    )
+    .filter(matchesSearch)
 
   const totalAmount = filtered.reduce((s, o) => s + o.totalAmount, 0)
   const totalPaid   = filtered.reduce((s, o) => s + paidOf(o), 0)
@@ -117,13 +127,19 @@ export default function PaymentList() {
       <div className={styles.pageTitle}>收款管理</div>
 
       <div className={styles.toolbar}>
+        <Select
+          value={searchField}
+          onChange={v => setSearchField(v as SearchField)}
+          options={SEARCH_FIELD_OPTIONS}
+          style={{ width: 110 }}
+        />
         <Input
           prefix={<SearchOutlined />}
-          placeholder="搜索客户或单号"
+          placeholder="搜索关键词"
           allowClear
           style={{ width: 200 }}
-          value={customerSearch}
-          onChange={e => setCustomerSearch(e.target.value)}
+          value={searchKeyword}
+          onChange={e => setSearchKeyword(e.target.value)}
         />
         <DatePicker.RangePicker
           value={dateRange}
