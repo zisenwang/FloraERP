@@ -4,6 +4,7 @@ import {
 } from 'antd'
 import { SearchOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
+import type { Dayjs } from 'dayjs'
 import type { ColumnsType } from 'antd/es/table'
 import { getSalesOrders, type SalesOrder } from '@/api/sales'
 import { createPayment } from '@/api/payments'
@@ -75,6 +76,10 @@ export default function AddPaymentModal({ open, onClose, onSuccess, preselectedO
   const isSingle = selectedKeys.length === 1
   const selectedTotal = selectedOrders.reduce((s, o) => s + o.totalAmount, 0)
 
+  // 收款日期 is optional in the UI but NOT NULL in the DB — fall back to today
+  const toPaymentDate = (d?: Dayjs | null) =>
+    (d && dayjs.isDayjs(d) && d.isValid() ? d : dayjs()).format('YYYY-MM-DD')
+
   const handleSubmit = () => {
     if (selectedKeys.length === 0) return
     form.validateFields().then(async values => {
@@ -85,7 +90,7 @@ export default function AddPaymentModal({ open, onClose, onSuccess, preselectedO
             await createPayment({
               salesOrderId: order.id,
               amount: order.totalAmount,
-              paymentDate: values.paymentDate.format('YYYY-MM-DD'),
+              paymentDate: toPaymentDate(values.paymentDate),
               method: values.method,
               notes: values.notes || undefined,
             })
@@ -95,7 +100,7 @@ export default function AddPaymentModal({ open, onClose, onSuccess, preselectedO
           await createPayment({
             salesOrderId: selectedOrders[0].id,
             amount: values.amount,
-            paymentDate: values.paymentDate.format('YYYY-MM-DD'),
+            paymentDate: toPaymentDate(values.paymentDate),
             method: values.method,
             notes: values.notes || undefined,
           })
@@ -204,8 +209,8 @@ export default function AddPaymentModal({ open, onClose, onSuccess, preselectedO
                   <InputNumber min={0.01} precision={2} prefix="¥" style={{ width: 150 }} />
                 </Form.Item>
               )}
-              <Form.Item name="paymentDate" label="收款日期" rules={[{ required: true }]}>
-                <DatePicker defaultValue={dayjs()} style={{ width: 140 }} />
+              <Form.Item name="paymentDate" label="收款日期">
+                <DatePicker style={{ width: 140 }} />
               </Form.Item>
               <Form.Item name="method" label="收款方式" initialValue="微信">
                 <Select options={METHOD_OPTIONS} style={{ width: 120 }} />
