@@ -6,6 +6,8 @@ export interface InventoryReportItem {
   productId: number
   productCode: string
   productName: string
+  spec: string | null
+  grade: string | null
   supplierName: string
   supplierCode: string
   category: string
@@ -85,6 +87,8 @@ export interface ReportOrderRow {
   customerName?: string
   productCode?: string
   productName?: string
+  spec?: string | null
+  grade?: string | null
   supplierCode?: string
   supplierName?: string
   unit?: string | null

@@ -22,7 +22,9 @@ interface Props {
 const itemColumns: ColumnsType<SalesOrderItem> = [
   { title: '供应商', dataIndex: 'supplierCode', width: 70 },
   { title: '编码', dataIndex: 'productCode', width: 80 },
+  { title: '规格', dataIndex: 'spec', width: 90, render: (v: string | null) => v || '—' },
   { title: '货品名称', dataIndex: 'productName', width: 140 },
+  { title: '等级', dataIndex: 'grade', width: 70, render: (v: string | null) => v || '—' },
   { title: '单位', dataIndex: 'unit', width: 55, align: 'center' },
   { title: '数量', dataIndex: 'qty', width: 60, align: 'center' },
   { title: '单价', dataIndex: 'unitPrice', width: 80, align: 'right', render: (v: number) => `¥${v.toFixed(2)}` },
@@ -213,7 +215,9 @@ export default function SalesOrderModal({ orderId, onClose, showPayments, onPaym
                   <tr>
                     <th>供应商</th>
                     <th>编码</th>
+                    <th>规格</th>
                     <th>货品名称</th>
+                    <th>等级</th>
                     <th>单位</th>
                     <th>数量</th>
                     <th>单价</th>
@@ -229,7 +233,9 @@ export default function SalesOrderModal({ orderId, onClose, showPayments, onPaym
                       <tr key={i}>
                         <td>{item.supplierCode}</td>
                         <td>{item.productCode}</td>
+                        <td>{item.spec || ''}</td>
                         <td>{item.productName}</td>
+                        <td>{item.grade || ''}</td>
                         <td className={printStyles.center}>{item.unit}</td>
                         <td className={printStyles.center}>{item.qty}</td>
                         <td className={printStyles.right}>¥{item.unitPrice}</td>
@@ -240,7 +246,7 @@ export default function SalesOrderModal({ orderId, onClose, showPayments, onPaym
                     )
                   })}
                   <tr>
-                    <td colSpan={4} style={{ textAlign: 'right', fontWeight: 600 }}>小计</td>
+                    <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600 }}>小计</td>
                     <td className={printStyles.center}><strong>{totalQty}</strong></td>
                     <td></td>
                     <td className={printStyles.right}><strong>¥{(order.totalAmount ?? 0).toFixed(2)}</strong></td>

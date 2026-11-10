@@ -89,23 +89,25 @@ export default function PurchaseOrderView() {
         <table className={styles.printTable}>
           <colgroup>
             <col style={{ width: '9%' }} />   {/* 编码 */}
-            <col style={{ width: '16%' }} />  {/* 货品名称 */}
-            <col style={{ width: '8%' }} />   {/* 品类 */}
-            <col style={{ width: '6%' }} />   {/* 等级 */}
+            <col style={{ width: '7%' }} />   {/* 品类 */}
+            <col style={{ width: '8%' }} />   {/* 规格 */}
+            <col style={{ width: '14%' }} />  {/* 货品名称 */}
+            <col style={{ width: '5%' }} />   {/* 等级 */}
             <col style={{ width: '5%' }} />   {/* 单位 */}
             <col style={{ width: '5%' }} />   {/* 数量 */}
             <col style={{ width: '5%' }} />   {/* 件数 */}
             <col style={{ width: '8%' }} />   {/* 单价 */}
             <col style={{ width: '9%' }} />   {/* 金额 */}
             <col style={{ width: '6%' }} />   {/* 折扣 */}
-            <col style={{ width: '10%' }} />  {/* 折后金额 */}
-            <col style={{ width: '13%' }} />  {/* 备注 */}
+            <col style={{ width: '9%' }} />   {/* 折后金额 */}
+            <col style={{ width: '10%' }} />  {/* 备注 */}
           </colgroup>
           <thead>
             <tr>
               <th>编码</th>
-              <th>货品名称</th>
               <th>品类</th>
+              <th>规格</th>
+              <th>货品名称</th>
               <th>等级</th>
               <th>单位</th>
               <th>数量</th>
@@ -124,9 +126,10 @@ export default function PurchaseOrderView() {
               return (
                 <tr key={i}>
                   <td>{item.productCode}</td>
-                  <td>{item.productName}</td>
                   <td>{item.category ?? '—'}</td>
-                  <td>{item.grade ?? '—'}</td>
+                  <td>{item.spec || '—'}</td>
+                  <td>{item.productName}</td>
+                  <td>{item.grade || '—'}</td>
                   <td>{item.unit}</td>
                   <td>{item.qty}</td>
                   <td>{item.pieces || '—'}</td>
@@ -139,7 +142,7 @@ export default function PurchaseOrderView() {
               )
             })}
             <tr>
-              <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600 }}>小计</td>
+              <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600 }}>小计</td>
               <td><strong>{totalQty}</strong></td>
               <td><strong>{totalPieces || '—'}</strong></td>
               <td></td>

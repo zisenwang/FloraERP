@@ -3,6 +3,8 @@ export interface LossRecord {
   productId: number
   productCode: string
   productName: string
+  spec: string | null
+  grade: string | null
   unit: string
   qty: number
   reason: string | null

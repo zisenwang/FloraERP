@@ -7,7 +7,7 @@ export async function findAll(
   filters: { supplierId?: number; category?: string; search?: string } = {},
 ): Promise<InventoryRow[]> {
   let sql = `
-    SELECT i.product_id, CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
+    SELECT i.product_id, CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name, p.spec, p.grade,
            s.name AS supplier_name, s.code AS supplier_code,
            p.category, p.unit, p.units_per_piece, i.quantity AS stock,
            DATE_FORMAT(i.updated_at, '%Y-%m-%d') AS last_updated
@@ -35,7 +35,7 @@ export async function findAll(
 
 export async function findAdjustments(productId?: number): Promise<InventoryAdjustment[]> {
   let sql = `
-    SELECT ia.id, ia.product_id, CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
+    SELECT ia.id, ia.product_id, CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name, p.spec, p.grade,
            ia.type, ia.qty_before, ia.qty_change, ia.qty_after,
            ia.reason, ia.ref_type, ia.ref_id, COALESCE(u.name, ia.operator) AS operator,
            DATE_FORMAT(ia.created_at, '%Y-%m-%d %H:%i') AS created_at

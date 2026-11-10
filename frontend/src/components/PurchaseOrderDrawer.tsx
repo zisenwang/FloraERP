@@ -16,9 +16,10 @@ interface Props {
 
 const itemColumns: ColumnsType<PurchaseOrderItem> = [
   { title: '编码', dataIndex: 'productCode', width: 80 },
+  { title: '规格', dataIndex: 'spec', width: 90, render: (v: string | null) => v || '—' },
   { title: '货品名称', dataIndex: 'productName', width: 140 },
+  { title: '等级', dataIndex: 'grade', width: 70, render: (v: string | null) => v || '—' },
   { title: '品类', dataIndex: 'category', width: 70, render: (v: string | null) => v || '—' },
-  { title: '等级', dataIndex: 'grade', width: 60, render: (v: string | null) => v || '—' },
   { title: '单位', dataIndex: 'unit', width: 55, align: 'center' },
   { title: '数量', dataIndex: 'qty', width: 60, align: 'center' },
   { title: '件数', dataIndex: 'pieces', width: 60, align: 'center', render: (v: number) => v || '—' },
@@ -113,23 +114,25 @@ export default function PurchaseOrderDrawer({ orderId, onClose }: Props) {
               <table className={styles.printTable}>
                 <colgroup>
                   <col style={{ width: '9%' }} />
-                  <col style={{ width: '16%' }} />
+                  <col style={{ width: '7%' }} />
                   <col style={{ width: '8%' }} />
-                  <col style={{ width: '6%' }} />
+                  <col style={{ width: '14%' }} />
+                  <col style={{ width: '5%' }} />
                   <col style={{ width: '5%' }} />
                   <col style={{ width: '5%' }} />
                   <col style={{ width: '5%' }} />
                   <col style={{ width: '8%' }} />
                   <col style={{ width: '9%' }} />
                   <col style={{ width: '6%' }} />
+                  <col style={{ width: '9%' }} />
                   <col style={{ width: '10%' }} />
-                  <col style={{ width: '13%' }} />
                 </colgroup>
                 <thead>
                   <tr>
                     <th>编码</th>
-                    <th>货品名称</th>
                     <th>品类</th>
+                    <th>规格</th>
+                    <th>货品名称</th>
                     <th>等级</th>
                     <th>单位</th>
                     <th>数量</th>
@@ -148,9 +151,10 @@ export default function PurchaseOrderDrawer({ orderId, onClose }: Props) {
                     return (
                       <tr key={i}>
                         <td>{item.productCode}</td>
-                        <td className={styles.left}>{item.productName}</td>
                         <td>{item.category ?? '—'}</td>
-                        <td>{item.grade ?? '—'}</td>
+                        <td>{item.spec || '—'}</td>
+                        <td className={styles.left}>{item.productName}</td>
+                        <td>{item.grade || '—'}</td>
                         <td>{item.unit}</td>
                         <td>{item.qty}</td>
                         <td>{item.pieces || '—'}</td>
@@ -163,7 +167,7 @@ export default function PurchaseOrderDrawer({ orderId, onClose }: Props) {
                     )
                   })}
                   <tr>
-                    <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600 }}>小计</td>
+                    <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600 }}>小计</td>
                     <td><strong>{totalQty}</strong></td>
                     <td><strong>{totalPieces || '—'}</strong></td>
                     <td></td>

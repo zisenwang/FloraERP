@@ -80,6 +80,8 @@ export default function InventoryCheck() {
       let cmp = 0
       switch (sortKey) {
         case 'productName':   cmp = a.productName.localeCompare(b.productName); break
+        case 'spec':          cmp = (a.spec ?? '').localeCompare(b.spec ?? ''); break
+        case 'grade':         cmp = (a.grade ?? '').localeCompare(b.grade ?? ''); break
         case 'supplierName':  cmp = a.supplierName.localeCompare(b.supplierName); break
         case 'unit':          cmp = a.unit.localeCompare(b.unit); break
         case 'stock':         cmp = a.stock - b.stock; break
@@ -105,7 +107,9 @@ export default function InventoryCheck() {
 
   const columns: ColumnsType<CheckRow> = [
     { ...col('productCode'),  title: '编码',     dataIndex: 'productCode',  width: 100 },
+    { ...col('spec'),         title: '规格',     dataIndex: 'spec',         width: 90,  render: (v: string | null) => v || '—' },
     { ...col('productName'),  title: '货品名称',  dataIndex: 'productName',  width: 160 },
+    { ...col('grade'),        title: '等级',     dataIndex: 'grade',        width: 70,  render: (v: string | null) => v || '—' },
     { ...col('supplierName'), title: '供应商',    dataIndex: 'supplierName', width: 100 },
     { ...col('unit'),         title: '单位',     dataIndex: 'unit',         width: 70, align: 'center' },
     {

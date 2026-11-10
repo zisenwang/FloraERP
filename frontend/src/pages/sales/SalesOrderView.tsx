@@ -94,7 +94,9 @@ export default function SalesOrderView() {
             <tr>
               <th>供应商</th>
               <th>编码</th>
+              <th>规格</th>
               <th>货品名称</th>
+              <th>等级</th>
               <th>单位</th>
               <th>数量</th>
               <th>单价</th>
@@ -110,7 +112,9 @@ export default function SalesOrderView() {
                 <tr key={i}>
                   <td>{item.supplierCode}</td>
                   <td>{item.productCode}</td>
+                  <td>{item.spec || ''}</td>
                   <td>{item.productName}</td>
+                  <td>{item.grade || ''}</td>
                   <td className={styles.center}>{item.unit}</td>
                   <td className={styles.center}>{item.qty}</td>
                   <td className={styles.right}>¥{item.unitPrice}</td>
@@ -121,7 +125,7 @@ export default function SalesOrderView() {
               )
             })}
             <tr>
-              <td colSpan={4} style={{ textAlign: 'right', fontWeight: 600 }}>小计</td>
+              <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600 }}>小计</td>
               <td className={styles.center}><strong>{totalQty}</strong></td>
               <td></td>
               <td className={styles.right}><strong>¥{order.totalAmount.toFixed(2)}</strong></td>

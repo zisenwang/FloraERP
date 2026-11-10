@@ -89,9 +89,10 @@ export default function PurchaseReturnList() {
 
   const itemColumns: ColumnsType<PurchaseReturnItem> = [
     { title: '编码', dataIndex: 'productCode', width: 100, align: 'center' },
+    { title: '规格', dataIndex: 'spec', width: 90, align: 'center', render: (v: string | null) => v || '—' },
     { title: '货品名称', dataIndex: 'productName', width: 160, align: 'center' },
+    { title: '等级', dataIndex: 'grade', width: 70, align: 'center', render: (v: string | null) => v || '—' },
     { title: '品类', dataIndex: 'category', width: 90, align: 'center', render: v => v ?? '—' },
-    { title: '等级', dataIndex: 'grade', width: 70, align: 'center', render: v => v ?? '—' },
     { title: '单位', dataIndex: 'unit', width: 60, align: 'center' },
     { title: '数量', dataIndex: 'qty', width: 70, align: 'center' },
     { title: '件数', dataIndex: 'pieces', width: 70, align: 'center', render: (v: number) => v || '—' },

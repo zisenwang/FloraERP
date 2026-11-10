@@ -4,7 +4,7 @@ import type { LossRecord, CreateLossDto } from '@/dto/loss.dto'
 import type { RowDataPacket, ResultSetHeader, PoolConnection } from 'mysql2/promise'
 
 const SELECT = `
-  SELECT lr.id, lr.product_id, CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
+  SELECT lr.id, lr.product_id, CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name, p.spec, p.grade,
          p.unit, lr.qty, lr.reason, COALESCE(u.name, lr.operator) AS operator,
          DATE_FORMAT(lr.date, '%Y-%m-%d') AS date, lr.notes
   FROM loss_records lr

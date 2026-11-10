@@ -14,7 +14,7 @@ const RETURN_SELECT = `
   JOIN customers c ON c.id = sr.customer_id`
 
 const ITEM_SELECT = `
-  SELECT sri.id, sri.product_id, CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
+  SELECT sri.id, sri.product_id, CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name, p.spec, p.grade,
          s.code AS supplier_code, p.unit, sri.qty, sri.pieces, sri.unit_price, sri.amount, sri.notes
   FROM sales_return_items sri
   JOIN products p ON p.id = sri.product_id

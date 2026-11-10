@@ -3,6 +3,8 @@ export interface SalesReturnItem {
   productId: number
   productCode: string
   productName: string
+  spec: string | null
+  grade: string | null
   supplierCode: string
   unit: string
   qty: number

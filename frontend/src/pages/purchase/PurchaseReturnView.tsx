@@ -88,21 +88,23 @@ export default function PurchaseReturnView() {
         <table className={styles.printTable}>
           <colgroup>
             <col style={{ width: '9%' }} />
-            <col style={{ width: '18%' }} />
+            <col style={{ width: '7%' }} />
             <col style={{ width: '8%' }} />
+            <col style={{ width: '15%' }} />
             <col style={{ width: '6%' }} />
             <col style={{ width: '5%' }} />
             <col style={{ width: '5%' }} />
             <col style={{ width: '6%' }} />
             <col style={{ width: '9%' }} />
             <col style={{ width: '10%' }} />
-            <col style={{ width: '14%' }} />
+            <col style={{ width: '10%' }} />
           </colgroup>
           <thead>
             <tr>
               <th>编码</th>
-              <th>货品名称</th>
               <th>品类</th>
+              <th>规格</th>
+              <th>货品名称</th>
               <th>等级</th>
               <th>单位</th>
               <th>数量</th>
@@ -116,9 +118,10 @@ export default function PurchaseReturnView() {
             {items.map((item, i) => (
               <tr key={i}>
                 <td>{item.productCode}</td>
-                <td>{item.productName}</td>
                 <td>{item.category ?? '—'}</td>
-                <td>{item.grade ?? '—'}</td>
+                <td>{item.spec || '—'}</td>
+                <td>{item.productName}</td>
+                <td>{item.grade || '—'}</td>
                 <td>{item.unit}</td>
                 <td>{item.qty}</td>
                 <td>{item.pieces || '—'}</td>
@@ -128,7 +131,7 @@ export default function PurchaseReturnView() {
               </tr>
             ))}
             <tr>
-              <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600 }}>小计</td>
+              <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600 }}>小计</td>
               <td><strong>{totalQty}</strong></td>
               <td><strong>{totalPieces || '—'}</strong></td>
               <td></td>

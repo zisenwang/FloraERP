@@ -13,7 +13,7 @@ const ORDER_SELECT = `
   JOIN suppliers s ON s.id = po.supplier_id`
 
 const ITEM_SELECT = `
-  SELECT poi.id, poi.product_id, CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
+  SELECT poi.id, poi.product_id, CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name, p.spec,
          p.category, p.grade, p.unit, poi.qty, poi.pieces, poi.unit_price, poi.amount,
          poi.discount, poi.final_amount, poi.notes
   FROM purchase_order_items poi
@@ -269,7 +269,7 @@ export async function findDetail(
       po.order_no AS no,
       DATE_FORMAT(po.date, '%Y-%m-%d') AS date,
       s.code AS supplier_code, s.name AS supplier_name,
-      CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
+      CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name, p.spec, p.grade,
       p.unit AS unit,
       poi.qty, poi.unit_price, poi.final_amount AS amount, poi.pieces,
       po.operator, poi.notes, po.status,
@@ -288,7 +288,7 @@ export async function findDetail(
       pr.return_no AS no,
       DATE_FORMAT(pr.date, '%Y-%m-%d') AS date,
       s.code AS supplier_code, s.name AS supplier_name,
-      CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
+      CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name, p.spec, p.grade,
       p.unit AS unit,
       pri.qty, pri.unit_price, pri.amount AS amount, pri.pieces,
       pr.operator, pri.notes, NULL AS status,

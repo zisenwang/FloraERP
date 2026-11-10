@@ -103,7 +103,9 @@ export function exportSalesExcel(
     '客户': r.customerName ?? '',
     '单号': r.orderNo,
     '产品编码': r.productCode ?? '',
+    '规格': r.spec ?? '',
     '产品名称': r.productName ?? '',
+    '等级': r.grade ?? '',
     '供应商': r.supplierCode ?? '',
     '单位': r.unit ?? '',
     '数量': r.qty,
@@ -119,7 +121,7 @@ export function exportSalesExcel(
   const totalAmount = rows.reduce((s, r) => s + r.finalAmount, 0)
   const totalProfit = rows.filter(r => !r.isReturn).reduce((s, r) => s + (r.profit ?? 0), 0)
   sheetData.push({
-    '日期': '', '客户': '', '单号': '合计', '产品编码': '', '产品名称': '',
+    '日期': '', '客户': '', '单号': '合计', '产品编码': '', '规格': '', '产品名称': '', '等级': '',
     '供应商': '', '单位': '', '数量': totalQty, '单价': '', '金额': totalAmount,
     '件数': totalPieces, '毛利': totalProfit, '经办人': '', '备注': '',
   } as never)
@@ -143,7 +145,9 @@ export function exportPurchaseExcel(
     '供应商': r.supplierCode ?? '',
     '单号': r.orderNo,
     '产品编码': r.productCode ?? '',
+    '规格': r.spec ?? '',
     '产品名称': r.productName ?? '',
+    '等级': r.grade ?? '',
     '单位': r.unit ?? '',
     '数量': r.qty,
     '单价': r.unitPrice,
@@ -156,7 +160,7 @@ export function exportPurchaseExcel(
   const totalPieces = rows.reduce((s, r) => s + (r.pieces || 0), 0)
   const totalAmount = rows.reduce((s, r) => s + r.finalAmount, 0)
   sheetData.push({
-    '日期': '', '供应商': '', '单号': '合计', '产品编码': '', '产品名称': '',
+    '日期': '', '供应商': '', '单号': '合计', '产品编码': '', '规格': '', '产品名称': '', '等级': '',
     '单位': '', '数量': totalQty, '单价': '', '金额': totalAmount,
     '件数': totalPieces, '经办人': '', '备注': '',
   } as never)
@@ -174,7 +178,9 @@ export function exportInventoryExcel(rows: InventoryReportItem[]) {
     r.unitsPerPiece ? Math.ceil(r.stock / r.unitsPerPiece) : 0
   const sheetData = rows.map(r => ({
     '编码': r.productCode,
+    '规格': r.spec ?? '',
     '货品名称': r.productName,
+    '等级': r.grade ?? '',
     '供应商': r.supplierName,
     '分类': r.category ?? '',
     '单位': r.unit,
@@ -186,7 +192,7 @@ export function exportInventoryExcel(rows: InventoryReportItem[]) {
   }))
   const totalQty    = rows.reduce((s, r) => s + r.stock, 0)
   const totalPieces = rows.reduce((s, r) => s + getPieces(r), 0)
-  sheetData.push({ '编码': '', '货品名称': '合计', '供应商': '', '分类': '', '单位': '', '当前库存': totalQty, '件数': totalPieces, '每件数量': '', '成本价': '', '售价': '' })
+  sheetData.push({ '编码': '', '规格': '', '货品名称': '合计', '等级': '', '供应商': '', '分类': '', '单位': '', '当前库存': totalQty, '件数': totalPieces, '每件数量': '', '成本价': '', '售价': '' })
   const ws = XLSX.utils.json_to_sheet(sheetData)
   autoWidth(ws)
   const wb = XLSX.utils.book_new()
@@ -255,7 +261,9 @@ export function exportSalesOrdersDetailExcel(
     '单号': r.no,
     '类型': r.rowType === 'return' ? '退货' : '销售',
     '产品编码': r.productCode,
+    '规格': r.spec ?? '',
     '产品名称': r.productName,
+    '等级': r.grade ?? '',
     '供应商': r.supplierCode,
     '单位': r.unit,
     '数量': r.qty,
@@ -269,7 +277,7 @@ export function exportSalesOrdersDetailExcel(
   const orderRows  = rows.filter(r => r.rowType === 'order')
   const returnRows = rows.filter(r => r.rowType === 'return')
   sheetData.push({
-    '日期': '', '客户': '', '单号': '合计', '类型': '', '产品编码': '', '产品名称': '', '供应商': '', '单位': '',
+    '日期': '', '客户': '', '单号': '合计', '类型': '', '产品编码': '', '规格': '', '产品名称': '', '等级': '', '供应商': '', '单位': '',
     '数量': orderRows.reduce((s, r) => s + r.qty, 0) - returnRows.reduce((s, r) => s + r.qty, 0),
     '单价': '',
     '金额': orderRows.reduce((s, r) => s + r.amount, 0) - returnRows.reduce((s, r) => s + r.amount, 0),
@@ -342,7 +350,9 @@ export function exportPurchaseOrdersDetailExcel(
     '单号': r.no,
     '类型': r.rowType === 'return' ? '退货' : '采购',
     '产品编码': r.productCode,
+    '规格': r.spec ?? '',
     '产品名称': r.productName,
+    '等级': r.grade ?? '',
     '单位': r.unit,
     '数量': r.qty,
     '单价': r.unitPrice,
@@ -354,7 +364,7 @@ export function exportPurchaseOrdersDetailExcel(
   const orderRows  = rows.filter(r => r.rowType === 'order')
   const returnRows = rows.filter(r => r.rowType === 'return')
   sheetData.push({
-    '日期': '', '供应商': '', '单号': '合计', '类型': '', '产品编码': '', '产品名称': '', '单位': '',
+    '日期': '', '供应商': '', '单号': '合计', '类型': '', '产品编码': '', '规格': '', '产品名称': '', '等级': '', '单位': '',
     '数量': orderRows.reduce((s, r) => s + r.qty, 0) - returnRows.reduce((s, r) => s + r.qty, 0),
     '单价': '',
     '金额': orderRows.reduce((s, r) => s + r.amount, 0) - returnRows.reduce((s, r) => s + r.amount, 0),
@@ -375,9 +385,10 @@ export function exportProductsExcel(rows: Product[]) {
     r.unitsPerPiece ? Math.floor((r.stock || 0) / r.unitsPerPiece) : null
   const sheetData = rows.map(r => ({
     '编码': r.code,
-    '货品名称': r.name,
     '供应商': r.supplierName,
     '品类': r.category ?? '',
+    '规格': r.spec ?? '',
+    '货品名称': r.name,
     '等级': r.grade ?? '',
     '单位': r.unit,
     '每件数量': r.unitsPerPiece ?? '',
@@ -401,7 +412,9 @@ export function exportInventoryListExcel(rows: InventoryRow[]) {
     r.unitsPerPiece ? Math.ceil(r.stock / r.unitsPerPiece) : null
   const sheetData = rows.map(r => ({
     '编码': r.productCode,
+    '规格': r.spec ?? '',
     '货品名称': r.productName,
+    '等级': r.grade ?? '',
     '供应商': r.supplierName,
     '分类': r.category ?? '',
     '单位': r.unit,
@@ -412,7 +425,7 @@ export function exportInventoryListExcel(rows: InventoryRow[]) {
   }))
   const totalQty    = rows.reduce((s, r) => s + r.stock, 0)
   const totalPieces = rows.reduce((s, r) => s + (getPieces(r) ?? 0), 0)
-  sheetData.push({ '编码': '', '货品名称': '合计', '供应商': '', '分类': '', '单位': '', '当前库存': totalQty, '件数': totalPieces, '每件数量': '', '最后更新': '' })
+  sheetData.push({ '编码': '', '规格': '', '货品名称': '合计', '等级': '', '供应商': '', '分类': '', '单位': '', '当前库存': totalQty, '件数': totalPieces, '每件数量': '', '最后更新': '' })
   const ws = XLSX.utils.json_to_sheet(sheetData)
   autoWidth(ws)
   const wb = XLSX.utils.book_new()

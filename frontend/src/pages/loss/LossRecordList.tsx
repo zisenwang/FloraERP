@@ -33,7 +33,9 @@ export default function LossRecordList() {
   const columns: ColumnsType<LossRecord> = [
     { title: '日期', dataIndex: 'date', width: 110 },
     { title: '编码', dataIndex: 'productCode', width: 100 },
+    { title: '规格', dataIndex: 'spec', width: 90, render: (v: string | null) => v || '—' },
     { title: '货品名称', dataIndex: 'productName', render: (v: string) => <span style={{ color: C_LABEL }}>{v}</span> },
+    { title: '等级', dataIndex: 'grade', width: 70, render: (v: string | null) => v || '—' },
     { title: '单位', dataIndex: 'unit', width: 70, align: 'center' },
     { title: '数量', dataIndex: 'qty', width: 80, align: 'center', render: (v: number) => <span style={{ color: C_AMOUNT, fontWeight: 600 }}>{v}</span> },
     { title: '原因', dataIndex: 'reason', ellipsis: true },

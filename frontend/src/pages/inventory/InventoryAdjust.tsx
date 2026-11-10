@@ -58,7 +58,9 @@ export default function InventoryAdjust() {
   const historyColumns: ColumnsType<InventoryAdjustment> = [
     { title: '时间', dataIndex: 'createdAt', width: 110 },
     { title: '编码', dataIndex: 'productCode', width: 100 },
+    { title: '规格', dataIndex: 'spec', width: 90, render: (v: string | null) => v || '—' },
     { title: '货品名称', dataIndex: 'productName', width: 150 },
+    { title: '等级', dataIndex: 'grade', width: 70, render: (v: string | null) => v || '—' },
     {
       title: '类型', dataIndex: 'type', width: 100, align: 'center',
       render: (v: string) => <Tag color={TYPE_COLOR[v] ?? 'default'}>{TYPE_LABEL[v] ?? v}</Tag>,

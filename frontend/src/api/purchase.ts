@@ -5,6 +5,7 @@ export interface PurchaseOrderItem {
   productId: number
   productCode: string
   productName: string
+  spec: string | null
   category: string | null
   grade: string | null
   unit: string
@@ -88,6 +89,7 @@ export interface PurchaseReturnItem {
   productId: number
   productCode: string
   productName: string
+  spec: string | null
   category: string | null
   grade: string | null
   unit: string
@@ -173,6 +175,8 @@ export interface PurchaseDetailRow {
   supplierName: string
   productCode: string
   productName: string
+  spec: string | null
+  grade: string | null
   unit: string
   qty: number
   unitPrice: number

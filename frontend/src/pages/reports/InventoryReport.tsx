@@ -49,6 +49,8 @@ export default function InventoryReport() {
       let cmp = 0
       switch (sortKey) {
         case 'productName':   cmp = a.productName.localeCompare(b.productName); break
+        case 'spec':          cmp = (a.spec ?? '').localeCompare(b.spec ?? ''); break
+        case 'grade':         cmp = (a.grade ?? '').localeCompare(b.grade ?? ''); break
         case 'supplierName':  cmp = a.supplierName.localeCompare(b.supplierName); break
         case 'category':      cmp = (a.category ?? '').localeCompare(b.category ?? ''); break
         case 'unit':          cmp = a.unit.localeCompare(b.unit); break
@@ -82,7 +84,9 @@ export default function InventoryReport() {
 
   const columns: ColumnsType<InventoryReportItem> = [
     { ...col('productCode'),  title: '编码',     dataIndex: 'productCode',  width: 100 },
+    { ...col('spec'),         title: '规格',     dataIndex: 'spec',         width: 90,  render: (v: string | null) => v || '—' },
     { ...col('productName'),  title: '货品名称',  dataIndex: 'productName',  width: 160, render: (v: string) => <span style={{ color: C_LABEL }}>{v}</span> },
+    { ...col('grade'),        title: '等级',     dataIndex: 'grade',        width: 70,  render: (v: string | null) => v || '—' },
     { ...col('supplierName'), title: '供应商',    dataIndex: 'supplierName', width: 120, render: (v: string) => <span style={{ color: C_LABEL }}>{v}</span> },
     {
       ...col('category'),

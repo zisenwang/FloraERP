@@ -152,7 +152,7 @@ export async function getPurchaseStats(
 
 export async function getInventoryRows(f: InventoryFilters): Promise<InventoryReportRow[]> {
   let sql = `
-    SELECT p.id AS product_id, CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
+    SELECT p.id AS product_id, CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name, p.spec, p.grade,
            s.name AS supplier_name, s.code AS supplier_code, p.category, p.unit,
            p.units_per_piece, COALESCE(i.quantity, 0) AS stock, p.price, p.cost_price
     FROM products p
@@ -394,13 +394,13 @@ export async function getSalesL3(
   if (f.supplierId) { returnWhere += ' AND p.supplier_id = ?'; returnParams.push(f.supplierId) }
 
   const sql = `
-    SELECT order_id, order_no, order_date, customer_name, product_code, product_name,
+    SELECT order_id, order_no, order_date, customer_name, product_code, product_name, spec, grade,
            supplier_code, supplier_name, unit, operator, qty, pieces, unit_price, amount, discount,
            final_amount, cost_price, notes, profit, is_return
     FROM (
       SELECT so.id AS order_id, so.order_no, DATE_FORMAT(so.date, '%Y-%m-%d') AS order_date,
              CONCAT(c.code, ' ', c.name) AS customer_name,
-             CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
+             CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name, p.spec, p.grade,
              s.code AS supplier_code, CONCAT(s.code, ' ', s.name) AS supplier_name,
              p.unit, so.operator,
              soi.qty, soi.pieces, soi.unit_price, soi.amount, soi.discount, soi.final_amount,
@@ -417,7 +417,7 @@ export async function getSalesL3(
       SELECT sr.id AS order_id, sr.return_no AS order_no,
              DATE_FORMAT(sr.date, '%Y-%m-%d') AS order_date,
              CONCAT(c.code, ' ', c.name) AS customer_name,
-             CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
+             CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name, p.spec, p.grade,
              s.code AS supplier_code, CONCAT(s.code, ' ', s.name) AS supplier_name,
              p.unit, sr.operator,
              -sri.qty AS qty, -COALESCE(sri.pieces, 0) AS pieces, sri.unit_price,
@@ -623,12 +623,12 @@ export async function getPurchaseL3(
   if (f.productId)  { returnWhere += ' AND pri.product_id = ?'; returnParams.push(f.productId) }
 
   const sql = `
-    SELECT order_id, order_no, order_date, supplier_code, supplier_name, product_code, product_name,
+    SELECT order_id, order_no, order_date, supplier_code, supplier_name, product_code, product_name, spec, grade,
            unit, qty, pieces, unit_price, amount, discount, final_amount, operator, notes, is_return
     FROM (
       SELECT po.id AS order_id, po.order_no, DATE_FORMAT(po.date, '%Y-%m-%d') AS order_date,
              s.code AS supplier_code, CONCAT(s.code, ' ', s.name) AS supplier_name,
-             CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
+             CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name, p.spec, p.grade,
              p.unit, poi.qty, poi.pieces, poi.unit_price, poi.amount, poi.discount, poi.final_amount,
              po.operator, poi.notes, 0 AS is_return
       FROM purchase_order_items poi
@@ -640,7 +640,7 @@ export async function getPurchaseL3(
       SELECT pr.id AS order_id, pr.return_no AS order_no,
              DATE_FORMAT(pr.date, '%Y-%m-%d') AS order_date,
              s.code AS supplier_code, CONCAT(s.code, ' ', s.name) AS supplier_name,
-             CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name,
+             CONCAT(s.code, '.', p.code) AS product_code, p.name AS product_name, p.spec, p.grade,
              p.unit, -pri.qty AS qty, -COALESCE(pri.pieces, 0) AS pieces, pri.unit_price,
              -pri.amount AS amount, 100 AS discount, -pri.amount AS final_amount,
              pr.operator, pri.notes, 1 AS is_return
