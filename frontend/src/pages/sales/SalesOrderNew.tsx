@@ -241,12 +241,6 @@ export default function SalesOrderNew() {
       ),
     },
     {
-      title: '规格', width: 90,
-      render: (_: unknown, record: LineItem) => (
-        <span style={{ fontSize: 13, color: '#888' }}>{products.find(p => p.id === record.productId)?.spec || '—'}</span>
-      ),
-    },
-    {
       title: '货品', width: 200,
       render: (_: unknown, record: LineItem) => (
         <Select
@@ -263,12 +257,6 @@ export default function SalesOrderNew() {
           }))}
           onChange={val => handleProductSelect(record.key, val)}
         />
-      ),
-    },
-    {
-      title: '等级', width: 70,
-      render: (_: unknown, record: LineItem) => (
-        <span style={{ fontSize: 13, color: '#888' }}>{products.find(p => p.id === record.productId)?.grade || '—'}</span>
       ),
     },
     {

@@ -3,8 +3,6 @@ export interface SalesOrderItem {
   productId: number
   productCode: string
   productName: string
-  spec: string | null
-  grade: string | null
   supplierId: number
   supplierCode: string
   supplierName: string
@@ -74,8 +72,6 @@ export interface SalesDetailRow {
   customerName: string
   productCode: string
   productName: string
-  spec: string | null
-  grade: string | null
   supplierCode: string
   unit: string
   qty: number

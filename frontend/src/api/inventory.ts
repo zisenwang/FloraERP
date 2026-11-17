@@ -4,8 +4,6 @@ export interface InventoryRow {
   productId: number;
   productCode: string;
   productName: string;
-  spec: string | null;
-  grade: string | null;
   supplierName: string;
   supplierCode: string;
   category: string;
@@ -20,8 +18,6 @@ export interface InventoryAdjustment {
   productId: number;
   productCode: string;
   productName: string;
-  spec: string | null;
-  grade: string | null;
   type: string;
   qtyBefore: number;
   qtyChange: number;

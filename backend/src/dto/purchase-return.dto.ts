@@ -3,7 +3,6 @@ export interface PurchaseReturnItem {
   productId: number
   productCode: string
   productName: string
-  spec: string | null
   category: string | null
   grade: string | null
   unit: string
