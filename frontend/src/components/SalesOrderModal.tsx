@@ -188,7 +188,7 @@ export default function SalesOrderModal({ orderId, onClose, showPayments, onPaym
           <div style={{ display: 'none' }}>
             <div ref={printRef} className={printStyles.printArea}>
               <div className={printStyles.printHeader}>
-                <img src="/logo.png" alt="logo" className={printStyles.printLogo} />
+                <div />
                 <div className={printStyles.printHeaderCenter}>
                   <div className={printStyles.printTitle}>{settings.print_title}送货单</div>
                   <div className={printStyles.printSubtitle}>

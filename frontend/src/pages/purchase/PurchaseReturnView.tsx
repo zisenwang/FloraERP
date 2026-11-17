@@ -69,7 +69,7 @@ export default function PurchaseReturnView() {
 
       <div ref={printRef} className={styles.printArea}>
         <div className={styles.printHeader}>
-          <img src="/logo.png" alt="logo" className={styles.printLogo} />
+          <div />
           <div className={styles.printHeaderCenter}>
             <div className={styles.printTitle}>{settings.print_title}退货单</div>
             <div className={styles.printSubtitle}>

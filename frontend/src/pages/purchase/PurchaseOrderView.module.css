@@ -26,11 +26,6 @@
   margin-bottom: 20px;
 }
 
-.printLogo {
-  width: 120px;
-  height: auto;
-  object-fit: contain;
-}
 
 .printHeaderCenter {
   text-align: center;
@@ -139,10 +134,6 @@
     margin-bottom: 12pt;
   }
 
-  .printLogo {
-    width: 120pt;
-    height: auto;
-  }
 
   .printTitle {
     font-size: 28pt;

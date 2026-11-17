@@ -70,7 +70,7 @@ export default function PurchaseOrderView() {
 
       <div ref={printRef} className={styles.printArea}>
         <div className={styles.printHeader}>
-          <img src="/logo.png" alt="logo" className={styles.printLogo} />
+          <div />
           <div className={styles.printHeaderCenter}>
             <div className={styles.printTitle}>{settings.print_title}进货单</div>
             <div className={styles.printSubtitle}>

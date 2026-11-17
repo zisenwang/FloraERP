@@ -26,11 +26,6 @@
   margin-bottom: 5px;
 }
 
-.printLogo {
-  width: 120px;
-  height: 120px;
-  object-fit: contain;
-}
 
 .printHeaderCenter {
   text-align: center;
@@ -150,10 +145,6 @@
     grid-template-columns: 120pt 1fr 120pt;
   }
 
-  .printLogo {
-    width: 120pt;
-    height: 120pt;
-  }
 
   .printTitle {
     font-size: 28pt;
