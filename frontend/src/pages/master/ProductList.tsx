@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
-import { Table, Button, Input, Modal, Form, App, Tag, Select, InputNumber, Space } from 'antd'
+import { Table, Button, Input, Modal, Form, App, Tag, Select, InputNumber, Space, AutoComplete } from 'antd'
 import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons'
 import type { ColumnsType, SorterResult } from 'antd/es/table/interface'
 import {
@@ -12,6 +12,13 @@ import { exportProductsExcel } from '@/utils/exportExcel'
 import { C_AMOUNT, C_LABEL } from '@/constants/colors'
 import styles from './SupplierList.module.css'
 
+type SearchField = 'name' | 'code'
+
+const SEARCH_FIELD_OPTIONS = [
+  { value: 'name', label: '货品名称' },
+  { value: 'code', label: '编码' },
+]
+
 export default function ProductList() {
   const { message, modal } = App.useApp()
   const [form] = Form.useForm<ProductPayload>()
@@ -20,6 +27,7 @@ export default function ProductList() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
+  const [searchField, setSearchField] = useState<SearchField>('name')
   const [filterSupplierId, setFilterSupplierId] = useState<number | undefined>()
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Product | null>(null)
@@ -52,9 +60,7 @@ export default function ProductList() {
     }
     if (search.trim()) {
       const kw = search.trim().toLowerCase()
-      filtered = filtered.filter(p =>
-        p.name.toLowerCase().includes(kw) || p.code.toLowerCase().includes(kw),
-      )
+      filtered = filtered.filter(p => p[searchField].toLowerCase().includes(kw))
     }
 
     const getPieces = (p: Product) =>
@@ -68,7 +74,6 @@ export default function ProductList() {
         case 'name':          cmp = a.name.localeCompare(b.name); break
         case 'supplierName':  cmp = a.supplierName.localeCompare(b.supplierName); break
         case 'category':      cmp = (a.category ?? '').localeCompare(b.category ?? ''); break
-        case 'grade':         cmp = (a.grade ?? '').localeCompare(b.grade ?? ''); break
         case 'unit':          cmp = a.unit.localeCompare(b.unit); break
         case 'unitsPerPiece': cmp = (a.unitsPerPiece ?? 0) - (b.unitsPerPiece ?? 0); break
         case 'costPrice':     cmp = (a.costPrice ?? 0) - (b.costPrice ?? 0); break
@@ -80,7 +85,15 @@ export default function ProductList() {
       }
       return dir * cmp
     })
-  }, [allProducts, filterSupplierId, search, sortKey, sortOrder])
+  }, [allProducts, filterSupplierId, search, searchField, sortKey, sortOrder])
+
+  // Existing categories, offered as suggestions in the 品类 field
+  const categoryOptions = useMemo(
+    () => [...new Set(allProducts.map(p => p.category?.trim()).filter((c): c is string => !!c))]
+      .sort((a, b) => a.localeCompare(b, 'zh'))
+      .map(c => ({ value: c })),
+    [allProducts],
+  )
 
   const applyNextCode = (supplierId: number) => {
     setCodeLoading(true)
@@ -172,7 +185,6 @@ export default function ProductList() {
     { ...col('name'),         title: '货品名称',  dataIndex: 'name',         width: 150, render: (v: string) => <span style={{ color: C_LABEL }}>{v}</span> },
     { ...col('supplierName'), title: '供应商',    dataIndex: 'supplierName', width: 100, render: (v: string) => <span style={{ color: C_LABEL }}>{v}</span> },
     { ...col('category'),     title: '品类',     dataIndex: 'category',     width: 100, render: (v: string) => v ?? '—' },
-    { ...col('grade'),        title: '等级',     dataIndex: 'grade',        width: 80,  render: (v: string) => v ?? '—' },
     { ...col('unit'),         title: '单位',     dataIndex: 'unit',         width: 60  },
     { ...col('unitsPerPiece'),title: '每件数量',  dataIndex: 'unitsPerPiece',width: 75,  render: (v: number) => v ?? '—' },
     { ...col('costPrice'),    title: '最新进价',  dataIndex: 'costPrice',    width: 90,  render: (v: number) => v ? <span style={{ color: C_AMOUNT, fontWeight: 600 }}>¥{v}</span> : '—' },
@@ -206,8 +218,14 @@ export default function ProductList() {
 
       <div className={styles.toolbar}>
         <div className={styles.toolbarLeft}>
+          <Select
+            value={searchField}
+            onChange={v => setSearchField(v as SearchField)}
+            options={SEARCH_FIELD_OPTIONS}
+            style={{ width: 110 }}
+          />
           <Input
-            placeholder="搜索编码或名称"
+            placeholder="搜索关键词"
             prefix={<SearchOutlined />}
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -294,7 +312,14 @@ export default function ProductList() {
             <Input placeholder="如：金钱树小型" />
           </Form.Item>
           <Form.Item name="category" label="品类">
-            <Input placeholder="如：观叶植物" />
+            <AutoComplete
+              options={categoryOptions}
+              placeholder="输入新品类或选择已有品类"
+              allowClear
+              filterOption={(input, option) =>
+                String(option?.value ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+            />
           </Form.Item>
           <Form.Item name="grade" label="等级">
             <Input placeholder="如：A级" />
